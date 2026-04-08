@@ -58,7 +58,7 @@ function formatAcceptRules(rules: string[]): string {
     }
 
     if (normalizedRule.startsWith('.')) {
-      labels.add(normalizedRule.toUpperCase());
+      labels.add(normalizedRule.slice(1).toUpperCase());
       continue;
     }
 

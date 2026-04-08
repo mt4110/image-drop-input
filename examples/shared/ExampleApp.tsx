@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import 'image-drop-input/style.css';
 import './example-app.css';
 import { GalleryExample } from './GalleryExample';
@@ -18,13 +19,72 @@ function PreviewLightbox({
   preview: PreviewState;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    closeButtonRef.current?.focus();
+
+    return () => {
+      previousFocus?.focus();
+    };
+  }, []);
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const dialog = dialogRef.current;
+
+    if (!dialog) {
+      return;
+    }
+
+    const focusableElements = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    );
+
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      dialog.focus();
+      return;
+    }
+
+    const firstFocusableElement = focusableElements[0];
+    const lastFocusableElement = focusableElements[focusableElements.length - 1];
+    const activeElement = document.activeElement;
+
+    if (event.shiftKey) {
+      if (activeElement === firstFocusableElement || !dialog.contains(activeElement)) {
+        event.preventDefault();
+        lastFocusableElement.focus();
+      }
+
+      return;
+    }
+
+    if (activeElement === lastFocusableElement) {
+      event.preventDefault();
+      firstFocusableElement.focus();
+    }
+  };
+
   return (
     <div
+      ref={dialogRef}
       className="exampleLightbox"
       role="dialog"
       aria-modal="true"
       aria-label={preview.title}
+      tabIndex={-1}
       onClick={onClose}
+      onKeyDown={handleKeyDown}
     >
       <div className="exampleLightboxChrome" onClick={(event) => event.stopPropagation()}>
         <div className="exampleLightboxHeader">
@@ -33,6 +93,7 @@ function PreviewLightbox({
             <p className="exampleLightboxFacts">{preview.facts ?? 'Image preview'}</p>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             className="exampleButton exampleButton--secondary"
             onClick={onClose}

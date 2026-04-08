@@ -21,7 +21,7 @@ describe('validateImage', () => {
 
   it('keeps mixed accept labels readable when image wildcards are combined with extensions', async () => {
     await expect(validateImage(textFile, { accept: 'image/*,.heic' })).rejects.toThrow(
-      'Accepted file types: image files, .HEIC.'
+      'Accepted file types: image files, HEIC.'
     );
   });
 
