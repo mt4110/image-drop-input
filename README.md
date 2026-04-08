@@ -79,7 +79,7 @@ type ImageUploadValue = {
 複数枚を扱いたい場合は、`image-drop-input/headless` の helper を使って、`1つの dropzone + 親側の配列 state + 別置き preview` を組むのが自然です。
 
 ```tsx
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { validateImage } from 'image-drop-input/headless';
 
 const accept = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
@@ -92,21 +92,36 @@ type GalleryItem = {
 
 export function GalleryDropzone() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrlsRef = useRef(new Set<string>());
   const [images, setImages] = useState<GalleryItem[]>([]);
 
+  useEffect(() => {
+    return () => {
+      for (const previewSrc of previewUrlsRef.current) {
+        URL.revokeObjectURL(previewSrc);
+      }
+
+      previewUrlsRef.current.clear();
+    };
+  }, []);
+
   async function appendFiles(files: File[]) {
+    const nextImages: GalleryItem[] = [];
+
     for (const file of files) {
       await validateImage(file, { accept, maxBytes: 8 * 1024 * 1024 });
+      const previewSrc = URL.createObjectURL(file);
 
-      setImages((current) => [
-        ...current,
-        {
-          id: crypto.randomUUID(),
-          fileName: file.name,
-          previewSrc: URL.createObjectURL(file)
-        }
-      ]);
+      previewUrlsRef.current.add(previewSrc);
+
+      nextImages.push({
+        id: crypto.randomUUID(),
+        fileName: file.name,
+        previewSrc
+      });
     }
+
+    setImages((current) => [...current, ...nextImages]);
   }
 
   return (
@@ -120,6 +135,8 @@ export function GalleryDropzone() {
   );
 }
 ```
+
+削除 UI を付ける場合は、そのタイミングでも対応する `previewSrc` を `URL.revokeObjectURL` してください。
 
 consumer examples では、単一画像版に加えて detached preview と one-dropzone / many-files の実装コードをそのまま見られるようにしています。
 

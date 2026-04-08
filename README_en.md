@@ -80,7 +80,7 @@ This package is currently **focused on a single-image input**. It does not expos
 When you need several images, the natural shape is `one dropzone + parent-owned array state + detached preview gallery` built with the helpers from `image-drop-input/headless`.
 
 ```tsx
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { validateImage } from 'image-drop-input/headless';
 
 const accept = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
@@ -93,21 +93,36 @@ type GalleryItem = {
 
 export function GalleryDropzone() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrlsRef = useRef(new Set<string>());
   const [images, setImages] = useState<GalleryItem[]>([]);
 
+  useEffect(() => {
+    return () => {
+      for (const previewSrc of previewUrlsRef.current) {
+        URL.revokeObjectURL(previewSrc);
+      }
+
+      previewUrlsRef.current.clear();
+    };
+  }, []);
+
   async function appendFiles(files: File[]) {
+    const nextImages: GalleryItem[] = [];
+
     for (const file of files) {
       await validateImage(file, { accept, maxBytes: 8 * 1024 * 1024 });
+      const previewSrc = URL.createObjectURL(file);
 
-      setImages((current) => [
-        ...current,
-        {
-          id: crypto.randomUUID(),
-          fileName: file.name,
-          previewSrc: URL.createObjectURL(file)
-        }
-      ]);
+      previewUrlsRef.current.add(previewSrc);
+
+      nextImages.push({
+        id: crypto.randomUUID(),
+        fileName: file.name,
+        previewSrc
+      });
     }
+
+    setImages((current) => [...current, ...nextImages]);
   }
 
   return (
@@ -121,6 +136,8 @@ export function GalleryDropzone() {
   );
 }
 ```
+
+If you let people remove images from the gallery, revoke that item's `previewSrc` at the same time.
 
 The consumer examples now show the actual wiring for both a detached single-image preview and a one-dropzone / many-files gallery flow.
 

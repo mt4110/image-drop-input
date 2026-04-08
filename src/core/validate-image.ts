@@ -1,7 +1,7 @@
 import { getImageMetadata } from './get-image-metadata';
 import type { ImageMetadata, ImageValidationOptions } from './types';
 
-function matchesAcceptRule(file: File, rule: string): boolean {
+export function matchesAcceptRule(file: File, rule: string): boolean {
   const normalizedRule = rule.trim().toLowerCase();
 
   if (!normalizedRule) {
@@ -20,6 +20,13 @@ function matchesAcceptRule(file: File, rule: string): boolean {
   return file.type.toLowerCase() === normalizedRule;
 }
 
+export function splitAcceptRules(accept: string): string[] {
+  return accept
+    .split(',')
+    .map((rule) => rule.trim())
+    .filter(Boolean);
+}
+
 function formatAcceptRules(rules: string[]): string {
   const labels = new Set<string>();
 
@@ -27,7 +34,8 @@ function formatAcceptRules(rules: string[]): string {
     const normalizedRule = rule.trim().toLowerCase();
 
     if (normalizedRule === 'image/*') {
-      return 'image files';
+      labels.add('image files');
+      continue;
     }
 
     if (normalizedRule === 'image/png' || normalizedRule === '.png') {
@@ -90,10 +98,7 @@ export async function validateImage(
     options;
 
   if (accept) {
-    const acceptRules = accept
-      .split(',')
-      .map((rule) => rule.trim())
-      .filter(Boolean);
+    const acceptRules = splitAcceptRules(accept);
 
     if (acceptRules.length > 0 && !acceptRules.some((rule) => matchesAcceptRule(file, rule))) {
       throw new Error(`Accepted file types: ${formatAcceptRules(acceptRules)}.`);

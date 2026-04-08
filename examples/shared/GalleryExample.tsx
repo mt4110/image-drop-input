@@ -51,10 +51,16 @@ type GalleryExampleProps = {
 export function GalleryExample({ onOpenPreview }: GalleryExampleProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const appendQueueRef = useRef(Promise.resolve());
   const galleryUrlMapRef = useRef(new Map<string, string>());
+  const galleryItemsRef = useRef<GalleryItem[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [galleryError, setGalleryError] = useState<string | null>(null);
   const [isGalleryDragging, setIsGalleryDragging] = useState(false);
+
+  useEffect(() => {
+    galleryItemsRef.current = galleryItems;
+  }, [galleryItems]);
 
   useEffect(() => {
     return () => {
@@ -70,47 +76,65 @@ export function GalleryExample({ onOpenPreview }: GalleryExampleProps) {
     inputRef.current?.click();
   };
 
-  const appendGalleryFiles = async (files: File[]) => {
-    const remainingSlots = maxGalleryItems - galleryItems.length;
+  const appendGalleryFiles = (files: File[]) => {
+    const task = appendQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        const remainingSlots = maxGalleryItems - galleryItemsRef.current.length;
 
-    if (remainingSlots <= 0) {
-      setGalleryError(`Up to ${maxGalleryItems} images can be previewed in this example.`);
-      return;
-    }
+        if (remainingSlots <= 0) {
+          setGalleryError(`Up to ${maxGalleryItems} images can be previewed in this example.`);
+          return;
+        }
 
-    const nextItems: GalleryItem[] = [];
-    const nextErrors: string[] = [];
-    let availableSlots = remainingSlots;
+        const nextItems: GalleryItem[] = [];
+        const nextErrors: string[] = [];
+        let availableSlots = remainingSlots;
 
-    for (const file of files) {
-      if (availableSlots <= 0) {
-        nextErrors.push(`Only the first ${remainingSlots} image${remainingSlots === 1 ? '' : 's'} were added.`);
-        break;
+        for (const file of files) {
+          if (availableSlots <= 0) {
+            nextErrors.push(
+              `Only the first ${remainingSlots} image${remainingSlots === 1 ? '' : 's'} were added.`
+            );
+            break;
+          }
+
+          try {
+            const metadata = await validateImage(file, {
+              accept: acceptedTypes,
+              maxBytes: maxFileBytes
+            });
+            const galleryItem = createGalleryItem(file, metadata ?? undefined);
+
+            galleryUrlMapRef.current.set(galleryItem.id, galleryItem.previewSrc);
+            nextItems.push(galleryItem);
+            availableSlots -= 1;
+          } catch (error) {
+            nextErrors.push(
+              error instanceof Error
+                ? error.message
+                : 'Something went wrong while preparing the preview.'
+            );
+          }
+        }
+
+        if (nextItems.length > 0) {
+          const updatedItems = [...galleryItemsRef.current, ...nextItems];
+
+          galleryItemsRef.current = updatedItems;
+          setGalleryItems(updatedItems);
+        }
+
+        setGalleryError(nextErrors[0] ?? null);
+      });
+
+    appendQueueRef.current = task;
+
+    return task.finally(() => {
+      if (inputRef.current) {
+        inputRef.current.value = '';
       }
-
-      try {
-        const metadata = await validateImage(file, {
-          accept: acceptedTypes,
-          maxBytes: maxFileBytes
-        });
-        const galleryItem = createGalleryItem(file, metadata ?? undefined);
-
-        galleryUrlMapRef.current.set(galleryItem.id, galleryItem.previewSrc);
-        nextItems.push(galleryItem);
-        availableSlots -= 1;
-      } catch (error) {
-        nextErrors.push(
-          error instanceof Error ? error.message : 'Something went wrong while preparing the preview.'
-        );
-      }
-    }
-
-    setGalleryItems((current) => [...current, ...nextItems]);
-    setGalleryError(nextErrors[0] ?? null);
-
-    if (inputRef.current) {
-      inputRef.current.value = '';
-    }
+    });
   };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -145,7 +169,13 @@ export function GalleryExample({ onOpenPreview }: GalleryExampleProps) {
       galleryUrlMapRef.current.delete(id);
     }
 
-    setGalleryItems((current) => current.filter((item) => item.id !== id));
+    setGalleryItems((current) => {
+      const nextItems = current.filter((item) => item.id !== id);
+
+      galleryItemsRef.current = nextItems;
+
+      return nextItems;
+    });
   };
 
   return (
