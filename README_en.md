@@ -427,6 +427,17 @@ That split is intentional. It keeps the public surface quieter.
 - the preview dialog is intentionally inline, not portal-based, to keep the runtime surface smaller
 - if an ancestor creates a stacking context with `transform` or `filter`, mount closer to the app root or replace the dialog through the headless API
 
+## Next milestone candidates
+
+- a headless sizing helper for SEO / AIO image variants built on the browser's native Canvas API
+- output presets for `1:1`, `4:3`, and `16:9`
+- a default output width of `1200px`
+- end-to-end `image/webp` conversion, including filename and MIME updates
+- consumer examples in both `examples/vite` and `examples/rsbuild` so the integration shape stays easy to inspect
+
+The intent here is not to grow this into a general image editor.
+The better next step is a practical helper and concrete examples for social/share and article-thumbnail style outputs.
+
 ## Development
 
 ```bash

@@ -426,6 +426,17 @@ import {
 - preview dialog は依存を増やさないため現状 portal ではなく inline 描画です
 - 祖先に `transform` / `filter` などの stacking context がある場合は、より app root に近い位置へ置くか、headless API で独自 dialog に差し替えてください
 
+## 次のマイルストーン候補
+
+- ブラウザ標準の Canvas API を使った、SEO / AIO 向け派生画像の headless sizing helper
+- 出力プリセットは `1:1` / `4:3` / `16:9` を先に用意
+- 既定の出力幅は `1200px` を基準にそろえる
+- `image/webp` への変換、file name の差し替え、MIME 更新まで一貫して扱う
+- consumer example を `examples/vite` と `examples/rsbuild` の両方に追加して、導入差分をそのまま読めるようにする
+
+このスコープは「画像エディタを増築する」より、共有画像や記事サムネイルを静かに整えるための
+実用的な変換 helper と example を先に固める、という考え方です。
+
 ## 開発
 
 ```bash
