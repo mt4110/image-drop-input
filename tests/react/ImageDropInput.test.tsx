@@ -521,6 +521,23 @@ describe('ImageDropInput', () => {
     expect(nextValue?.src).toBeUndefined();
   });
 
+  it('shows an explicit validation error when a non-image archive is dropped', async () => {
+    const onChange = vi.fn();
+
+    render(<ImageDropInput onChange={onChange} />);
+
+    const dropzone = screen.getByRole('button', { name: 'Image upload area' });
+    const file = new File(['hello'], 'archive.zip', { type: 'application/zip' });
+
+    fireEvent.drop(dropzone, { dataTransfer: createTransfer(file) });
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('Accepted file types: image files.');
+    });
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('keeps local-only selections in previewSrc so src stays reserved for persisted references', async () => {
     const user = userEvent.setup({ document: window.document });
     const onChange = vi.fn();

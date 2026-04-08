@@ -1,0 +1,527 @@
+.examplePage {
+  min-height: 100vh;
+  background: #f3f4f6;
+  color: #111827;
+  font-family: "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif;
+}
+
+.exampleShell {
+  margin: 0 auto;
+  max-width: 1040px;
+  padding: 48px 20px 72px;
+  display: grid;
+  gap: 24px;
+}
+
+.exampleIntro {
+  display: grid;
+  gap: 8px;
+}
+
+.exampleEyebrow {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.exampleTitle {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.exampleDescription {
+  margin: 0;
+  max-width: 42rem;
+  color: #4b5563;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.exampleSection {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+}
+
+.exampleSectionHeader {
+  display: grid;
+  gap: 6px;
+}
+
+.exampleLabel {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.exampleHeading {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.exampleSubcopy {
+  margin: 0;
+  max-width: 42rem;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.exampleMeta {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.exampleSingleLayout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  align-items: start;
+}
+
+.exampleStack {
+  display: grid;
+  gap: 12px;
+}
+
+.exampleInputLabel,
+.exampleInput {
+  display: none;
+}
+
+.exampleSurface {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  min-height: 288px;
+  padding: 24px;
+  font: inherit;
+  background: #f8fafc;
+  border: 1px solid #d6dbe3;
+  border-radius: 20px;
+  appearance: none;
+  align-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.exampleSurface--gallery {
+  min-height: 224px;
+}
+
+.exampleSurface:hover {
+  border-color: #c0c9d6;
+}
+
+.exampleSurface:focus-visible,
+.exampleButton:focus-visible,
+.exampleCode summary:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.exampleSurface.is-dragging {
+  background: #eef5ff;
+  border-color: #6b92d6;
+}
+
+.exampleSurface.is-error {
+  background: #fff7f5;
+  border-color: #cf8b7d;
+}
+
+.exampleSurfaceLabel {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.exampleSurfaceTitle {
+  color: #111827;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.exampleSurfaceHint {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.exampleProgress {
+  display: grid;
+  gap: 8px;
+}
+
+.exampleProgressBar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.exampleProgressFill {
+  display: block;
+  height: 100%;
+  width: var(--example-progress);
+  background: #3b82f6;
+  border-radius: inherit;
+}
+
+.exampleStatus {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.exampleNotice {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.exampleNotice--error {
+  background: #fff7f5;
+  border: 1px solid #f0c8bf;
+  color: #8a3b2f;
+}
+
+.exampleActions,
+.exampleGalleryToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.exampleToolbarHint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.exampleButton {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.exampleButton--primary {
+  background: #111827;
+  color: #ffffff;
+}
+
+.exampleButton--primary:hover {
+  background: #1f2937;
+}
+
+.exampleButton--secondary {
+  background: #ffffff;
+  border-color: #d6dbe3;
+  color: #374151;
+}
+
+.exampleButton--secondary:hover {
+  background: #f8fafc;
+}
+
+.examplePreviewPanel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+}
+
+.examplePreviewFrame {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background-color: #eef2f7;
+  background-image:
+    linear-gradient(45deg, rgba(148, 163, 184, 0.14) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(148, 163, 184, 0.14) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.14) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.14) 75%);
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-size: 20px 20px;
+  border: 1px solid #d6dbe3;
+  border-radius: 16px;
+}
+
+.exampleImageButton {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
+.examplePreviewImage,
+.exampleGalleryImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.examplePreviewEmpty,
+.exampleGalleryEmpty {
+  display: grid;
+  gap: 6px;
+  place-items: center;
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.examplePreviewEmpty strong,
+.exampleGalleryEmpty strong {
+  color: #111827;
+  font-size: 14px;
+}
+
+.exampleFileMeta {
+  display: grid;
+  gap: 4px;
+}
+
+.exampleFileName {
+  margin: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.exampleFileHint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.exampleTapHint {
+  margin: 2px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.exampleGalleryGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+}
+
+.exampleGalleryItem {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+}
+
+.exampleGalleryThumb {
+  aspect-ratio: 1;
+  overflow: hidden;
+  background-color: #eef2f7;
+  background-image:
+    linear-gradient(45deg, rgba(148, 163, 184, 0.14) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(148, 163, 184, 0.14) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.14) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.14) 75%);
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-size: 20px 20px;
+  border-radius: 14px;
+}
+
+.exampleGalleryEmpty {
+  min-height: 144px;
+  padding: 20px;
+  border: 1px dashed #d1d5db;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.exampleCode {
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.exampleCode summary {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.exampleCode summary::-webkit-details-marker {
+  display: none;
+}
+
+.exampleCode pre {
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  color: #334155;
+  font-family: "SFMono-Regular", "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.exampleLightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.76);
+  backdrop-filter: blur(6px);
+}
+
+.exampleLightboxChrome {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 16px;
+  min-height: 0;
+}
+
+.exampleLightboxHeader {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  color: #f8fafc;
+}
+
+.exampleLightboxMeta {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.exampleLightboxTitle,
+.exampleLightboxFacts {
+  margin: 0;
+}
+
+.exampleLightboxTitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.exampleLightboxFacts {
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.exampleLightboxHeader .exampleButton--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+}
+
+.exampleLightboxHeader .exampleButton--secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.exampleLightboxStage {
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.04);
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.06) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.06) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.06) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.06) 75%);
+  background-position: 0 0, 0 16px, 16px -16px, -16px 0;
+  background-size: 32px 32px;
+}
+
+.exampleLightboxImage {
+  max-width: 100%;
+  max-height: min(82vh, 100%);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 840px) {
+  .exampleShell {
+    padding-inline: 16px;
+  }
+
+  .exampleSingleLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .exampleSection {
+    padding: 20px;
+  }
+
+  .exampleLightbox {
+    padding: 16px;
+  }
+
+  .exampleLightboxHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

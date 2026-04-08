@@ -52,7 +52,7 @@ function normalizeTransformedFile(originalFile: File, transformed: ImageTransfor
   });
 }
 
-function extractImageFile(dataTransfer: DataTransfer | null): File | null {
+function extractFile(dataTransfer: DataTransfer | null): File | null {
   if (!dataTransfer) {
     return null;
   }
@@ -61,13 +61,13 @@ function extractImageFile(dataTransfer: DataTransfer | null): File | null {
     if (item.kind === 'file') {
       const file = item.getAsFile();
 
-      if (file?.type.startsWith('image/')) {
+      if (file) {
         return file;
       }
     }
   }
 
-  return Array.from(dataTransfer.files).find((file) => file.type.startsWith('image/')) ?? null;
+  return dataTransfer.files[0] ?? null;
 }
 
 function valueUsesUrl(value: ImageUploadValue | null | undefined, url: string): boolean {
@@ -484,7 +484,7 @@ export function useImageDropInput({
         return;
       }
 
-      const nextFile = extractImageFile(event.dataTransfer);
+      const nextFile = extractFile(event.dataTransfer);
 
       if (nextFile) {
         await handleFile(nextFile);
@@ -499,7 +499,7 @@ export function useImageDropInput({
         return;
       }
 
-      const nextFile = extractImageFile(event.clipboardData);
+      const nextFile = extractFile(event.clipboardData);
 
       if (nextFile) {
         event.preventDefault();

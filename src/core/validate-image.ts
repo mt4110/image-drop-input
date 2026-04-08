@@ -20,6 +20,46 @@ function matchesAcceptRule(file: File, rule: string): boolean {
   return file.type.toLowerCase() === normalizedRule;
 }
 
+function formatAcceptRules(rules: string[]): string {
+  const labels = new Set<string>();
+
+  for (const rule of rules) {
+    const normalizedRule = rule.trim().toLowerCase();
+
+    if (normalizedRule === 'image/*') {
+      return 'image files';
+    }
+
+    if (normalizedRule === 'image/png' || normalizedRule === '.png') {
+      labels.add('PNG');
+      continue;
+    }
+
+    if (
+      normalizedRule === 'image/jpeg' ||
+      normalizedRule === '.jpg' ||
+      normalizedRule === '.jpeg'
+    ) {
+      labels.add('JPEG');
+      continue;
+    }
+
+    if (normalizedRule === 'image/webp' || normalizedRule === '.webp') {
+      labels.add('WebP');
+      continue;
+    }
+
+    if (normalizedRule.startsWith('.')) {
+      labels.add(normalizedRule.toUpperCase());
+      continue;
+    }
+
+    labels.add(normalizedRule);
+  }
+
+  return Array.from(labels).join(', ');
+}
+
 function formatBytes(value: number): string {
   if (value < 1024) {
     return `${value} B`;
@@ -56,7 +96,7 @@ export async function validateImage(
       .filter(Boolean);
 
     if (acceptRules.length > 0 && !acceptRules.some((rule) => matchesAcceptRule(file, rule))) {
-      throw new Error(`Accepted file types: ${acceptRules.join(', ')}.`);
+      throw new Error(`Accepted file types: ${formatAcceptRules(acceptRules)}.`);
     }
   }
 

@@ -6,6 +6,7 @@ dist/
 coverage/
 .nyc_output/
 .storybook-static/
+*.tgz
 
 # examples build cache
 examples/**/dist/

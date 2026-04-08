@@ -73,6 +73,57 @@ type ImageUploadValue = {
 };
 ```
 
+## Handling multiple images
+
+This package is currently **focused on a single-image input**. It does not expose a built-in `multiple` prop or an array-shaped value model.
+
+When you need several images, the natural shape is `one dropzone + parent-owned array state + detached preview gallery` built with the helpers from `image-drop-input/headless`.
+
+```tsx
+import { useRef, useState } from 'react';
+import { validateImage } from 'image-drop-input/headless';
+
+const accept = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
+
+type GalleryItem = {
+  id: string;
+  fileName: string;
+  previewSrc: string;
+};
+
+export function GalleryDropzone() {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [images, setImages] = useState<GalleryItem[]>([]);
+
+  async function appendFiles(files: File[]) {
+    for (const file of files) {
+      await validateImage(file, { accept, maxBytes: 8 * 1024 * 1024 });
+
+      setImages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          fileName: file.name,
+          previewSrc: URL.createObjectURL(file)
+        }
+      ]);
+    }
+  }
+
+  return (
+    <>
+      <input ref={inputRef} type="file" accept={accept} multiple hidden />
+      <button type="button" onClick={() => inputRef.current?.click()}>
+        Drop or browse PNG, JPEG, or WebP files
+      </button>
+      <div>{images.map((image) => <img key={image.id} src={image.previewSrc} alt={image.fileName} />)}</div>
+    </>
+  );
+}
+```
+
+The consumer examples now show the actual wiring for both a detached single-image preview and a one-dropzone / many-files gallery flow.
+
 ## The value model
 
 - `src`: persisted or otherwise shareable image reference
@@ -217,8 +268,8 @@ If you need to control the filename or MIME type explicitly:
 
 ```ts
 transform={async (file) => ({
-  file: await compressImage(file, { maxWidth: 1600 }),
-  fileName: file.name.replace(/\.png$/i, '.webp'),
+  file: await compressImage(file, { maxWidth: 1600, outputType: 'image/webp', quality: 0.86 }),
+  fileName: file.name.replace(/\.(png|jpe?g|webp)$/i, '.webp'),
   mimeType: 'image/webp'
 })}
 ```

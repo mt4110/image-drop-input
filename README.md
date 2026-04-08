@@ -72,6 +72,57 @@ type ImageUploadValue = {
 };
 ```
 
+## 複数画像を扱うには
+
+この package は今のところ **単一画像入力に特化** しています。`multiple` prop や配列 value を直接持たせる設計にはしていません。
+
+複数枚を扱いたい場合は、`image-drop-input/headless` の helper を使って、`1つの dropzone + 親側の配列 state + 別置き preview` を組むのが自然です。
+
+```tsx
+import { useRef, useState } from 'react';
+import { validateImage } from 'image-drop-input/headless';
+
+const accept = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
+
+type GalleryItem = {
+  id: string;
+  fileName: string;
+  previewSrc: string;
+};
+
+export function GalleryDropzone() {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [images, setImages] = useState<GalleryItem[]>([]);
+
+  async function appendFiles(files: File[]) {
+    for (const file of files) {
+      await validateImage(file, { accept, maxBytes: 8 * 1024 * 1024 });
+
+      setImages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          fileName: file.name,
+          previewSrc: URL.createObjectURL(file)
+        }
+      ]);
+    }
+  }
+
+  return (
+    <>
+      <input ref={inputRef} type="file" accept={accept} multiple hidden />
+      <button type="button" onClick={() => inputRef.current?.click()}>
+        Drop or browse PNG, JPEG, or WebP files
+      </button>
+      <div>{images.map((image) => <img key={image.id} src={image.previewSrc} alt={image.fileName} />)}</div>
+    </>
+  );
+}
+```
+
+consumer examples では、単一画像版に加えて detached preview と one-dropzone / many-files の実装コードをそのまま見られるようにしています。
+
 ## value の意味
 
 - `src`: 永続化済み、または共有可能な画像参照
@@ -216,8 +267,8 @@ import { compressImage } from 'image-drop-input/headless';
 
 ```ts
 transform={async (file) => ({
-  file: await compressImage(file, { maxWidth: 1600 }),
-  fileName: file.name.replace(/\.png$/i, '.webp'),
+  file: await compressImage(file, { maxWidth: 1600, outputType: 'image/webp', quality: 0.86 }),
+  fileName: file.name.replace(/\.(png|jpe?g|webp)$/i, '.webp'),
   mimeType: 'image/webp'
 })}
 ```
