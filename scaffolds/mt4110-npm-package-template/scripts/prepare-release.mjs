@@ -22,4 +22,4 @@ console.log(`Prepared release version ${nextVersion}.`);
 console.log('Next steps:');
 console.log('  1. Review package.json and package-lock.json.');
 console.log('  2. Run: npm run release:pr:check');
-console.log(`  3. Open a release PR with the Release template and a neutral title like release: ${nextVersion}.`);
+console.log(`  3. Open a release PR with the Release template and a neutral title like \`release: ${nextVersion}\`.`);

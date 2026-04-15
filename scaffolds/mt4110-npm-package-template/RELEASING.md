@@ -48,6 +48,9 @@ After the first publish creates the package, move the repository to trusted publ
 npm trust github <package-name> --repo mt4110/<repo-name> --file release.yml
 ```
 
+This CLI path requires npm `11.10+`.
+If you prefer the web flow, configure the trusted publisher in the npm package settings and follow https://docs.npmjs.com/trusted-publishers.
+
 Then remove `NODE_AUTH_TOKEN` from `.github/workflows/release.yml` and keep the `id-token: write` permission.
 
 ## Commands

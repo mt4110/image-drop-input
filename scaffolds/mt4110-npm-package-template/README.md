@@ -20,13 +20,18 @@ It intentionally does not freeze the package layout, bundler choice, or test run
 
 ## Included here
 
-- `.github/workflows/ci.yml`
-- `.github/workflows/release.yml`
 - `.github/PULL_REQUEST_TEMPLATE/release.md`
 - `scripts/prepare-release.mjs`
+- `README.md`
+- `RELEASING.md`
+
+This local seed is intentionally partial.
+The future public `mt4110/npm-package-template` repository should also add:
+
+- `.github/workflows/ci.yml`
+- `.github/workflows/release.yml`
 - `CHANGELOG.md`
 - `LICENSE`
-- `RELEASING.md`
 - `.gitignore`
 
 ## Assumptions
@@ -40,8 +45,8 @@ The receiving repository should provide:
 
 The package itself should publish from the repository root.
 
-The bundled workflows are intentionally self-skipping inside `mt4110/npm-package-template` itself.
-They start running once the files are copied into another repository.
+The workflow files are not part of this seed directory yet.
+Add them when the public template repository is created so the release lane can stay explicit without pretending this local draft is already the finished template.
 
 ## npm publish auth
 
@@ -53,6 +58,9 @@ After the first successful publish creates the package, move that repository to 
 ```bash
 npm trust github <package-name> --repo mt4110/<repo-name> --file release.yml
 ```
+
+This CLI path requires npm `11.10+`.
+If you prefer the web flow, configure the trusted publisher in the npm package settings and follow https://docs.npmjs.com/trusted-publishers.
 
 Then remove `NODE_AUTH_TOKEN` from `.github/workflows/release.yml` in the package repository and keep `id-token: write`.
 Keep branch names short and keep PR and release titles plain, for example `release/0.2.0`, `release: 0.2.0`, and `v0.2.0`.
