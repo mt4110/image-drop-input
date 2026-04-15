@@ -3,13 +3,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const releaseTarget = process.argv[2];
+const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 if (!releaseTarget) {
   console.error('Usage: npm run release:prepare -- <patch|minor|major|version>');
   process.exit(1);
 }
 
-execFileSync('npm', ['version', releaseTarget, '--no-git-tag-version'], {
+execFileSync(npmExecutable, ['version', releaseTarget, '--no-git-tag-version'], {
   stdio: 'inherit'
 });
 
