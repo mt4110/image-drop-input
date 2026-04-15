@@ -66,14 +66,13 @@ export function formatImageFacts(
 }
 
 export function createUploadAdapter(uploadKey: string, progressStops: readonly [number, number]) {
-  return async (file: Blob, context: UploadContext) => {
+  return async (_file: Blob, context: UploadContext) => {
     context.onProgress?.(progressStops[0]);
     await delay(140);
     context.onProgress?.(progressStops[1]);
     await delay(140);
 
     return {
-      src: URL.createObjectURL(file),
       key: uploadKey
     };
   };
