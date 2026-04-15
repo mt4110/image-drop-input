@@ -127,7 +127,23 @@ export function GalleryDropzone() {
 
   return (
     <>
-      <input ref={inputRef} type="file" accept={accept} multiple hidden />
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        multiple
+        hidden
+        onChange={(event) => {
+          const files = Array.from(event.currentTarget.files ?? []);
+
+          if (files.length === 0) {
+            return;
+          }
+
+          void appendFiles(files);
+          event.currentTarget.value = '';
+        }}
+      />
       <button type="button" onClick={() => inputRef.current?.click()}>
         Drop or browse PNG, JPEG, or WebP files
       </button>

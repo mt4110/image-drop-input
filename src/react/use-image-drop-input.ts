@@ -89,11 +89,15 @@ function extractFile(dataTransfer: DataTransfer | null, accept?: string): File |
     if (acceptedFile) {
       return acceptedFile;
     }
+
+    const imageFile = files.find((file) => file.type.startsWith('image/'));
+
+    return imageFile ?? files[0] ?? null;
   }
 
   const imageFile = files.find((file) => file.type.startsWith('image/'));
 
-  return imageFile ?? files[0] ?? null;
+  return imageFile ?? null;
 }
 
 function valueUsesUrl(value: ImageUploadValue | null | undefined, url: string): boolean {

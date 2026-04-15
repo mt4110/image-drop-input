@@ -9,9 +9,9 @@ export default defineConfig({
   plugins: [pluginReact()],
   resolve: {
     alias: {
-      'image-drop-input': path.join(packageRoot, 'dist/index.js'),
       'image-drop-input/headless': path.join(packageRoot, 'dist/headless.js'),
-      'image-drop-input/style.css': path.join(packageRoot, 'dist/style.css')
+      'image-drop-input/style.css': path.join(packageRoot, 'dist/style.css'),
+      'image-drop-input': path.join(packageRoot, 'dist/index.js')
     }
   },
   html: {
