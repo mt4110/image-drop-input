@@ -43,6 +43,6 @@ jobs:
       - run: npm run build:examples
       - run: npm run check:package
       - run: npm publish --access public
-        if: ${{ github.event_name == 'release' || inputs.publish }}
+        if: ${{ github.event_name == 'release' || inputs.publish == true || inputs.publish == 'true' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
