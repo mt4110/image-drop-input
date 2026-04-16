@@ -11,7 +11,7 @@ import type {
   ManagedObjectUrl,
   TransformedImageFile
 } from '../core/types';
-import { validateImage } from '../core/validate-image';
+import { matchesAcceptRule, splitAcceptRules, validateImage } from '../core/validate-image';
 import type { UploadAdapter } from '../upload/types';
 
 function toError(error: unknown): Error {
@@ -52,22 +52,52 @@ function normalizeTransformedFile(originalFile: File, transformed: ImageTransfor
   });
 }
 
-function extractImageFile(dataTransfer: DataTransfer | null): File | null {
+function extractFiles(dataTransfer: DataTransfer | null): File[] {
   if (!dataTransfer) {
-    return null;
+    return [];
   }
+
+  const files: File[] = [];
 
   for (const item of Array.from(dataTransfer.items)) {
     if (item.kind === 'file') {
       const file = item.getAsFile();
 
-      if (file?.type.startsWith('image/')) {
-        return file;
+      if (file) {
+        files.push(file);
       }
     }
   }
 
-  return Array.from(dataTransfer.files).find((file) => file.type.startsWith('image/')) ?? null;
+  return files.length > 0 ? files : Array.from(dataTransfer.files);
+}
+
+function extractFile(dataTransfer: DataTransfer | null, accept?: string): File | null {
+  const files = extractFiles(dataTransfer);
+
+  if (files.length === 0) {
+    return null;
+  }
+
+  const acceptRules = accept ? splitAcceptRules(accept) : [];
+
+  if (acceptRules.length > 0) {
+    const acceptedFile = files.find((file) =>
+      acceptRules.some((rule) => matchesAcceptRule(file, rule))
+    );
+
+    if (acceptedFile) {
+      return acceptedFile;
+    }
+
+    const imageFile = files.find((file) => file.type.startsWith('image/'));
+
+    return imageFile ?? files[0] ?? null;
+  }
+
+  const imageFile = files.find((file) => file.type.startsWith('image/'));
+
+  return imageFile ?? null;
 }
 
 function valueUsesUrl(value: ImageUploadValue | null | undefined, url: string): boolean {
@@ -484,13 +514,13 @@ export function useImageDropInput({
         return;
       }
 
-      const nextFile = extractImageFile(event.dataTransfer);
+      const nextFile = extractFile(event.dataTransfer, accept);
 
       if (nextFile) {
         await handleFile(nextFile);
       }
     },
-    [disabled, handleFile]
+    [accept, disabled, handleFile]
   );
 
   const handlePaste = useCallback(
@@ -499,14 +529,14 @@ export function useImageDropInput({
         return;
       }
 
-      const nextFile = extractImageFile(event.clipboardData);
+      const nextFile = extractFile(event.clipboardData, accept);
 
       if (nextFile) {
         event.preventDefault();
         await handleFile(nextFile);
       }
     },
-    [disabled, handleFile]
+    [accept, disabled, handleFile]
   );
 
   const handleKeyDown = useCallback(

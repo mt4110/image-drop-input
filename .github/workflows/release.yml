@@ -24,7 +24,9 @@ jobs:
           cache: npm
 
       - name: Resolve npm version from packageManager
-        run: echo "NPM_VERSION=$(node -p \"require('./package.json').packageManager.split('@')[1]\")" >> "$GITHUB_ENV"
+        run: |
+          NPM_VERSION="$(node -p 'require("./package.json").packageManager.split("@")[1]')"
+          echo "NPM_VERSION=${NPM_VERSION}" >> "$GITHUB_ENV"
 
       - name: Install pinned npm
         run: npm install --global "npm@${NPM_VERSION}"

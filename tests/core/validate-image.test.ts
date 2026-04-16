@@ -3,11 +3,25 @@ import { describe, expect, it } from 'vitest';
 import { validateImage } from '../../src/core/validate-image';
 
 const imageFile = new File(['hello'], 'avatar.png', { type: 'image/png' });
+const webpFile = new File(['hello'], 'avatar.webp', { type: 'image/webp' });
+const textFile = new File(['hello'], 'notes.txt', { type: 'text/plain' });
 
 describe('validateImage', () => {
   it('rejects files outside the accepted mime types', async () => {
     await expect(validateImage(imageFile, { accept: 'image/jpeg' })).rejects.toThrow(
       'Accepted file types'
+    );
+  });
+
+  it('accepts WebP files when WebP is listed in the accept rules', async () => {
+    await expect(
+      validateImage(webpFile, { accept: 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp' })
+    ).resolves.toBeNull();
+  });
+
+  it('keeps mixed accept labels readable when image wildcards are combined with extensions', async () => {
+    await expect(validateImage(textFile, { accept: 'image/*,.heic' })).rejects.toThrow(
+      'Accepted file types: image files, HEIC.'
     );
   });
 

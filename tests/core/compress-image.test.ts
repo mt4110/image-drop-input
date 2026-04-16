@@ -107,4 +107,46 @@ describe('compressImage', () => {
     expect(close).toHaveBeenCalledTimes(1);
     expect(result).toBe(source);
   });
+
+  it('preserves WebP sources when auto output type is used', async () => {
+    const close = vi.fn();
+    const bitmap = {
+      width: 1200,
+      height: 900,
+      close
+    } as ImageBitmap;
+    const createImageBitmap = vi.fn(async () => bitmap);
+
+    Object.defineProperty(globalThis, 'createImageBitmap', {
+      configurable: true,
+      value: createImageBitmap
+    });
+
+    const source = new File(['hello'], 'avatar.webp', { type: 'image/webp' });
+    const result = await compressImage(source, { maxWidth: 600 });
+
+    expect(result.type).toBe('image/webp');
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('can convert JPEG sources to WebP explicitly', async () => {
+    const close = vi.fn();
+    const bitmap = {
+      width: 1200,
+      height: 900,
+      close
+    } as ImageBitmap;
+    const createImageBitmap = vi.fn(async () => bitmap);
+
+    Object.defineProperty(globalThis, 'createImageBitmap', {
+      configurable: true,
+      value: createImageBitmap
+    });
+
+    const source = new File(['hello'], 'avatar.jpg', { type: 'image/jpeg' });
+    const result = await compressImage(source, { maxWidth: 600, outputType: 'image/webp' });
+
+    expect(result.type).toBe('image/webp');
+    expect(close).toHaveBeenCalledTimes(1);
+  });
 });

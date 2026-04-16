@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "rsbuild dev",
-    "build": "rsbuild build",
+    "dev": "npm --prefix ../.. run build:lib && rsbuild dev",
+    "build": "npm --prefix ../.. run build:lib && rsbuild build",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
