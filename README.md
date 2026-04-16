@@ -72,6 +72,90 @@ type ImageUploadValue = {
 };
 ```
 
+## 複数画像を扱うには
+
+この package は今のところ **単一画像入力に特化** しています。`multiple` prop や配列 value を直接持たせる設計にはしていません。
+
+複数枚を扱いたい場合は、`image-drop-input/headless` の helper を使って、`1つの dropzone + 親側の配列 state + 別置き preview` を組むのが自然です。
+
+```tsx
+import { useEffect, useRef, useState } from 'react';
+import { validateImage } from 'image-drop-input/headless';
+
+const accept = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
+
+type GalleryItem = {
+  id: string;
+  fileName: string;
+  previewSrc: string;
+};
+
+export function GalleryDropzone() {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrlsRef = useRef(new Set<string>());
+  const [images, setImages] = useState<GalleryItem[]>([]);
+
+  useEffect(() => {
+    return () => {
+      for (const previewSrc of previewUrlsRef.current) {
+        URL.revokeObjectURL(previewSrc);
+      }
+
+      previewUrlsRef.current.clear();
+    };
+  }, []);
+
+  async function appendFiles(files: File[]) {
+    const nextImages: GalleryItem[] = [];
+
+    for (const file of files) {
+      await validateImage(file, { accept, maxBytes: 8 * 1024 * 1024 });
+      const previewSrc = URL.createObjectURL(file);
+
+      previewUrlsRef.current.add(previewSrc);
+
+      nextImages.push({
+        id: crypto.randomUUID(),
+        fileName: file.name,
+        previewSrc
+      });
+    }
+
+    setImages((current) => [...current, ...nextImages]);
+  }
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        multiple
+        hidden
+        onChange={(event) => {
+          const files = Array.from(event.currentTarget.files ?? []);
+
+          if (files.length === 0) {
+            return;
+          }
+
+          void appendFiles(files);
+          event.currentTarget.value = '';
+        }}
+      />
+      <button type="button" onClick={() => inputRef.current?.click()}>
+        Drop or browse PNG, JPEG, or WebP files
+      </button>
+      <div>{images.map((image) => <img key={image.id} src={image.previewSrc} alt={image.fileName} />)}</div>
+    </>
+  );
+}
+```
+
+削除 UI を付ける場合は、そのタイミングでも対応する `previewSrc` を `URL.revokeObjectURL` してください。
+
+consumer examples では、単一画像版に加えて detached preview と one-dropzone / many-files の実装コードをそのまま見られるようにしています。
+
 ## value の意味
 
 - `src`: 永続化済み、または共有可能な画像参照
@@ -216,8 +300,8 @@ import { compressImage } from 'image-drop-input/headless';
 
 ```ts
 transform={async (file) => ({
-  file: await compressImage(file, { maxWidth: 1600 }),
-  fileName: file.name.replace(/\.png$/i, '.webp'),
+  file: await compressImage(file, { maxWidth: 1600, outputType: 'image/webp', quality: 0.86 }),
+  fileName: file.name.replace(/\.(png|jpe?g|webp)$/i, '.webp'),
   mimeType: 'image/webp'
 })}
 ```
@@ -357,6 +441,17 @@ import {
 - preview dialog は `Escape` で閉じ、開いている間は focus を中に留めます
 - preview dialog は依存を増やさないため現状 portal ではなく inline 描画です
 - 祖先に `transform` / `filter` などの stacking context がある場合は、より app root に近い位置へ置くか、headless API で独自 dialog に差し替えてください
+
+## 次のマイルストーン候補
+
+- ブラウザ標準の Canvas API を使った、SEO / AIO 向け派生画像の headless sizing helper
+- 出力プリセットは `1:1` / `4:3` / `16:9` を先に用意
+- 既定の出力幅は `1200px` を基準にそろえる
+- `image/webp` への変換、file name の差し替え、MIME 更新まで一貫して扱う
+- consumer example を `examples/vite` と `examples/rsbuild` の両方に追加して、導入差分をそのまま読めるようにする
+
+このスコープは「画像エディタを増築する」より、共有画像や記事サムネイルを静かに整えるための
+実用的な変換 helper と example を先に固める、という考え方です。
 
 ## 開発
 

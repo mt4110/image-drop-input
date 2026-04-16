@@ -27,16 +27,14 @@ describe('ImageDropInput', () => {
     });
   });
 
-  function createTransfer(file: File): DataTransfer {
+  function createTransfer(...files: File[]): DataTransfer {
     return {
       dropEffect: 'copy',
-      files: [file],
-      items: [
-        {
-          kind: 'file',
-          getAsFile: () => file
-        }
-      ]
+      files,
+      items: files.map((file) => ({
+        kind: 'file',
+        getAsFile: () => file
+      }))
     } as unknown as DataTransfer;
   }
 
@@ -519,6 +517,46 @@ describe('ImageDropInput', () => {
     const nextValue = onChange.mock.lastCall?.[0] as { previewSrc?: string; src?: string } | undefined;
 
     expect(nextValue?.src).toBeUndefined();
+  });
+
+  it('shows an explicit validation error when a non-image archive is dropped', async () => {
+    const onChange = vi.fn();
+
+    render(<ImageDropInput onChange={onChange} />);
+
+    const dropzone = screen.getByRole('button', { name: 'Image upload area' });
+    const file = new File(['hello'], 'archive.zip', { type: 'application/zip' });
+
+    fireEvent.drop(dropzone, { dataTransfer: createTransfer(file) });
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('Accepted file types: image files.');
+    });
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('prefers an acceptable image when mixed files are dropped together', async () => {
+    const onChange = vi.fn();
+
+    render(<ImageDropInput onChange={onChange} accept="image/png" />);
+
+    const dropzone = screen.getByRole('button', { name: 'Image upload area' });
+    const textFile = new File(['hello'], 'notes.txt', { type: 'text/plain' });
+    const pngFile = new File(['hello'], 'photo.png', { type: 'image/png' });
+
+    fireEvent.drop(dropzone, { dataTransfer: createTransfer(textFile, pngFile) });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          previewSrc: 'blob:preview-url',
+          fileName: 'photo.png'
+        })
+      );
+    });
+
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('keeps local-only selections in previewSrc so src stays reserved for persisted references', async () => {

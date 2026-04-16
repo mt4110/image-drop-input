@@ -1,7 +1,7 @@
 import { getImageMetadata } from './get-image-metadata';
 import type { ImageMetadata, ImageValidationOptions } from './types';
 
-function matchesAcceptRule(file: File, rule: string): boolean {
+export function matchesAcceptRule(file: File, rule: string): boolean {
   const normalizedRule = rule.trim().toLowerCase();
 
   if (!normalizedRule) {
@@ -18,6 +18,54 @@ function matchesAcceptRule(file: File, rule: string): boolean {
   }
 
   return file.type.toLowerCase() === normalizedRule;
+}
+
+export function splitAcceptRules(accept: string): string[] {
+  return accept
+    .split(',')
+    .map((rule) => rule.trim())
+    .filter(Boolean);
+}
+
+function formatAcceptRules(rules: string[]): string {
+  const labels = new Set<string>();
+
+  for (const rule of rules) {
+    const normalizedRule = rule.trim().toLowerCase();
+
+    if (normalizedRule === 'image/*') {
+      labels.add('image files');
+      continue;
+    }
+
+    if (normalizedRule === 'image/png' || normalizedRule === '.png') {
+      labels.add('PNG');
+      continue;
+    }
+
+    if (
+      normalizedRule === 'image/jpeg' ||
+      normalizedRule === '.jpg' ||
+      normalizedRule === '.jpeg'
+    ) {
+      labels.add('JPEG');
+      continue;
+    }
+
+    if (normalizedRule === 'image/webp' || normalizedRule === '.webp') {
+      labels.add('WebP');
+      continue;
+    }
+
+    if (normalizedRule.startsWith('.')) {
+      labels.add(normalizedRule.slice(1).toUpperCase());
+      continue;
+    }
+
+    labels.add(normalizedRule);
+  }
+
+  return Array.from(labels).join(', ');
 }
 
 function formatBytes(value: number): string {
@@ -50,13 +98,10 @@ export async function validateImage(
     options;
 
   if (accept) {
-    const acceptRules = accept
-      .split(',')
-      .map((rule) => rule.trim())
-      .filter(Boolean);
+    const acceptRules = splitAcceptRules(accept);
 
     if (acceptRules.length > 0 && !acceptRules.some((rule) => matchesAcceptRule(file, rule))) {
-      throw new Error(`Accepted file types: ${acceptRules.join(', ')}.`);
+      throw new Error(`Accepted file types: ${formatAcceptRules(acceptRules)}.`);
     }
   }
 
