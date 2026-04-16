@@ -69,7 +69,7 @@ function PreviewLightbox({
       return;
     }
 
-    if (activeElement === lastFocusableElement) {
+    if (activeElement === lastFocusableElement || !dialog.contains(activeElement)) {
       event.preventDefault();
       firstFocusableElement.focus();
     }
