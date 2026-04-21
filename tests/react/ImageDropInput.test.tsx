@@ -606,7 +606,7 @@ describe('ImageDropInput', () => {
     expect(dropzone.style.minHeight).toBe('22rem');
   });
 
-  it('treats the filled dropzone as a focusable group and keeps pointer replacement explicit', async () => {
+  it('treats the filled dropzone as a focusable button and keeps pointer replacement explicit', async () => {
     const user = userEvent.setup({ document: window.document });
     const inputClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click');
 
@@ -619,10 +619,11 @@ describe('ImageDropInput', () => {
       />
     );
 
-    const dropzone = screen.getByRole('group', { name: 'Selected image' });
+    const dropzone = screen.getByRole('button', { name: 'Selected image' });
 
-    expect(screen.queryByRole('button', { name: 'Selected image' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Selected image' })).toBeNull();
     expect(dropzone.tabIndex).toBe(0);
+    expect(dropzone.getAttribute('aria-keyshortcuts')).toBe('Enter Space Delete Backspace');
 
     await user.click(dropzone);
     expect(inputClickSpy).not.toHaveBeenCalled();
@@ -649,7 +650,7 @@ describe('ImageDropInput', () => {
       />
     );
 
-    const dropzone = screen.getByRole('group', { name: 'Selected image' });
+    const dropzone = screen.getByRole('button', { name: 'Selected image' });
 
     dropzone.focus();
     await user.keyboard('{Delete}');
@@ -714,7 +715,7 @@ describe('ImageDropInput', () => {
       />
     );
 
-    const dropzone = screen.getByRole('group', { name: 'Selected image' });
+    const dropzone = screen.getByRole('button', { name: 'Selected image' });
     const file = new File(['hello'], 'pasted.png', { type: 'image/png' });
 
     dropzone.focus();

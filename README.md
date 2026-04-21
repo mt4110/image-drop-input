@@ -1,32 +1,34 @@
 # image-drop-input
 
-[Japanese README](./README.ja.md) · [Demo](https://mt4110.github.io/image-drop-input/) · [Issues](https://github.com/mt4110/image-drop-input/issues)
+[![npm version](https://img.shields.io/npm/v/image-drop-input.svg)](https://www.npmjs.com/package/image-drop-input)
+[![CI](https://github.com/mt4110/image-drop-input/actions/workflows/ci.yml/badge.svg)](https://github.com/mt4110/image-drop-input/actions/workflows/ci.yml)
+[![types](https://img.shields.io/npm/types/image-drop-input.svg)](https://www.npmjs.com/package/image-drop-input)
+[![license](https://img.shields.io/npm/l/image-drop-input.svg)](./LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/image-drop-input)](https://bundlephobia.com/package/image-drop-input)
 
-The image input for everything that happens before upload.
+Preview, validate, compress, and upload a single image safely before your form ever submits.
 
-A lightweight React image input for the messy part before upload: drop, browse, paste, preview, validate, compress, and upload images without UI-framework or cloud-SDK lock-in.
+**Built for:** avatars, CMS thumbnails, article covers, product images, and admin forms.
 
-## Why
+[Demo](https://mt4110.github.io/image-drop-input/) · [Docs](./docs/README.md) · [Recipes](#recipes) · [Japanese README](./README.ja.md) · [Issues](https://github.com/mt4110/image-drop-input/issues)
 
-Most upload components stop at "give me a file".
+![image-drop-input demo showing preview, prepared metadata, and upload state](./docs/assets/demo-light.png)
 
-Real product forms usually need more:
+## Why this exists
+
+A normal file input gives you a `File`.
+
+A product image field usually needs more:
 
 - show a local preview immediately
-- reject images that are too large, too small, or the wrong type
-- compress or convert before upload
-- keep temporary preview state separate from persisted state
-- upload to S3, R2, GCS, Azure Blob, or your own API
-- avoid bundling a cloud SDK into the client
-- keep the UI accessible and replaceable
+- reject unsupported types and unsafe sizes
+- compress before upload
+- keep temporary `blob:` previews out of saved state
+- upload through signed URLs without bundling a cloud SDK
+- recover cleanly when upload fails
+- stay keyboard-accessible
 
-`image-drop-input` is built around that full pre-upload flow.
-
-Despite the name, this is not only about drag and drop. It is about preparing an image safely before upload.
-
-It is not a generic file uploader. It is not a cloud provider SDK. It is not a full image editor.
-
-It is the product-safe image input you add to avatar fields, CMS thumbnails, article covers, product images, and admin screens.
+`image-drop-input` is a small React image input for that pre-upload flow.
 
 ## Install
 
@@ -40,16 +42,13 @@ Import the default CSS once:
 import 'image-drop-input/style.css';
 ```
 
-## Quick Start
+## 30-second quick start
 
 Use it as a local-preview-only image input:
 
 ```tsx
 import { useState } from 'react';
-import {
-  ImageDropInput,
-  type ImageUploadValue
-} from 'image-drop-input';
+import { ImageDropInput, type ImageUploadValue } from 'image-drop-input';
 import 'image-drop-input/style.css';
 
 export function AvatarField() {
@@ -60,64 +59,82 @@ export function AvatarField() {
       value={value}
       onChange={setValue}
       accept="image/png,image/jpeg,image/webp"
-      maxBytes={5 * 1024 * 1024}
       aspectRatio={1}
+      outputMaxBytes={5 * 1024 * 1024}
     />
   );
 }
 ```
 
-Users can drag and drop an image, click to select one, paste from the clipboard, preview the selected image, and remove or replace it.
+Users can drop an image, browse for one, paste from the clipboard, preview it, and remove or replace it.
 
-## What You Get
+## Choose image-drop-input when...
 
-| Feature | Included |
+Use it when you need one image field that can be safely stored in product state:
+
+- profile avatar
+- workspace logo
+- article cover
+- CMS thumbnail
+- product image
+- admin form image
+
+Use a larger uploader when you need queues, resumable uploads, remote file sources, or multi-file orchestration.
+
+## What it handles
+
+| Area | What happens |
 | --- | --- |
-| Drag and drop | Yes |
-| Click-to-select | Yes |
-| Clipboard paste | Yes |
-| Local preview | Yes |
-| Preview dialog | Yes |
-| Validation | MIME, size, dimensions, pixel budget |
-| Transform hook | Yes |
-| Compression helper | Yes |
-| WebP conversion | Yes, when browser canvas encoding supports it |
-| Presigned PUT upload | Yes |
-| Multipart POST upload | Yes |
-| Raw PUT upload | Yes |
-| Headless hook | Yes |
-| Runtime dependencies | React peer dependency only |
+| Input | drop, browse, paste, replace, remove |
+| Preview | local `blob:` preview separated from persisted `src` |
+| Validation | type, byte budget, dimensions, pixel budget |
+| Transform | compress, resize, convert before upload |
+| Upload | presigned PUT, multipart POST, raw PUT, custom adapter |
+| Accessibility | keyboard operation, paste support, dialog focus behavior |
+| Packaging | React peer dependency only, no cloud SDK, no UI framework |
 
-## The Image Lifecycle
+## The image state model
 
-`image-drop-input` keeps the image flow explicit:
+`image-drop-input` keeps temporary UI state separate from persisted product state.
 
-```txt
-pick / drop / paste
-  -> validate
-  -> transform
-  -> validate again
-  -> preview
-  -> upload
-  -> commit
+```ts
+type ImageUploadValue = {
+  src?: string;        // persisted or shareable image URL
+  previewSrc?: string; // temporary local preview, usually blob:
+  key?: string;        // object key from your storage layer
+  fileName?: string;
+  mimeType?: string;
+  size?: number;
+  width?: number;
+  height?: number;
+};
 ```
 
-This matters because a user-visible preview is not always the same thing as a persisted image.
+```txt
+selected local file     -> previewSrc
+successful upload URL   -> src
+storage object key      -> key
+failed upload           -> previous committed value remains safe
+```
 
-## Validation And Byte Limits
+`blob:` URLs are for UI feedback. They are not database values.
+
+Read the full state model in [docs/value-model.md](./docs/value-model.md).
+
+## Validation and byte limits
 
 Validation runs before and after `transform`.
 
-`maxBytes` is a compatibility convenience limit. It applies to both the source file and the transformed file:
-
-```txt
-source file must be <= maxBytes
-transformed file must be <= maxBytes
-```
-
-That is strict and predictable, but it is not the right shape when you want to accept a large camera image and only require the compressed output to fit a budget. Use the explicit byte-limit props for that:
+| Prop | Stage | Use case |
+| --- | --- | --- |
+| `inputMaxBytes` | before transform | reject huge source files |
+| `outputMaxBytes` | after transform | enforce upload budget |
+| `maxBytes` | both | compatibility shortcut |
 
 ```tsx
+import { ImageDropInput } from 'image-drop-input';
+import { compressImage } from 'image-drop-input/headless';
+
 <ImageDropInput
   inputMaxBytes={20 * 1024 * 1024}
   outputMaxBytes={5 * 1024 * 1024}
@@ -131,70 +148,17 @@ That is strict and predictable, but it is not the right shape when you want to a
 />
 ```
 
-If `inputMaxBytes` or `outputMaxBytes` is provided, it overrides `maxBytes` for that stage only.
+Dimension and pixel-budget validation also runs after `transform`, so `onChange` receives metadata for the prepared file.
 
-Dimension and pixel-budget validation also runs after `transform`, so the value emitted from `onChange` describes the prepared file that will be previewed or uploaded.
+Read the details in [docs/validation.md](./docs/validation.md).
 
-## Value Model
+## Upload recipes
 
-```ts
-type ImageUploadValue = {
-  src?: string;
-  previewSrc?: string;
-  fileName?: string;
-  mimeType?: string;
-  size?: number;
-  width?: number;
-  height?: number;
-  key?: string;
-};
-```
-
-### `src`
-
-A persisted or otherwise shareable image URL.
-
-Use this for values that can safely be stored in your database or sent back from your API.
-
-### `previewSrc`
-
-A temporary local preview URL, usually a `blob:` URL.
-
-Use this only for immediate UI feedback. Do not store it as your final image value.
-
-This separation keeps the UI honest:
-
-- if upload returns `src`, the component displays the persisted image
-- if upload returns only `key`, the temporary preview remains separate
-- if upload fails, the component returns to the last committed value and retry uploads the same prepared file
-
-## Upload Examples
-
-### Local Preview Only
-
-Omit `upload` when you only need selection and preview:
+Upload wiring is explicit by design. The package does not create signed URLs, bundle provider SDKs, or infer public URLs from upload URLs.
 
 ```tsx
-<ImageDropInput
-  value={value}
-  onChange={setValue}
-/>
-```
-
-### Presigned PUT
-
-For S3, R2, GCS, Azure Blob, or similar object storage flows:
-
-```tsx
-import { useState } from 'react';
-import {
-  ImageDropInput,
-  type ImageUploadValue
-} from 'image-drop-input';
-import {
-  createPresignedPutUploader
-} from 'image-drop-input/headless';
-import 'image-drop-input/style.css';
+import { ImageDropInput } from 'image-drop-input';
+import { createPresignedPutUploader } from 'image-drop-input/headless';
 
 const upload = createPresignedPutUploader({
   async getTarget(file, context) {
@@ -217,21 +181,10 @@ const upload = createPresignedPutUploader({
   }
 });
 
-export function AvatarUploader() {
-  const [value, setValue] = useState<ImageUploadValue | null>(null);
-
-  return (
-    <ImageDropInput
-      value={value}
-      onChange={setValue}
-      upload={upload}
-      maxBytes={5 * 1024 * 1024}
-    />
-  );
-}
+<ImageDropInput value={value} onChange={setValue} upload={upload} />;
 ```
 
-Your presign endpoint should return:
+Your endpoint should return `publicUrl` or `objectKey` explicitly:
 
 ```ts
 type PresignedPutTarget = {
@@ -242,75 +195,11 @@ type PresignedPutTarget = {
 };
 ```
 
-The package does not guess public URLs from upload URLs. Pass `publicUrl` or `objectKey` explicitly.
+See [docs/uploads.md](./docs/uploads.md) for presigned PUT, multipart POST, raw PUT, custom adapters, progress, and abort behavior.
 
-`UploadResult` may contain `etag` and `response` for custom adapter logic and diagnostics. The UI value emitted through `onChange` intentionally keeps only product state: `src`, `previewSrc`, `key`, file metadata, and dimensions.
+## Transform recipes
 
-### Multipart POST
-
-For classic application-server uploads:
-
-```ts
-import { createMultipartUploader } from 'image-drop-input/headless';
-
-const upload = createMultipartUploader({
-  endpoint: '/api/upload',
-  fieldName: 'file'
-});
-```
-
-If your response shape is custom, map it:
-
-```ts
-const upload = createMultipartUploader({
-  endpoint: '/api/upload',
-  fieldName: 'file',
-  mapResponse(body) {
-    const result = body as { imageUrl: string; imageKey: string };
-
-    return {
-      src: result.imageUrl,
-      key: result.imageKey
-    };
-  }
-});
-```
-
-### Raw PUT
-
-For a direct `PUT` endpoint:
-
-```ts
-import { createRawPutUploader } from 'image-drop-input/headless';
-
-const upload = createRawPutUploader({
-  endpoint: '/api/avatar',
-  publicUrl: '/avatars/current-user.jpg',
-  objectKey: 'avatars/current-user.jpg'
-});
-```
-
-## Transform And Compress Before Upload
-
-Use `transform` when you want to modify the image before upload.
-
-```tsx
-import { compressImage } from 'image-drop-input/headless';
-
-<ImageDropInput
-  value={value}
-  onChange={setValue}
-  transform={(file) =>
-    compressImage(file, {
-      maxWidth: 1600,
-      maxHeight: 1600,
-      quality: 0.86
-    })
-  }
-/>
-```
-
-Convert to WebP and update the file name:
+Use `transform` when you want to resize, compress, or convert the image before preview and upload.
 
 ```tsx
 import { compressImage } from 'image-drop-input/headless';
@@ -332,193 +221,48 @@ import { compressImage } from 'image-drop-input/headless';
 />
 ```
 
-Explicit `outputType` requests are checked after canvas encoding. If the browser cannot encode the requested type, `compressImage()` rejects instead of returning a blob whose bytes and MIME metadata disagree.
+Explicit `outputType` requests are checked after canvas encoding. If the browser cannot encode the requested type, `compressImage()` rejects instead of returning mismatched bytes and MIME metadata.
 
-## Common Props
+Read more in [docs/transforms.md](./docs/transforms.md).
 
-| Prop | Purpose |
+## Recipes
+
+- [Local preview](./docs/recipes/local-preview.md)
+- [Avatar field](./docs/recipes/avatar.md)
+- [Compression](./docs/recipes/compression.md)
+- [WebP transform](./docs/recipes/webp.md)
+- [Presigned PUT](./docs/recipes/presigned-put.md)
+- [Multipart POST](./docs/recipes/multipart-post.md)
+- [Raw PUT](./docs/recipes/raw-put.md)
+- [Headless UI](./docs/recipes/headless-ui.md)
+
+## How it fits with other upload tools
+
+| Need | Good fit |
 | --- | --- |
-| `value` | Current image value |
-| `onChange` | Receives the next image value |
-| `upload` | Optional upload adapter |
-| `transform` | Optional pre-upload image transform |
-| `accept` | Accepted MIME types or extensions |
-| `inputMaxBytes` | Maximum source file size before transform |
-| `maxBytes` | Compatibility size limit applied before and after transform |
-| `outputMaxBytes` | Maximum transformed file size after transform |
-| `minWidth` / `minHeight` | Minimum image dimensions |
-| `maxWidth` / `maxHeight` | Maximum image dimensions |
-| `maxPixels` | Maximum pixel budget |
-| `disabled` | Disable the input |
-| `removable` | Enable remove actions |
-| `previewable` | Enable the preview dialog |
-| `capture` | Forward camera capture hints to the file input |
-| `aspectRatio` | Dropzone aspect ratio |
-| `className` | Root class name |
-| `classNames` | Part-level class names |
-| `style` / `rootStyle` / `dropzoneStyle` | Inline style hooks |
-| `messages` | Override UI copy and aria labels |
-| `renderPlaceholder` | Replace placeholder rendering |
-| `renderActions` | Replace action rendering |
-| `renderFooter` | Replace footer rendering |
-| `onError` | Receive validation and upload errors |
-| `onProgress` | Receive upload progress. Successful uploads finish with `100` |
+| Build a custom file drop area | `react-dropzone` |
+| Full multi-file uploader with queues | Uppy / FilePond / Dropzone |
+| One product image field with preview, validation, transform, and explicit signed uploads | `image-drop-input` |
 
-`zoomable` is still accepted for compatibility, but `previewable` is the clearer name for the current preview-dialog behavior.
+## Accessibility
 
-## Headless Usage
+The default component includes keyboard operation, paste support, action labels, status text, and a focus-managed preview dialog. The headless hook exposes the same behavior when you need custom markup.
 
-Use `useImageDropInput()` when you want to build your own UI.
+Read the checklist in [docs/accessibility.md](./docs/accessibility.md).
 
-```tsx
-import { useImageDropInput } from 'image-drop-input/headless';
+## API
 
-export function CustomImageInput() {
-  const imageInput = useImageDropInput({
-    accept: 'image/*',
-    maxBytes: 5 * 1024 * 1024
-  });
-
-  return (
-    <>
-      <input
-        ref={imageInput.inputRef}
-        type="file"
-        accept={imageInput.accept}
-        onChange={imageInput.handleInputChange}
-        hidden
-      />
-
-      <div
-        role="button"
-        tabIndex={0}
-        aria-disabled={imageInput.disabled}
-        onClick={imageInput.openFileDialog}
-        onKeyDown={imageInput.handleKeyDown}
-        onDragOver={imageInput.handleDragOver}
-        onDragLeave={imageInput.handleDragLeave}
-        onDrop={imageInput.handleDrop}
-        onPaste={imageInput.handlePaste}
-      >
-        {imageInput.displaySrc ? (
-          <img
-            src={imageInput.displaySrc}
-            alt={imageInput.messages.selectedImageAlt}
-          />
-        ) : (
-          <span>{imageInput.messages.placeholderTitle}</span>
-        )}
-      </div>
-
-      <p>{imageInput.statusMessage}</p>
-    </>
-  );
-}
-```
-
-The hook gives you the input ref, drag-and-drop handlers, paste handler, keyboard handler, display state, upload state, progress, retry, cancel, remove, and status message.
-
-`UseImageDropInputReturn` is exported when you want to type a wrapper around the headless API.
-
-## Customization
-
-### Validation Errors
-
-Validation errors are regular `Error` objects with stable codes and details:
-
-```ts
-import { isImageValidationError } from 'image-drop-input';
-
-function handleError(error: Error) {
-  if (isImageValidationError(error)) {
-    switch (error.code) {
-      case 'file_too_large':
-        return `Choose an image under ${error.details.maxBytes} bytes.`;
-      case 'invalid_type':
-        return 'Choose a supported image type.';
-      default:
-        return error.message;
-    }
-  }
-
-  return error.message;
-}
-```
-
-Supported validation codes are `invalid_type`, `file_too_large`, `image_too_small`, `image_too_large`, `too_many_pixels`, and `decode_failed`. This lets products localize validation failures without parsing English copy.
-
-### Messages
-
-```tsx
-<ImageDropInput
-  messages={{
-    placeholderTitle: 'Choose a profile image',
-    placeholderDescription: 'Drop, browse, or paste',
-    statusUploading: (percent) => `Uploading ${percent}%`
-  }}
-/>
-```
-
-### Class Names
-
-```tsx
-<ImageDropInput
-  classNames={{
-    root: 'profileImageInput',
-    dropzone: 'profileImageInput__surface',
-    actions: 'profileImageInput__actions',
-    status: 'profileImageInput__status',
-    dialog: 'profileImageInput__dialog'
-  }}
-/>
-```
-
-### Partial Rendering
-
-```tsx
-<ImageDropInput
-  renderFooter={({ statusMessage, canRetryUpload, retryUpload }) => (
-    <div className="profileImageInput__footer">
-      <span>{statusMessage}</span>
-      {canRetryUpload ? (
-        <button type="button" onClick={retryUpload}>
-          Retry
-        </button>
-      ) : null}
-    </div>
-  )}
-/>
-```
-
-## Multiple Images
-
-This package is intentionally single-image first.
-
-For multiple images, keep array state in your app and render one `ImageDropInput` or one headless instance per item. That keeps ordering, deletion, persistence, and upload orchestration in the product layer where those decisions belong.
-
-## Accessibility Notes
-
-- The empty state is exposed as a keyboard-focusable button.
-- Enter and Space open the file dialog from the empty state.
-- The filled state is exposed as a focusable group.
-- Enter and Space replace the image from the filled state.
-- Delete and Backspace remove the image from the filled state when `removable` is enabled.
-- Paste is supported on the dropzone in both empty and filled states.
-- Default action buttons have aria labels from `messages`.
-- The preview dialog uses `role="dialog"`, `aria-modal="true"`, Escape-to-close, focus trapping, and focus return.
-- The default UI stays intentionally quiet, and the headless API is available when you need a fully custom accessible surface.
-
-## Public Entrypoints
-
-| Import | Role |
+| Import | Exports |
 | --- | --- |
-| `image-drop-input` | UI component and UI-facing types |
-| `image-drop-input/headless` | Uploader factories, image processing, hooks, and validation helpers |
-| `image-drop-input/style.css` | Default CSS |
+| `image-drop-input` | `ImageDropInput`, UI props and render types, `ImageUploadValue`, upload types, validation error helpers |
+| `image-drop-input/headless` | `useImageDropInput`, `compressImage`, `validateImage`, metadata helpers, upload factories |
+| `image-drop-input/style.css` | default component styles |
 
 ```ts
 import {
   ImageDropInput,
+  ImageValidationError,
+  isImageValidationError,
   type ImageDropInputProps,
   type ImageUploadValue,
   type UploadAdapter
@@ -539,18 +283,18 @@ import {
 
 The root entry stays UI-first. Low-level utilities live under `/headless`.
 
-## When Not To Use This
+## When not to use this
 
 Use another tool if you need:
 
 - a generic multi-file uploader
 - resumable or chunked uploads
 - drag sorting between lists
-- a full crop, rotate, or annotation editor
+- full crop, rotate, or annotation editing
 - provider-specific SDK wrappers
 - Node-side image processing
 
-Use `image-drop-input` when you want one product-safe image input with validation, preview, transform, and explicit upload wiring.
+This package is intentionally single-image first.
 
 ## Development
 
@@ -564,7 +308,7 @@ npm run check:package
 npm pack --dry-run
 ```
 
-Release planning lives in [ROADMAP.md](./ROADMAP.md), so this README can stay focused on what works today.
+Release planning stays outside the npm package, so this README can stay focused on what works today.
 
 ## License
 

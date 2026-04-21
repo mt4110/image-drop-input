@@ -1,10 +1,12 @@
 # image-drop-input
 
-[English README](./README.md) · [Demo](https://mt4110.github.io/image-drop-input/) · [Issues](https://github.com/mt4110/image-drop-input/issues)
+[English README](./README.md) · [Public docs](./docs/README.md) · [Demo](https://mt4110.github.io/image-drop-input/) · [Issues](https://github.com/mt4110/image-drop-input/issues)
 
 upload 前に起きる面倒なことを引き受ける、軽量な React 画像 input です。
 
 drop / browse / paste / preview / validate / compress / upload を、UI framework や cloud SDK に縛られずに組み込めます。
+
+詳細な公開 docs は現時点では English README と [docs](./docs/README.md) を canonical としています。この日本語 README は主要な導入と設計思想を押さえるための短い入口です。
 
 ## なぜ
 
@@ -352,4 +354,4 @@ npm run check:package
 npm pack --dry-run
 ```
 
-今後の方針は [ROADMAP.md](./ROADMAP.md) に分けています。README は「今使える価値」に寄せています。
+今後の方針は npm package の外に分けています。README は「今使える価値」に寄せています。

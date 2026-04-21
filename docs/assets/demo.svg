@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">image-drop-input demo</title>
+  <desc id="desc">A product image field showing a selected source image, prepared output metadata, state flow, and signed upload result.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f6f7f9; }
+      .panel { fill: #ffffff; stroke: #d9dde5; stroke-width: 1; }
+      .soft { fill: #f1f4f8; stroke: #d9dde5; stroke-width: 1; }
+      .ink { fill: #111827; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .muted { fill: #667085; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .mono { fill: #344054; font-family: "SFMono-Regular", Consolas, monospace; }
+      .label { fill: #475467; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 18px; font-weight: 700; }
+      .title { font-size: 36px; font-weight: 700; }
+      .body { font-size: 20px; }
+      .small { font-size: 17px; }
+      .tiny { font-size: 15px; }
+      .accent { fill: #2563eb; }
+      .green { fill: #087443; }
+      .orange { fill: #b54708; }
+      .line { stroke: #98a2b3; stroke-width: 2; stroke-linecap: round; }
+      .dash { stroke: #98a2b3; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 7 9; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1200" height="720"/>
+  <rect x="42" y="38" width="1116" height="644" rx="18" class="panel"/>
+
+  <text x="82" y="100" class="ink title">Safe image state before upload</text>
+  <text x="82" y="136" class="muted body">Preview, validate, compress, and upload one product image without hiding the storage boundary.</text>
+
+  <rect x="82" y="178" width="384" height="382" rx="14" class="soft"/>
+  <text x="114" y="224" class="label">Article cover</text>
+  <rect x="114" y="252" width="320" height="190" rx="10" fill="#dbe7f0" stroke="#c7d3df"/>
+  <path d="M114 400 L205 315 L264 365 L308 330 L434 442 L114 442 Z" fill="#9db9ca"/>
+  <circle cx="360" cy="306" r="28" fill="#f6c065"/>
+  <rect x="114" y="466" width="152" height="42" rx="8" fill="#111827"/>
+  <text x="145" y="492" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16" font-weight="700">Replace</text>
+  <rect x="282" y="466" width="112" height="42" rx="8" fill="#ffffff" stroke="#cfd5df"/>
+  <text x="320" y="492" class="ink tiny" font-weight="700">Clear</text>
+  <text x="114" y="532" class="muted tiny">Drop, browse, paste, replace, remove</text>
+
+  <line x1="492" y1="370" x2="552" y2="370" class="line"/>
+  <path d="M552 370 L538 360 M552 370 L538 380" class="line" fill="none"/>
+
+  <rect x="582" y="178" width="260" height="128" rx="12" class="panel"/>
+  <text x="612" y="217" class="label">Source</text>
+  <text x="612" y="250" class="mono tiny">DSC_1234.jpg</text>
+  <text x="612" y="278" class="mono tiny">image/jpeg, 8.4 MB</text>
+
+  <rect x="582" y="328" width="260" height="128" rx="12" class="panel"/>
+  <text x="612" y="367" class="label">Prepared</text>
+  <text x="612" y="400" class="mono tiny">article-cover.webp</text>
+  <text x="612" y="428" class="mono tiny">image/webp, 642 KB</text>
+
+  <rect x="582" y="478" width="260" height="128" rx="12" class="panel"/>
+  <text x="612" y="517" class="label">State</text>
+  <text x="612" y="550" class="mono tiny">previewSrc: blob:</text>
+  <text x="612" y="578" class="mono tiny">src: /images/cover.webp</text>
+
+  <line x1="872" y1="370" x2="932" y2="370" class="line"/>
+  <path d="M932 370 L918 360 M932 370 L918 380" class="line" fill="none"/>
+
+  <rect x="962" y="218" width="118" height="42" rx="8" fill="#ecfdf3" stroke="#abefc6"/>
+  <text x="989" y="245" class="green tiny" font-weight="700">Valid</text>
+
+  <rect x="932" y="288" width="178" height="42" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="963" y="315" class="accent tiny" font-weight="700">Compressed</text>
+
+  <rect x="934" y="358" width="174" height="42" rx="8" fill="#fff7ed" stroke="#fed7aa"/>
+  <text x="968" y="385" class="orange tiny" font-weight="700">Signed PUT</text>
+
+  <rect x="943" y="428" width="156" height="42" rx="8" fill="#f2f4f7" stroke="#d0d5dd"/>
+  <text x="970" y="455" class="mono tiny">key: covers/...</text>
+
+  <line x1="1021" y1="266" x2="1021" y2="286" class="dash"/>
+  <line x1="1021" y1="336" x2="1021" y2="356" class="dash"/>
+  <line x1="1021" y1="406" x2="1021" y2="426" class="dash"/>
+
+  <text x="82" y="622" class="muted small">Product-safe defaults: single image, explicit upload wiring, React peer dependency only, no cloud SDK.</text>
+</svg>

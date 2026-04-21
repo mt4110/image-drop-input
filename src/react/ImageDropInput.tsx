@@ -399,8 +399,9 @@ export function ImageDropInput({
         data-disabled={isDisabled}
         data-dragging={isDragging}
         data-has-image={hasImage}
-        role={hasImage ? 'group' : 'button'}
+        role="button"
         tabIndex={!isDisabled ? 0 : undefined}
+        aria-keyshortcuts={hasImage && removable ? 'Enter Space Delete Backspace' : 'Enter Space'}
         aria-label={
           hasImage ? resolvedMessages.dropzoneLabelFilled : resolvedMessages.dropzoneLabelEmpty
         }
