@@ -658,6 +658,54 @@ describe('ImageDropInput', () => {
     expect(onChange).toHaveBeenCalledWith(null);
   });
 
+  it('cancels an in-flight keyboard replacement without clearing the committed image', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onChange = vi.fn();
+    const upload = vi.fn(
+      (_file: Blob, context: { signal?: AbortSignal }) =>
+        new Promise<never>((_resolve, reject) => {
+          context.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Upload aborted.', 'AbortError'));
+          });
+        })
+    );
+
+    render(
+      <ImageDropInput
+        value={{
+          src: 'https://cdn.example.com/avatar.png',
+          fileName: 'avatar.png'
+        }}
+        onChange={onChange}
+        upload={upload}
+      />
+    );
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['replacement'], 'replacement.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected image preview').getAttribute('src')).toBe(
+        'blob:preview-url'
+      );
+    });
+
+    const dropzone = screen.getByRole('button', { name: 'Selected image' });
+
+    dropzone.focus();
+    await user.keyboard('{Delete}');
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected image preview').getAttribute('src')).toBe(
+        'https://cdn.example.com/avatar.png'
+      );
+    });
+
+    expect(onChange).not.toHaveBeenCalledWith(null);
+  });
+
   it('does not enter drag state or accept drops while disabled', async () => {
     const upload = vi.fn(async () => ({
       src: 'https://cdn.example.com/avatar.png'

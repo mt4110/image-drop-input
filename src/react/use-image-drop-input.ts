@@ -652,10 +652,15 @@ export function useImageDropInput({
 
       if ((event.key === 'Backspace' || event.key === 'Delete') && removable && displayValue) {
         event.preventDefault();
+        if (isUploading) {
+          cancelUpload();
+          return;
+        }
+
         removeValue();
       }
     },
-    [disabled, displayValue, openFileDialog, removable, removeValue]
+    [cancelUpload, disabled, displayValue, isUploading, openFileDialog, removable, removeValue]
   );
 
   const statusMessage = useMemo(() => {

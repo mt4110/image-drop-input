@@ -23,8 +23,34 @@ export class ImageValidationError extends Error {
   }
 }
 
+const imageValidationErrorCodes = new Set<string>([
+  'invalid_type',
+  'file_too_large',
+  'image_too_small',
+  'image_too_large',
+  'too_many_pixels',
+  'decode_failed'
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 export function isImageValidationError(error: unknown): error is ImageValidationError {
-  return error instanceof ImageValidationError;
+  if (error instanceof ImageValidationError) {
+    return true;
+  }
+
+  if (!isRecord(error)) {
+    return false;
+  }
+
+  return (
+    error.name === 'ImageValidationError' &&
+    typeof error.code === 'string' &&
+    imageValidationErrorCodes.has(error.code) &&
+    isRecord(error.details)
+  );
 }
 
 export function matchesAcceptRule(file: File, rule: string): boolean {

@@ -204,6 +204,28 @@ describe('validateImage', () => {
     }
   });
 
+  it('recognizes structurally equivalent validation errors from another module copy', () => {
+    expect(
+      isImageValidationError({
+        name: 'ImageValidationError',
+        code: 'file_too_large',
+        details: {
+          actualBytes: 12,
+          maxBytes: 2
+        },
+        message: 'File is too large.'
+      })
+    ).toBe(true);
+
+    expect(
+      isImageValidationError({
+        name: 'ImageValidationError',
+        code: 'unknown_error',
+        details: {}
+      })
+    ).toBe(false);
+  });
+
   it('returns image metadata when the file passes validation', async () => {
     await expect(
       validateImage(imageFile, {
