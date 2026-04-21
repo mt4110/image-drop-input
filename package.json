@@ -1,10 +1,10 @@
 {
   "name": "image-drop-input",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lightweight React image uploader with preview, preview dialog, compression, and pluggable uploads.",
   "license": "MIT",
   "type": "module",
-  "homepage": "https://github.com/mt4110/image-drop-input#readme",
+  "homepage": "https://mt4110.github.io/image-drop-input/",
   "bugs": {
     "url": "https://github.com/mt4110/image-drop-input/issues"
   },
@@ -71,6 +71,7 @@
     "clean:share": "rm -rf node_modules dist coverage examples/vite/dist examples/rsbuild/dist examples/rsbuild/.rsbuild",
     "build:lib": "tsdown && node -e \"import { copyFileSync, mkdirSync } from 'node:fs'; mkdirSync('dist', { recursive: true }); copyFileSync('src/style.css', 'dist/style.css'); copyFileSync('src/core/style-css.d.ts', 'dist/style.css.d.ts');\"",
     "build:examples": "npm run build --workspace examples/vite && npm run build --workspace examples/rsbuild",
+    "build:pages": "GITHUB_PAGES=true npm run build --workspace examples/vite",
     "build": "npm run clean && npm run build:lib && npm run build:examples",
     "prepack": "npm run build:lib",
     "prepublishOnly": "npm run check:package",

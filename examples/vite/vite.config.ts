@@ -4,8 +4,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const packageRoot = fileURLToPath(new URL('../..', import.meta.url));
+const base = process.env.GITHUB_PAGES === 'true' ? '/image-drop-input/' : '/';
 
 export default defineConfig({
+  base,
   plugins: [react()],
   resolve: {
     alias: [
