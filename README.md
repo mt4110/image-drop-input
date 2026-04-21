@@ -19,6 +19,12 @@ default skin はできるだけ静かに、そして dark mode / high contrast /
 - root export は UI 寄り、低レベル API は `/headless` に分離
 - Vite / Rsbuild の両方で consumption を検証済み
 
+## Example
+
+Vite consumer example:
+
+https://mt4110.github.io/image-drop-input/
+
 ## インストール
 
 ```bash
@@ -472,9 +478,3 @@ npm run check:package
 
 - publish owner や GitHub repository を変える場合は、`package.json` の `name` / `homepage` / `bugs` / `repository` を一緒に更新してください
 - `npm pack --dry-run` と `npm run check:package` を最後に通すと安全です
-
-## ひとことで
-
-**「全部入り uploader」を作るのではなく、単一画像に強い・速い・壊れにくい入力部品として磨く。**
-
-この package は、そのためのかなり静かな土台です。

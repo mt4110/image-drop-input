@@ -20,6 +20,12 @@ high contrast, reduced transparency, and compact container widths.
 - Keeps the root entry UI-first and lower-level APIs under `/headless`
 - Verified in both Vite and Rsbuild consumers
 
+## Example
+
+Vite consumer example:
+
+https://mt4110.github.io/image-drop-input/
+
 ## Install
 
 ```bash
@@ -473,8 +479,3 @@ npm run check:package
 
 - if you move the package to a different owner or GitHub repository, update `name`, `homepage`, `bugs`, and `repository` together in `package.json`
 - run `npm pack --dry-run` and `npm run check:package` as the last gate
-
-## One sentence
-
-This package is meant to be a **fast, quiet, dependable single-image input**,
-not an everything-and-the-kitchen-sink uploader.
