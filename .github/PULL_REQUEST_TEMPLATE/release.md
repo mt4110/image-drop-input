@@ -15,7 +15,7 @@
 ## Checks
 
 - [ ] `package.json` and `package-lock.json` carry the intended version
-- [ ] `CHANGELOG.md` is updated with release-facing notes
+- [ ] release-facing notes are included in the PR body
 - [ ] `npm run verify`
 - [ ] `npm run publish:check`
 - [ ] demo still looks right in the consumer you care about

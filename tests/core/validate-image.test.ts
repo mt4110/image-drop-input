@@ -1,6 +1,10 @@
 import '../setup';
 import { describe, expect, it } from 'vitest';
-import { validateImage } from '../../src/core/validate-image';
+import {
+  ImageValidationError,
+  isImageValidationError,
+  validateImage
+} from '../../src/core/validate-image';
 
 const imageFile = new File(['hello'], 'avatar.png', { type: 'image/png' });
 const webpFile = new File(['hello'], 'avatar.webp', { type: 'image/webp' });
@@ -11,6 +15,18 @@ describe('validateImage', () => {
     await expect(validateImage(imageFile, { accept: 'image/jpeg' })).rejects.toThrow(
       'Accepted file types'
     );
+  });
+
+  it('adds a stable code and details for invalid file types', async () => {
+    await expect(validateImage(imageFile, { accept: 'image/jpeg,.webp' })).rejects.toMatchObject({
+      code: 'invalid_type',
+      details: {
+        accept: 'image/jpeg,.webp',
+        acceptRules: ['image/jpeg', '.webp'],
+        formattedAccept: 'JPEG, WebP',
+        mimeType: 'image/png'
+      }
+    });
   });
 
   it('accepts WebP files when WebP is listed in the accept rules', async () => {
@@ -29,6 +45,17 @@ describe('validateImage', () => {
     await expect(validateImage(imageFile, { maxBytes: 2 })).rejects.toThrow('smaller than');
   });
 
+  it('adds a stable code and details for byte-limit failures', async () => {
+    await expect(validateImage(imageFile, { maxBytes: 2 })).rejects.toMatchObject({
+      code: 'file_too_large',
+      details: {
+        actualBytes: imageFile.size,
+        maxBytes: 2,
+        mimeType: 'image/png'
+      }
+    });
+  });
+
   it('rejects files that are smaller than the required dimensions', async () => {
     await expect(
       validateImage(imageFile, {
@@ -42,6 +69,28 @@ describe('validateImage', () => {
         })
       })
     ).rejects.toThrow('at least 800px wide');
+  });
+
+  it('adds a stable code and details for minimum dimension failures', async () => {
+    await expect(
+      validateImage(imageFile, {
+        minHeight: 600,
+        getMetadata: async () => ({
+          width: 640,
+          height: 480,
+          size: imageFile.size,
+          mimeType: imageFile.type
+        })
+      })
+    ).rejects.toMatchObject({
+      code: 'image_too_small',
+      details: {
+        actualHeight: 480,
+        actualWidth: 640,
+        minHeight: 600,
+        mimeType: 'image/png'
+      }
+    });
   });
 
   it('rejects files that exceed the maximum dimensions', async () => {
@@ -59,6 +108,28 @@ describe('validateImage', () => {
     ).rejects.toThrow('no wider than 1000px');
   });
 
+  it('adds a stable code and details for maximum dimension failures', async () => {
+    await expect(
+      validateImage(imageFile, {
+        maxHeight: 800,
+        getMetadata: async () => ({
+          width: 1200,
+          height: 900,
+          size: imageFile.size,
+          mimeType: imageFile.type
+        })
+      })
+    ).rejects.toMatchObject({
+      code: 'image_too_large',
+      details: {
+        actualHeight: 900,
+        actualWidth: 1200,
+        maxHeight: 800,
+        mimeType: 'image/png'
+      }
+    });
+  });
+
   it('rejects files that exceed the maximum pixel budget', async () => {
     await expect(
       validateImage(imageFile, {
@@ -71,6 +142,66 @@ describe('validateImage', () => {
         })
       })
     ).rejects.toThrow('no larger than 1 megapixel');
+  });
+
+  it('adds a stable code and details for pixel budget failures', async () => {
+    await expect(
+      validateImage(imageFile, {
+        maxPixels: 1_000_000,
+        getMetadata: async () => ({
+          width: 1400,
+          height: 900,
+          size: imageFile.size,
+          mimeType: imageFile.type
+        })
+      })
+    ).rejects.toMatchObject({
+      code: 'too_many_pixels',
+      details: {
+        actualHeight: 900,
+        actualPixels: 1_260_000,
+        actualWidth: 1400,
+        maxPixels: 1_000_000,
+        mimeType: 'image/png'
+      }
+    });
+  });
+
+  it('wraps metadata decode failures in a localizable validation error', async () => {
+    const cause = new Error('decode exploded');
+
+    await expect(
+      validateImage(imageFile, {
+        minWidth: 1,
+        getMetadata: async () => {
+          throw cause;
+        }
+      })
+    ).rejects.toMatchObject({
+      code: 'decode_failed',
+      details: {
+        actualBytes: imageFile.size,
+        mimeType: 'image/png'
+      },
+      message: 'Unable to read image dimensions.'
+    });
+  });
+
+  it('exposes a runtime guard for validation errors', async () => {
+    try {
+      await validateImage(imageFile, { maxBytes: 2 });
+      throw new Error('Expected validation to fail.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ImageValidationError);
+      expect(isImageValidationError(error)).toBe(true);
+
+      if (!isImageValidationError(error)) {
+        throw new Error('Expected image validation error.');
+      }
+
+      expect(error.code).toBe('file_too_large');
+      expect(error.details.maxBytes).toBe(2);
+    }
   });
 
   it('returns image metadata when the file passes validation', async () => {

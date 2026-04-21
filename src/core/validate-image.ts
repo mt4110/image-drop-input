@@ -1,5 +1,31 @@
 import { getImageMetadata } from './get-image-metadata';
-import type { ImageMetadata, ImageValidationOptions } from './types';
+import type {
+  ImageMetadata,
+  ImageValidationErrorCode,
+  ImageValidationErrorDetails,
+  ImageValidationOptions
+} from './types';
+
+export class ImageValidationError extends Error {
+  readonly code: ImageValidationErrorCode;
+  readonly details: ImageValidationErrorDetails;
+
+  constructor(
+    code: ImageValidationErrorCode,
+    message: string,
+    details: ImageValidationErrorDetails = {},
+    options?: ErrorOptions
+  ) {
+    super(message, options);
+    this.name = 'ImageValidationError';
+    this.code = code;
+    this.details = details;
+  }
+}
+
+export function isImageValidationError(error: unknown): error is ImageValidationError {
+  return error instanceof ImageValidationError;
+}
 
 export function matchesAcceptRule(file: File, rule: string): boolean {
   const normalizedRule = rule.trim().toLowerCase();
@@ -101,12 +127,27 @@ export async function validateImage(
     const acceptRules = splitAcceptRules(accept);
 
     if (acceptRules.length > 0 && !acceptRules.some((rule) => matchesAcceptRule(file, rule))) {
-      throw new Error(`Accepted file types: ${formatAcceptRules(acceptRules)}.`);
+      const formattedAccept = formatAcceptRules(acceptRules);
+
+      throw new ImageValidationError('invalid_type', `Accepted file types: ${formattedAccept}.`, {
+        accept,
+        acceptRules,
+        formattedAccept,
+        mimeType: file.type
+      });
     }
   }
 
   if (typeof maxBytes === 'number' && file.size > maxBytes) {
-    throw new Error(`Select an image smaller than ${formatBytes(maxBytes)}.`);
+    throw new ImageValidationError(
+      'file_too_large',
+      `Select an image smaller than ${formatBytes(maxBytes)}.`,
+      {
+        actualBytes: file.size,
+        maxBytes,
+        mimeType: file.type
+      }
+    );
   }
 
   const needsMetadata =
@@ -120,26 +161,86 @@ export async function validateImage(
     return null;
   }
 
-  const metadata = await (getMetadata ?? getImageMetadata)(file);
+  let metadata: ImageMetadata;
+
+  try {
+    metadata = await (getMetadata ?? getImageMetadata)(file);
+  } catch (error) {
+    throw new ImageValidationError(
+      'decode_failed',
+      'Unable to read image dimensions.',
+      {
+        actualBytes: file.size,
+        mimeType: file.type
+      },
+      { cause: error }
+    );
+  }
 
   if (typeof minWidth === 'number' && metadata.width < minWidth) {
-    throw new Error(`Select an image at least ${minWidth}px wide.`);
+    throw new ImageValidationError(
+      'image_too_small',
+      `Select an image at least ${minWidth}px wide.`,
+      {
+        actualHeight: metadata.height,
+        actualWidth: metadata.width,
+        minWidth,
+        mimeType: metadata.mimeType
+      }
+    );
   }
 
   if (typeof minHeight === 'number' && metadata.height < minHeight) {
-    throw new Error(`Select an image at least ${minHeight}px tall.`);
+    throw new ImageValidationError(
+      'image_too_small',
+      `Select an image at least ${minHeight}px tall.`,
+      {
+        actualHeight: metadata.height,
+        actualWidth: metadata.width,
+        minHeight,
+        mimeType: metadata.mimeType
+      }
+    );
   }
 
   if (typeof maxWidth === 'number' && metadata.width > maxWidth) {
-    throw new Error(`Select an image no wider than ${maxWidth}px.`);
+    throw new ImageValidationError(
+      'image_too_large',
+      `Select an image no wider than ${maxWidth}px.`,
+      {
+        actualHeight: metadata.height,
+        actualWidth: metadata.width,
+        maxWidth,
+        mimeType: metadata.mimeType
+      }
+    );
   }
 
   if (typeof maxHeight === 'number' && metadata.height > maxHeight) {
-    throw new Error(`Select an image no taller than ${maxHeight}px.`);
+    throw new ImageValidationError(
+      'image_too_large',
+      `Select an image no taller than ${maxHeight}px.`,
+      {
+        actualHeight: metadata.height,
+        actualWidth: metadata.width,
+        maxHeight,
+        mimeType: metadata.mimeType
+      }
+    );
   }
 
   if (typeof maxPixels === 'number' && metadata.width * metadata.height > maxPixels) {
-    throw new Error(`Select an image no larger than ${formatPixels(maxPixels)}.`);
+    throw new ImageValidationError(
+      'too_many_pixels',
+      `Select an image no larger than ${formatPixels(maxPixels)}.`,
+      {
+        actualHeight: metadata.height,
+        actualPixels: metadata.width * metadata.height,
+        actualWidth: metadata.width,
+        maxPixels,
+        mimeType: metadata.mimeType
+      }
+    );
   }
 
   return metadata;

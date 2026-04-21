@@ -8,8 +8,8 @@ export function App() {
         en: 'This one reads the same published surface from an Rsbuild consumer, so bundler parity stays visible without changing the API story.',
         jp: 'こちらは Rsbuild consumer から同じ公開面を読み、API の話を変えずに bundler parity を確認できます。'
       }}
-      demoCommand="npm run demo:rsbuild"
-      alternateDemoCommand="npm run demo:vite"
+      demoCommand="npm run dev --workspace examples/rsbuild"
+      alternateDemoCommand="npm run dev --workspace examples/vite"
       uploadKeyPrefix="example/rsbuild"
     />
   );

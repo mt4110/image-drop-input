@@ -11,14 +11,13 @@ This project is intentionally small in scope:
 
 ## Before you start
 
-- use the issue forms for bug reports and feature requests
-- use [SUPPORT.md](./SUPPORT.md) when you are not sure which path fits your question
-- use GitHub Discussions first for broad ideas or usage questions
+- open an issue for bug reports and concrete feature requests
+- use GitHub Discussions for broad ideas or usage questions if Discussions are enabled
 - open an issue first for larger concrete changes
 - keep pull requests focused
 - prefer the existing API and design language over new abstraction layers
 
-Please follow [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) in issues, pull requests, and review.
+Please keep issues, pull requests, and review calm, respectful, and specific.
 
 ## Local setup
 
@@ -30,8 +29,9 @@ npm run verify
 Useful commands:
 
 ```bash
-npm run demo:vite
-npm run demo:rsbuild
+npm run dev --workspace examples/vite
+npm run dev --workspace examples/rsbuild
+npm run build:examples
 npm run publish:check
 ```
 
@@ -42,7 +42,7 @@ Please make sure your PR:
 - uses a short descriptive branch name and a neutral PR title
 - explains the user-facing reason for the change
 - keeps docs in sync when public behavior changes
-- updates `CHANGELOG.md` when the release notes should mention the change
+- includes release-facing notes in the PR body when the change should be mentioned later
 - passes `npm run verify`
 
 For release work, use the `Release` pull request template and the steps in `RELEASING.md`.

@@ -81,7 +81,7 @@ Users can drag and drop an image, click to select one, paste from the clipboard,
 | Validation | MIME, size, dimensions, pixel budget |
 | Transform hook | Yes |
 | Compression helper | Yes |
-| WebP conversion | Yes |
+| WebP conversion | Yes, when browser canvas encoding supports it |
 | Presigned PUT upload | Yes |
 | Multipart POST upload | Yes |
 | Raw PUT upload | Yes |
@@ -103,6 +103,37 @@ pick / drop / paste
 ```
 
 This matters because a user-visible preview is not always the same thing as a persisted image.
+
+## Validation And Byte Limits
+
+Validation runs before and after `transform`.
+
+`maxBytes` is a compatibility convenience limit. It applies to both the source file and the transformed file:
+
+```txt
+source file must be <= maxBytes
+transformed file must be <= maxBytes
+```
+
+That is strict and predictable, but it is not the right shape when you want to accept a large camera image and only require the compressed output to fit a budget. Use the explicit byte-limit props for that:
+
+```tsx
+<ImageDropInput
+  inputMaxBytes={20 * 1024 * 1024}
+  outputMaxBytes={5 * 1024 * 1024}
+  transform={(file) =>
+    compressImage(file, {
+      maxWidth: 1600,
+      maxHeight: 1600,
+      quality: 0.86
+    })
+  }
+/>
+```
+
+If `inputMaxBytes` or `outputMaxBytes` is provided, it overrides `maxBytes` for that stage only.
+
+Dimension and pixel-budget validation also runs after `transform`, so the value emitted from `onChange` describes the prepared file that will be previewed or uploaded.
 
 ## Value Model
 
@@ -213,6 +244,8 @@ type PresignedPutTarget = {
 
 The package does not guess public URLs from upload URLs. Pass `publicUrl` or `objectKey` explicitly.
 
+`UploadResult` may contain `etag` and `response` for custom adapter logic and diagnostics. The UI value emitted through `onChange` intentionally keeps only product state: `src`, `previewSrc`, `key`, file metadata, and dimensions.
+
 ### Multipart POST
 
 For classic application-server uploads:
@@ -299,7 +332,7 @@ import { compressImage } from 'image-drop-input/headless';
 />
 ```
 
-Validation runs before and after `transform`, so transformed files are checked too.
+Explicit `outputType` requests are checked after canvas encoding. If the browser cannot encode the requested type, `compressImage()` rejects instead of returning a blob whose bytes and MIME metadata disagree.
 
 ## Common Props
 
@@ -310,7 +343,9 @@ Validation runs before and after `transform`, so transformed files are checked t
 | `upload` | Optional upload adapter |
 | `transform` | Optional pre-upload image transform |
 | `accept` | Accepted MIME types or extensions |
-| `maxBytes` | Maximum file size |
+| `inputMaxBytes` | Maximum source file size before transform |
+| `maxBytes` | Compatibility size limit applied before and after transform |
+| `outputMaxBytes` | Maximum transformed file size after transform |
 | `minWidth` / `minHeight` | Minimum image dimensions |
 | `maxWidth` / `maxHeight` | Maximum image dimensions |
 | `maxPixels` | Maximum pixel budget |
@@ -327,7 +362,7 @@ Validation runs before and after `transform`, so transformed files are checked t
 | `renderActions` | Replace action rendering |
 | `renderFooter` | Replace footer rendering |
 | `onError` | Receive validation and upload errors |
-| `onProgress` | Receive upload progress |
+| `onProgress` | Receive upload progress. Successful uploads finish with `100` |
 
 `zoomable` is still accepted for compatibility, but `previewable` is the clearer name for the current preview-dialog behavior.
 
@@ -387,6 +422,31 @@ The hook gives you the input ref, drag-and-drop handlers, paste handler, keyboar
 
 ## Customization
 
+### Validation Errors
+
+Validation errors are regular `Error` objects with stable codes and details:
+
+```ts
+import { isImageValidationError } from 'image-drop-input';
+
+function handleError(error: Error) {
+  if (isImageValidationError(error)) {
+    switch (error.code) {
+      case 'file_too_large':
+        return `Choose an image under ${error.details.maxBytes} bytes.`;
+      case 'invalid_type':
+        return 'Choose a supported image type.';
+      default:
+        return error.message;
+    }
+  }
+
+  return error.message;
+}
+```
+
+Supported validation codes are `invalid_type`, `file_too_large`, `image_too_small`, `image_too_large`, `too_many_pixels`, and `decode_failed`. This lets products localize validation failures without parsing English copy.
+
 ### Messages
 
 ```tsx
@@ -440,7 +500,10 @@ For multiple images, keep array state in your app and render one `ImageDropInput
 
 - The empty state is exposed as a keyboard-focusable button.
 - Enter and Space open the file dialog from the empty state.
-- Paste is supported on the dropzone.
+- The filled state is exposed as a focusable group.
+- Enter and Space replace the image from the filled state.
+- Delete and Backspace remove the image from the filled state when `removable` is enabled.
+- Paste is supported on the dropzone in both empty and filled states.
 - Default action buttons have aria labels from `messages`.
 - The preview dialog uses `role="dialog"`, `aria-modal="true"`, Escape-to-close, focus trapping, and focus return.
 - The default UI stays intentionally quiet, and the headless API is available when you need a fully custom accessible surface.

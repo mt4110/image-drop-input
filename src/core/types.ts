@@ -22,6 +22,31 @@ export interface ImageMetadata {
   mimeType: string;
 }
 
+export type ImageValidationErrorCode =
+  | 'invalid_type'
+  | 'file_too_large'
+  | 'image_too_small'
+  | 'image_too_large'
+  | 'too_many_pixels'
+  | 'decode_failed';
+
+export interface ImageValidationErrorDetails {
+  accept?: string;
+  acceptRules?: string[];
+  actualBytes?: number;
+  actualHeight?: number;
+  actualPixels?: number;
+  actualWidth?: number;
+  formattedAccept?: string;
+  maxBytes?: number;
+  maxHeight?: number;
+  maxPixels?: number;
+  maxWidth?: number;
+  mimeType?: string;
+  minHeight?: number;
+  minWidth?: number;
+}
+
 export interface TransformedImageFile {
   file: Blob | File;
   fileName?: string;

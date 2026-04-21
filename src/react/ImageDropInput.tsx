@@ -34,7 +34,9 @@ export interface ImageDropInputProps extends ImageDropInputRenderers {
   upload?: UploadAdapter;
   transform?: (file: File) => Promise<ImageTransformResult> | ImageTransformResult;
   accept?: string;
+  inputMaxBytes?: number;
   maxBytes?: number;
+  outputMaxBytes?: number;
   minWidth?: number;
   minHeight?: number;
   maxWidth?: number;
@@ -103,7 +105,9 @@ export function ImageDropInput({
   className,
   classNames,
   disabled,
+  inputMaxBytes,
   maxBytes,
+  outputMaxBytes,
   maxHeight,
   maxPixels,
   maxWidth,
@@ -152,8 +156,10 @@ export function ImageDropInput({
   } = useImageDropInput({
     accept,
     disabled,
+    inputMaxBytes,
     messages,
     maxBytes,
+    outputMaxBytes,
     maxHeight,
     maxPixels,
     maxWidth,
@@ -394,7 +400,7 @@ export function ImageDropInput({
         data-dragging={isDragging}
         data-has-image={hasImage}
         role={hasImage ? 'group' : 'button'}
-        tabIndex={!hasImage && !isDisabled ? 0 : undefined}
+        tabIndex={!isDisabled ? 0 : undefined}
         aria-label={
           hasImage ? resolvedMessages.dropzoneLabelFilled : resolvedMessages.dropzoneLabelEmpty
         }
@@ -403,7 +409,7 @@ export function ImageDropInput({
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        onKeyDown={!hasImage ? handleKeyDown : undefined}
+        onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         style={mergedDropzoneStyle}
       >

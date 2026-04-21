@@ -135,7 +135,9 @@ export interface UseImageDropInputOptions {
   upload?: UploadAdapter;
   transform?: (file: File) => Promise<ImageTransformResult> | ImageTransformResult;
   accept?: string;
+  inputMaxBytes?: number;
   maxBytes?: number;
+  outputMaxBytes?: number;
   minWidth?: number;
   minHeight?: number;
   maxWidth?: number;
@@ -178,7 +180,9 @@ export function useImageDropInput({
   accept,
   disabled,
   messages,
+  inputMaxBytes,
   maxBytes,
+  outputMaxBytes,
   maxHeight,
   maxPixels,
   maxWidth,
@@ -366,6 +370,7 @@ export function useImageDropInput({
 
         const abortController = new AbortController();
         abortControllerRef.current = abortController;
+        let lastProgressPercent = 0;
 
         const result = await upload(preparedUpload.file, {
           signal: abortController.signal,
@@ -377,6 +382,7 @@ export function useImageDropInput({
               return;
             }
 
+            lastProgressPercent = percent;
             setProgress(percent);
             onProgress?.(percent);
           }
@@ -389,6 +395,9 @@ export function useImageDropInput({
         abortControllerRef.current = null;
         setIsUploading(false);
         setProgress(100);
+        if (lastProgressPercent !== 100) {
+          onProgress?.(100);
+        }
         clearRetryableUpload();
 
         const nextValue: ImageUploadValue = {
@@ -453,7 +462,7 @@ export function useImageDropInput({
       try {
         await validateImage(file, {
           accept,
-          maxBytes,
+          maxBytes: inputMaxBytes ?? maxBytes,
           maxHeight,
           maxPixels,
           maxWidth,
@@ -471,7 +480,7 @@ export function useImageDropInput({
         const metadata =
           (await validateImage(transformedFile, {
             accept,
-            maxBytes,
+            maxBytes: outputMaxBytes ?? maxBytes,
             maxHeight,
             maxPixels,
             maxWidth,
@@ -536,12 +545,14 @@ export function useImageDropInput({
       clearRetryableUpload,
       disabled,
       isCurrentRun,
+      inputMaxBytes,
       maxBytes,
       maxHeight,
       maxPixels,
       maxWidth,
       minHeight,
       minWidth,
+      outputMaxBytes,
       reportError,
       resetTransientState,
       setCommittedValue,

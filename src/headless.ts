@@ -17,11 +17,13 @@ export type {
   ImageMetadata,
   ImageTransformResult,
   ImageUploadValue,
+  ImageValidationErrorCode,
+  ImageValidationErrorDetails,
   ImageValidationOptions,
   ManagedObjectUrl,
   TransformedImageFile
 } from './core/types';
-export { validateImage } from './core/validate-image';
+export { ImageValidationError, isImageValidationError, validateImage } from './core/validate-image';
 export { createMultipartUploader } from './upload/create-multipart-uploader';
 export { createPresignedPutUploader, uploadWithSignedTarget } from './upload/create-presigned-put-uploader';
 export { createRawPutUploader } from './upload/create-raw-put-uploader';

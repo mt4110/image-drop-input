@@ -75,7 +75,7 @@ export function AvatarField() {
 | Validation | MIME, size, dimensions, pixel budget |
 | Transform hook | Yes |
 | Compression helper | Yes |
-| WebP conversion | Yes |
+| WebP conversion | Yes, browser の canvas encode support に依存 |
 | Presigned PUT upload | Yes |
 | Multipart POST upload | Yes |
 | Raw PUT upload | Yes |
@@ -95,6 +95,35 @@ pick / drop / paste
 ```
 
 user に見えている preview と、DB に保存してよい画像参照は同じではありません。
+
+## Validation と byte limit
+
+validation は transform の前後で走ります。
+
+`maxBytes` は互換性のための convenience limit です。source file と transformed file の両方に適用されます。
+
+```txt
+source file must be <= maxBytes
+transformed file must be <= maxBytes
+```
+
+大きな camera image を受け取り、圧縮後の出力だけを 5MB 以下にしたい場合は、stage を分けて指定してください。
+
+```tsx
+<ImageDropInput
+  inputMaxBytes={20 * 1024 * 1024}
+  outputMaxBytes={5 * 1024 * 1024}
+  transform={(file) =>
+    compressImage(file, {
+      maxWidth: 1600,
+      maxHeight: 1600,
+      quality: 0.86
+    })
+  }
+/>
+```
+
+`inputMaxBytes` / `outputMaxBytes` を指定した stage では、その値が `maxBytes` より優先されます。
 
 ## Value model
 
@@ -169,6 +198,8 @@ type PresignedPutTarget = {
 
 package は upload URL から public URL を推測しません。`publicUrl` または `objectKey` を明示してください。
 
+`UploadResult` の `etag` / `response` は custom adapter の診断や内部処理には使えますが、`onChange` で返る UI value には含めません。`ImageUploadValue` は product state として必要な `src`, `previewSrc`, `key`, file metadata, dimensions に絞っています。
+
 ### Multipart POST
 
 ```ts
@@ -230,7 +261,7 @@ WebP 変換もできます。
 />
 ```
 
-validation は transform の前後で走ります。
+明示的に `outputType` を指定した場合、`compressImage()` は encode 後の blob type を確認します。browser が指定形式で encode できず別形式に fallback した場合は、bytes と MIME metadata がズレた blob を返さずに reject します。
 
 ## よく使う props
 
@@ -241,7 +272,9 @@ validation は transform の前後で走ります。
 | `upload` | optional upload adapter |
 | `transform` | optional pre-upload transform |
 | `accept` | 受け付ける MIME type / extension |
-| `maxBytes` | 最大 file size |
+| `inputMaxBytes` | transform 前の source file size limit |
+| `maxBytes` | 互換性用。transform 前後の両方にかかる size limit |
+| `outputMaxBytes` | transform 後の file size limit |
 | `minWidth` / `minHeight` | 最小画像寸法 |
 | `maxWidth` / `maxHeight` | 最大画像寸法 |
 | `maxPixels` | 最大 pixel 数 |
@@ -253,7 +286,28 @@ validation は transform の前後で走ります。
 | `messages` | copy と aria label の上書き |
 | `classNames` | part-level class names |
 | `renderPlaceholder` / `renderActions` / `renderFooter` | 部分 render 差し替え |
-| `onError` / `onProgress` | error / progress callback |
+| `onError` | validation / upload error callback |
+| `onProgress` | upload progress callback。成功時は最後に `100` を通知 |
+
+## Validation error
+
+validation error は通常の `Error` として扱えますが、localize できるように stable な `code` と `details` を持ちます。
+
+```ts
+import { isImageValidationError } from 'image-drop-input';
+
+function toMessage(error: Error) {
+  if (isImageValidationError(error)) {
+    if (error.code === 'file_too_large') {
+      return `${error.details.maxBytes} bytes 以下の画像を選んでください。`;
+    }
+  }
+
+  return error.message;
+}
+```
+
+code は `invalid_type`, `file_too_large`, `image_too_small`, `image_too_large`, `too_many_pixels`, `decode_failed` です。英語 message を parse せずに翻訳できます。
 
 ## Headless usage
 
