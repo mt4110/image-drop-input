@@ -550,7 +550,7 @@ function buildSnippet(flow: FlowMode, surface: SurfaceOption): string {
     '/>'
   ];
 
-  return lines.filter(Boolean).join('\n');
+  return lines.filter((line): line is string => line != null).join('\n');
 }
 
 function buildUploadPanel(
