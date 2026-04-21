@@ -3,6 +3,7 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent
 } from 'react';
+import { useCallback, useEffect } from 'react';
 import { PreviewDialog } from './PreviewDialog';
 import type {
   ImageDropInputActionsRenderProps,
@@ -185,6 +186,22 @@ export function ImageDropInput({
     mergedDropzoneStyle.aspectRatio = normalizedAspectRatio;
   }
 
+  const openPreview = useCallback(() => {
+    if (!resolvedPreviewable || !displaySrc) {
+      return;
+    }
+
+    previewDialog.open();
+  }, [displaySrc, previewDialog.open, resolvedPreviewable]);
+
+  useEffect(() => {
+    if (resolvedPreviewable && displaySrc) {
+      return;
+    }
+
+    previewDialog.close();
+  }, [displaySrc, previewDialog.close, resolvedPreviewable]);
+
   const renderState = {
     disabled: isDisabled,
     displayValue,
@@ -227,7 +244,7 @@ export function ImageDropInput({
     ...renderState,
     cancelUpload,
     openFileDialog,
-    openPreview: previewDialog.open,
+    openPreview,
     previewable: resolvedPreviewable,
     removable,
     removeValue,
@@ -245,7 +262,7 @@ export function ImageDropInput({
           disabled={isDisabled}
           onClick={(event) => {
             event.stopPropagation();
-            previewDialog.open();
+            openPreview();
           }}
           aria-label={resolvedMessages.openPreview}
         >
@@ -428,7 +445,7 @@ export function ImageDropInput({
         ariaLabel={resolvedMessages.previewDialog}
         classNames={classNames}
         closeLabel={resolvedMessages.closePreview}
-        open={previewDialog.isOpen}
+        open={resolvedPreviewable && previewDialog.isOpen}
         src={displaySrc}
         onClose={previewDialog.close}
       />

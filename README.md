@@ -1,45 +1,48 @@
 # image-drop-input
 
-[English README](./README_en.md)
+[Japanese README](./README.ja.md) · [Demo](https://mt4110.github.io/image-drop-input/) · [Issues](https://github.com/mt4110/image-drop-input/issues)
 
-軽量・高速・依存少なめの **React 向け画像アップロード入力コンポーネント** です。
+The image input for everything that happens before upload.
 
-ドラッグ & ドロップ、クリック選択、クリップボード貼り付け、ローカルプレビュー、プレビューダイアログ、画像圧縮、
-そして **Presigned URL / 独自 API** を使ったアップロードを、重い UI 依存や cloud SDK なしで扱えます。
+A lightweight React image input for the messy part before upload: drop, browse, paste, preview, validate, compress, and upload images without UI-framework or cloud-SDK lock-in.
 
-default skin はできるだけ静かに、そして dark mode / high contrast / reduced transparency / compact width でも
-面の役割が崩れにくいように設計しています。
+## Why
 
-## 特徴
+Most upload components stop at "give me a file".
 
-- React の peer dependency 以外に runtime dependency を持たない
-- 単一画像アップロードに必要な UX をひと通り持つ
-- `src` と `previewSrc` を分けて、保存対象と一時プレビューを混線させない
-- upload adapter を URL 文字列から推測せず、明示的な API で差し替えられる
-- root export は UI 寄り、低レベル API は `/headless` に分離
-- Vite / Rsbuild の両方で consumption を検証済み
+Real product forms usually need more:
 
-## Example
+- show a local preview immediately
+- reject images that are too large, too small, or the wrong type
+- compress or convert before upload
+- keep temporary preview state separate from persisted state
+- upload to S3, R2, GCS, Azure Blob, or your own API
+- avoid bundling a cloud SDK into the client
+- keep the UI accessible and replaceable
 
-Vite consumer example:
+`image-drop-input` is built around that full pre-upload flow.
 
-https://mt4110.github.io/image-drop-input/
+Despite the name, this is not only about drag and drop. It is about preparing an image safely before upload.
 
-## インストール
+It is not a generic file uploader. It is not a cloud provider SDK. It is not a full image editor.
+
+It is the product-safe image input you add to avatar fields, CMS thumbnails, article covers, product images, and admin screens.
+
+## Install
 
 ```bash
 npm install image-drop-input react
 ```
 
+Import the default CSS once:
+
 ```tsx
 import 'image-drop-input/style.css';
 ```
 
-> `react-dom` は多くの React Web アプリですでに入っています。まだ導入していない環境では、必要に応じて一緒に追加してください。
+## Quick Start
 
-## 最短導入
-
-`upload` を渡さなければ、ローカル preview 専用の入力として使えます。
+Use it as a local-preview-only image input:
 
 ```tsx
 import { useState } from 'react';
@@ -56,14 +59,52 @@ export function AvatarField() {
     <ImageDropInput
       value={value}
       onChange={setValue}
+      accept="image/png,image/jpeg,image/webp"
+      maxBytes={5 * 1024 * 1024}
       aspectRatio={1}
-      dropzoneStyle={{ minBlockSize: '20rem' }}
     />
   );
 }
 ```
 
-`onChange` では次のような value が返ります。
+Users can drag and drop an image, click to select one, paste from the clipboard, preview the selected image, and remove or replace it.
+
+## What You Get
+
+| Feature | Included |
+| --- | --- |
+| Drag and drop | Yes |
+| Click-to-select | Yes |
+| Clipboard paste | Yes |
+| Local preview | Yes |
+| Preview dialog | Yes |
+| Validation | MIME, size, dimensions, pixel budget |
+| Transform hook | Yes |
+| Compression helper | Yes |
+| WebP conversion | Yes |
+| Presigned PUT upload | Yes |
+| Multipart POST upload | Yes |
+| Raw PUT upload | Yes |
+| Headless hook | Yes |
+| Runtime dependencies | React peer dependency only |
+
+## The Image Lifecycle
+
+`image-drop-input` keeps the image flow explicit:
+
+```txt
+pick / drop / paste
+  -> validate
+  -> transform
+  -> validate again
+  -> preview
+  -> upload
+  -> commit
+```
+
+This matters because a user-visible preview is not always the same thing as a persisted image.
+
+## Value Model
 
 ```ts
 type ImageUploadValue = {
@@ -78,127 +119,40 @@ type ImageUploadValue = {
 };
 ```
 
-## 複数画像を扱うには
+### `src`
 
-この package は今のところ **単一画像入力に特化** しています。`multiple` prop や配列 value を直接持たせる設計にはしていません。
+A persisted or otherwise shareable image URL.
 
-複数枚を扱いたい場合は、`image-drop-input/headless` の helper を使って、`1つの dropzone + 親側の配列 state + 別置き preview` を組むのが自然です。
+Use this for values that can safely be stored in your database or sent back from your API.
+
+### `previewSrc`
+
+A temporary local preview URL, usually a `blob:` URL.
+
+Use this only for immediate UI feedback. Do not store it as your final image value.
+
+This separation keeps the UI honest:
+
+- if upload returns `src`, the component displays the persisted image
+- if upload returns only `key`, the temporary preview remains separate
+- if upload fails, the component returns to the last committed value and retry uploads the same prepared file
+
+## Upload Examples
+
+### Local Preview Only
+
+Omit `upload` when you only need selection and preview:
 
 ```tsx
-import { useEffect, useRef, useState } from 'react';
-import { validateImage } from 'image-drop-input/headless';
-
-const accept = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
-
-type GalleryItem = {
-  id: string;
-  fileName: string;
-  previewSrc: string;
-};
-
-export function GalleryDropzone() {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const previewUrlsRef = useRef(new Set<string>());
-  const [images, setImages] = useState<GalleryItem[]>([]);
-
-  useEffect(() => {
-    return () => {
-      for (const previewSrc of previewUrlsRef.current) {
-        URL.revokeObjectURL(previewSrc);
-      }
-
-      previewUrlsRef.current.clear();
-    };
-  }, []);
-
-  async function appendFiles(files: File[]) {
-    const nextImages: GalleryItem[] = [];
-
-    for (const file of files) {
-      await validateImage(file, { accept, maxBytes: 8 * 1024 * 1024 });
-      const previewSrc = URL.createObjectURL(file);
-
-      previewUrlsRef.current.add(previewSrc);
-
-      nextImages.push({
-        id: crypto.randomUUID(),
-        fileName: file.name,
-        previewSrc
-      });
-    }
-
-    setImages((current) => [...current, ...nextImages]);
-  }
-
-  return (
-    <>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={accept}
-        multiple
-        hidden
-        onChange={(event) => {
-          const files = Array.from(event.currentTarget.files ?? []);
-
-          if (files.length === 0) {
-            return;
-          }
-
-          void appendFiles(files);
-          event.currentTarget.value = '';
-        }}
-      />
-      <button type="button" onClick={() => inputRef.current?.click()}>
-        Drop or browse PNG, JPEG, or WebP files
-      </button>
-      <div>{images.map((image) => <img key={image.id} src={image.previewSrc} alt={image.fileName} />)}</div>
-    </>
-  );
-}
+<ImageDropInput
+  value={value}
+  onChange={setValue}
+/>
 ```
 
-削除 UI を付ける場合は、そのタイミングでも対応する `previewSrc` を `URL.revokeObjectURL` してください。
+### Presigned PUT
 
-consumer examples では、単一画像版に加えて detached preview と one-dropzone / many-files の実装コードをそのまま見られるようにしています。
-
-## value の意味
-
-- `src`: 永続化済み、または共有可能な画像参照
-- `previewSrc`: 一時プレビュー用のローカル object URL
-
-この区別はかなり大事です。
-
-- upload が `src` を返したときは `src` が表示に使われます
-- upload が `key` だけを返したときは、`blob:` URL は `previewSrc` に残ります
-- upload 失敗時は draft preview を破棄して、最後に commit 済みの value に戻ります
-
-見た目だけ先に進んで、保存対象と UI がズレる事故を避けるためです。
-
-## よく使う props
-
-| prop | 役割 |
-| --- | --- |
-| `accept` | 受け付ける MIME。既定値は `image/*` |
-| `maxBytes` | 最大ファイルサイズ |
-| `minWidth` / `minHeight` | 最小画像寸法 |
-| `maxWidth` / `maxHeight` | 最大画像寸法 |
-| `maxPixels` | 最大ピクセル数 |
-| `aspectRatio` | dropzone のアスペクト比 |
-| `disabled` | 入力全体を無効化 |
-| `removable` | 削除操作の有効化。既定値は `true` |
-| `previewable` | preview dialog の有効化 |
-| `onError` | validation / upload error の受け取り |
-| `onProgress` | upload progress の受け取り |
-
-`previewable` を推奨しつつ、既存互換のために `zoomable` も残しています。
-ただし現在の機能は preview dialog であり、wheel / pinch / pan を含む本格的な zoom UI ではありません。
-
-## アップロードをつなぐ
-
-### 1. Presigned PUT
-
-S3 / R2 / GCS / Azure のような構成では、`/headless` の uploader factory を使うのが素直です。
+For S3, R2, GCS, Azure Blob, or similar object storage flows:
 
 ```tsx
 import { useState } from 'react';
@@ -225,7 +179,7 @@ const upload = createPresignedPutUploader({
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get upload target.');
+      throw new Error('Failed to create upload URL.');
     }
 
     return response.json();
@@ -235,11 +189,18 @@ const upload = createPresignedPutUploader({
 export function AvatarUploader() {
   const [value, setValue] = useState<ImageUploadValue | null>(null);
 
-  return <ImageDropInput value={value} onChange={setValue} upload={upload} />;
+  return (
+    <ImageDropInput
+      value={value}
+      onChange={setValue}
+      upload={upload}
+      maxBytes={5 * 1024 * 1024}
+    />
+  );
 }
 ```
 
-`getTarget()` は次を返す想定です。
+Your presign endpoint should return:
 
 ```ts
 type PresignedPutTarget = {
@@ -250,12 +211,11 @@ type PresignedPutTarget = {
 };
 ```
 
-package 側は **「与えられた URL とヘッダーで PUT する」** だけに徹します。
-provider 判定や public URL の推測はしません。
+The package does not guess public URLs from upload URLs. Pass `publicUrl` or `objectKey` explicitly.
 
-### 2. Multipart POST
+### Multipart POST
 
-アプリケーションサーバーへ `multipart/form-data` で送る場合です。
+For classic application-server uploads:
 
 ```ts
 import { createMultipartUploader } from 'image-drop-input/headless';
@@ -266,32 +226,47 @@ const upload = createMultipartUploader({
 });
 ```
 
-既定では `src` / `publicUrl` / `url`、`key` / `objectKey` をゆるく拾います。
-レスポンス形状が違う場合は `mapResponse` で変換できます。
+If your response shape is custom, map it:
 
-### 3. Raw PUT
+```ts
+const upload = createMultipartUploader({
+  endpoint: '/api/upload',
+  fieldName: 'file',
+  mapResponse(body) {
+    const result = body as { imageUrl: string; imageKey: string };
 
-単純な PUT エンドポイントならこちらです。
+    return {
+      src: result.imageUrl,
+      key: result.imageKey
+    };
+  }
+});
+```
+
+### Raw PUT
+
+For a direct `PUT` endpoint:
 
 ```ts
 import { createRawPutUploader } from 'image-drop-input/headless';
 
 const upload = createRawPutUploader({
-  endpoint: 'https://upload.example.com/files/avatar.jpg',
-  publicUrl: 'https://cdn.example.com/avatar.jpg',
-  objectKey: 'avatars/avatar.jpg'
+  endpoint: '/api/avatar',
+  publicUrl: '/avatars/current-user.jpg',
+  objectKey: 'avatars/current-user.jpg'
 });
 ```
 
-## transform と圧縮
+## Transform And Compress Before Upload
 
-`transform` は `Blob | File | { file, fileName?, mimeType? }` を返せます。
-圧縮や変換は `/headless` の `compressImage()` を使うと扱いやすいです。
+Use `transform` when you want to modify the image before upload.
 
 ```tsx
 import { compressImage } from 'image-drop-input/headless';
 
 <ImageDropInput
+  value={value}
+  onChange={setValue}
   transform={(file) =>
     compressImage(file, {
       maxWidth: 1600,
@@ -302,73 +277,68 @@ import { compressImage } from 'image-drop-input/headless';
 />
 ```
 
-ファイル名や MIME を明示したい場合はこう返せます。
-
-```ts
-transform={async (file) => ({
-  file: await compressImage(file, { maxWidth: 1600, outputType: 'image/webp', quality: 0.86 }),
-  fileName: file.name.replace(/\.(png|jpe?g|webp)$/i, '.webp'),
-  mimeType: 'image/webp'
-})}
-```
-
-validation は transform 前後の両方で走るので、変換後の寸法や MIME も検証されます。
-
-## カスタマイズ
-
-### `messages` と `classNames`
-
-文言や aria-label は `messages`、各パーツの class hook は `classNames` で差し替えられます。
+Convert to WebP and update the file name:
 
 ```tsx
+import { compressImage } from 'image-drop-input/headless';
+
 <ImageDropInput
-  messages={{
-    placeholderTitle: 'プロフィール画像を選択',
-    placeholderDescription: 'ドラッグ、クリック、または貼り付け',
-    statusUploading: (percent) => `アップロード中 ${percent}%`
-  }}
-  classNames={{
-    root: 'profileImageInput',
-    dropzone: 'profileImageInput__surface',
-    actions: 'profileImageInput__actions',
-    status: 'profileImageInput__status',
-    dialog: 'profileImageInput__dialog'
-  }}
+  value={value}
+  onChange={setValue}
+  accept="image/png,image/jpeg,image/webp"
+  transform={async (file) => ({
+    file: await compressImage(file, {
+      maxWidth: 1600,
+      maxHeight: 1600,
+      outputType: 'image/webp',
+      quality: 0.86
+    }),
+    fileName: file.name.replace(/\.(png|jpe?g|webp)$/i, '.webp'),
+    mimeType: 'image/webp'
+  })}
 />
 ```
 
-### 部分レンダリング差し替え
+Validation runs before and after `transform`, so transformed files are checked too.
 
-`renderPlaceholder` / `renderActions` / `renderFooter` を使うと、コンポーネントを fork せずに
-必要な部分だけ差し替えられます。
+## Common Props
 
-```tsx
-<ImageDropInput
-  renderFooter={({ statusMessage, canRetryUpload, retryUpload }) => (
-    <div className="profileImageInput__footer">
-      <span>{statusMessage}</span>
-      {canRetryUpload ? (
-        <button type="button" onClick={retryUpload}>
-          再試行
-        </button>
-      ) : null}
-    </div>
-  )}
-/>
-```
+| Prop | Purpose |
+| --- | --- |
+| `value` | Current image value |
+| `onChange` | Receives the next image value |
+| `upload` | Optional upload adapter |
+| `transform` | Optional pre-upload image transform |
+| `accept` | Accepted MIME types or extensions |
+| `maxBytes` | Maximum file size |
+| `minWidth` / `minHeight` | Minimum image dimensions |
+| `maxWidth` / `maxHeight` | Maximum image dimensions |
+| `maxPixels` | Maximum pixel budget |
+| `disabled` | Disable the input |
+| `removable` | Enable remove actions |
+| `previewable` | Enable the preview dialog |
+| `capture` | Forward camera capture hints to the file input |
+| `aspectRatio` | Dropzone aspect ratio |
+| `className` | Root class name |
+| `classNames` | Part-level class names |
+| `style` / `rootStyle` / `dropzoneStyle` | Inline style hooks |
+| `messages` | Override UI copy and aria labels |
+| `renderPlaceholder` | Replace placeholder rendering |
+| `renderActions` | Replace action rendering |
+| `renderFooter` | Replace footer rendering |
+| `onError` | Receive validation and upload errors |
+| `onProgress` | Receive upload progress |
 
-default の actions / footer wrapper は click と keydown の伝播を吸収するので、
-custom button 側で毎回 `stopPropagation()` を書かなくても file dialog が暴発しにくくなっています。
+`zoomable` is still accepted for compatibility, but `previewable` is the clearer name for the current preview-dialog behavior.
 
-## headless API
+## Headless Usage
 
-UI を全面的に組み直したい場合は、`image-drop-input/headless` の
-`useImageDropInput()` を直接使えます。
+Use `useImageDropInput()` when you want to build your own UI.
 
 ```tsx
 import { useImageDropInput } from 'image-drop-input/headless';
 
-export function CustomImageField() {
+export function CustomImageInput() {
   const imageInput = useImageDropInput({
     accept: 'image/*',
     maxBytes: 5 * 1024 * 1024
@@ -387,6 +357,7 @@ export function CustomImageField() {
       <div
         role="button"
         tabIndex={0}
+        aria-disabled={imageInput.disabled}
         onClick={imageInput.openFileDialog}
         onKeyDown={imageInput.handleKeyDown}
         onDragOver={imageInput.handleDragOver}
@@ -395,7 +366,10 @@ export function CustomImageField() {
         onPaste={imageInput.handlePaste}
       >
         {imageInput.displaySrc ? (
-          <img src={imageInput.displaySrc} alt={imageInput.messages.selectedImageAlt} />
+          <img
+            src={imageInput.displaySrc}
+            alt={imageInput.messages.selectedImageAlt}
+          />
         ) : (
           <span>{imageInput.messages.placeholderTitle}</span>
         )}
@@ -407,22 +381,86 @@ export function CustomImageField() {
 }
 ```
 
-## root export と `/headless`
+The hook gives you the input ref, drag-and-drop handlers, paste handler, keyboard handler, display state, upload state, progress, retry, cancel, remove, and status message.
 
-root entry の `image-drop-input` は UI 寄りです。
+`UseImageDropInputReturn` is exported when you want to type a wrapper around the headless API.
+
+## Customization
+
+### Messages
+
+```tsx
+<ImageDropInput
+  messages={{
+    placeholderTitle: 'Choose a profile image',
+    placeholderDescription: 'Drop, browse, or paste',
+    statusUploading: (percent) => `Uploading ${percent}%`
+  }}
+/>
+```
+
+### Class Names
+
+```tsx
+<ImageDropInput
+  classNames={{
+    root: 'profileImageInput',
+    dropzone: 'profileImageInput__surface',
+    actions: 'profileImageInput__actions',
+    status: 'profileImageInput__status',
+    dialog: 'profileImageInput__dialog'
+  }}
+/>
+```
+
+### Partial Rendering
+
+```tsx
+<ImageDropInput
+  renderFooter={({ statusMessage, canRetryUpload, retryUpload }) => (
+    <div className="profileImageInput__footer">
+      <span>{statusMessage}</span>
+      {canRetryUpload ? (
+        <button type="button" onClick={retryUpload}>
+          Retry
+        </button>
+      ) : null}
+    </div>
+  )}
+/>
+```
+
+## Multiple Images
+
+This package is intentionally single-image first.
+
+For multiple images, keep array state in your app and render one `ImageDropInput` or one headless instance per item. That keeps ordering, deletion, persistence, and upload orchestration in the product layer where those decisions belong.
+
+## Accessibility Notes
+
+- The empty state is exposed as a keyboard-focusable button.
+- Enter and Space open the file dialog from the empty state.
+- Paste is supported on the dropzone.
+- Default action buttons have aria labels from `messages`.
+- The preview dialog uses `role="dialog"`, `aria-modal="true"`, Escape-to-close, focus trapping, and focus return.
+- The default UI stays intentionally quiet, and the headless API is available when you need a fully custom accessible surface.
+
+## Public Entrypoints
+
+| Import | Role |
+| --- | --- |
+| `image-drop-input` | UI component and UI-facing types |
+| `image-drop-input/headless` | Uploader factories, image processing, hooks, and validation helpers |
+| `image-drop-input/style.css` | Default CSS |
 
 ```ts
 import {
   ImageDropInput,
   type ImageDropInputProps,
   type ImageUploadValue,
-  type UploadAdapter,
-  type UploadContext,
-  type UploadResult
+  type UploadAdapter
 } from 'image-drop-input';
 ```
-
-低レベル API は `/headless` へ寄せています。
 
 ```ts
 import {
@@ -430,51 +468,41 @@ import {
   createMultipartUploader,
   createPresignedPutUploader,
   createRawPutUploader,
-  getImageMetadata,
   useImageDropInput,
-  validateImage
+  validateImage,
+  type UseImageDropInputReturn
 } from 'image-drop-input/headless';
 ```
 
-公開面を静かに保つために、この import 境界は意図的に分けています。
+The root entry stays UI-first. Low-level utilities live under `/headless`.
 
-## アクセシビリティと挙動メモ
+## When Not To Use This
 
-- empty state は `button` role を持ち、`Enter` / `Space` で file dialog を開けます
-- filled state は `group` として扱い、誤ってクリックだけで picker を開かないようにしています
-- `Delete` / `Backspace` で削除できます（`removable` が有効な場合）
-- 画像の paste に対応しています
-- preview dialog は `Escape` で閉じ、開いている間は focus を中に留めます
-- preview dialog は依存を増やさないため現状 portal ではなく inline 描画です
-- 祖先に `transform` / `filter` などの stacking context がある場合は、より app root に近い位置へ置くか、headless API で独自 dialog に差し替えてください
+Use another tool if you need:
 
-## 次のマイルストーン候補
+- a generic multi-file uploader
+- resumable or chunked uploads
+- drag sorting between lists
+- a full crop, rotate, or annotation editor
+- provider-specific SDK wrappers
+- Node-side image processing
 
-- ブラウザ標準の Canvas API を使った、SEO / AIO 向け派生画像の headless sizing helper
-- 出力プリセットは `1:1` / `4:3` / `16:9` を先に用意
-- 既定の出力幅は `1200px` を基準にそろえる
-- `image/webp` への変換、file name の差し替え、MIME 更新まで一貫して扱う
-- consumer example を `examples/vite` と `examples/rsbuild` の両方に追加して、導入差分をそのまま読めるようにする
+Use `image-drop-input` when you want one product-safe image input with validation, preview, transform, and explicit upload wiring.
 
-このスコープは「画像エディタを増築する」より、共有画像や記事サムネイルを静かに整えるための
-実用的な変換 helper と example を先に固める、という考え方です。
-
-## 開発
+## Development
 
 ```bash
 npm ci
-npm test
 npm run typecheck
+npm test
 npm run build:lib
 npm run build:examples
 npm run check:package
+npm pack --dry-run
 ```
 
-- example consumer は `examples/vite` と `examples/rsbuild` にあります
-- `npm run clean:share` で `node_modules` と生成物を落とせます
-- Node は `22.18+` か、それ以降のアクティブ LTS を推奨します
+Release planning lives in [ROADMAP.md](./ROADMAP.md), so this README can stay focused on what works today.
 
-## publish 前メモ
+## License
 
-- publish owner や GitHub repository を変える場合は、`package.json` の `name` / `homepage` / `bugs` / `repository` を一緒に更新してください
-- `npm pack --dry-run` と `npm run check:package` を最後に通すと安全です
+MIT

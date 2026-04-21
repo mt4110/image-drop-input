@@ -7,7 +7,7 @@ export type {
 } from './react/customization';
 export { resolveImageDropInputMessages } from './react/customization';
 export { normalizeAspectRatio, resolveDisplaySrc, useImageDropInput } from './react/use-image-drop-input';
-export type { UseImageDropInputOptions } from './react/use-image-drop-input';
+export type { UseImageDropInputOptions, UseImageDropInputReturn } from './react/use-image-drop-input';
 export { compressImage } from './core/compress-image';
 export { createObjectUrl } from './core/create-object-url';
 export { getImageMetadata } from './core/get-image-metadata';

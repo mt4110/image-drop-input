@@ -1,11 +1,16 @@
-import { ExampleApp } from '../../shared/ExampleApp';
+import { DemoApp } from '../../shared/demo-app';
 
 export function App() {
   return (
-    <ExampleApp
-      consumerName="Rsbuild consumer example"
-      uploadKey="example/rsbuild/cover-image.webp"
-      progressStops={[24, 78]}
+    <DemoApp
+      consumerName="Rsbuild"
+      consumerNote={{
+        en: 'This one reads the same published surface from an Rsbuild consumer, so bundler parity stays visible without changing the API story.',
+        jp: 'こちらは Rsbuild consumer から同じ公開面を読み、API の話を変えずに bundler parity を確認できます。'
+      }}
+      demoCommand="npm run demo:rsbuild"
+      alternateDemoCommand="npm run demo:vite"
+      uploadKeyPrefix="example/rsbuild"
     />
   );
 }
