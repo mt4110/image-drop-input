@@ -18,6 +18,14 @@ function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error('Something went wrong while processing the image.');
 }
 
+function clampProgressPercent(percent: number): number {
+  if (!Number.isFinite(percent)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, percent));
+}
+
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError';
 }
@@ -382,9 +390,11 @@ export function useImageDropInput({
               return;
             }
 
-            lastProgressPercent = percent;
-            setProgress(percent);
-            onProgress?.(percent);
+            const nextPercent = clampProgressPercent(percent);
+
+            lastProgressPercent = nextPercent;
+            setProgress(nextPercent);
+            onProgress?.(nextPercent);
           }
         });
 
@@ -395,7 +405,7 @@ export function useImageDropInput({
         abortControllerRef.current = null;
         setIsUploading(false);
         setProgress(100);
-        if (lastProgressPercent !== 100) {
+        if (lastProgressPercent < 100) {
           onProgress?.(100);
         }
         clearRetryableUpload();

@@ -180,6 +180,32 @@ describe('ImageDropInput', () => {
     expect(onProgress.mock.calls.map(([percent]) => percent)).toEqual([45, 100]);
   });
 
+  it('clamps adapter progress values and treats over-100 progress as final', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onProgress = vi.fn();
+    const upload = vi.fn(async (_file: Blob, context: { onProgress?: (percent: number) => void }) => {
+      context.onProgress?.(-10);
+      context.onProgress?.(101);
+
+      return {
+        src: 'https://cdn.example.com/avatar.png'
+      };
+    });
+
+    render(<ImageDropInput upload={upload} onProgress={onProgress} />);
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['hello'], 'avatar.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(upload).toHaveBeenCalledTimes(1);
+    });
+
+    expect(onProgress.mock.calls.map(([percent]) => percent)).toEqual([0, 100]);
+  });
+
   it('keeps previewSrc separate when upload finishes without a persisted src', async () => {
     const user = userEvent.setup({ document: window.document });
     const onChange = vi.fn();

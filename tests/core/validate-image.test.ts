@@ -221,7 +221,25 @@ describe('validateImage', () => {
       isImageValidationError({
         name: 'ImageValidationError',
         code: 'unknown_error',
+        message: 'Unknown.',
         details: {}
+      })
+    ).toBe(false);
+
+    expect(
+      isImageValidationError({
+        name: 'ImageValidationError',
+        code: 'file_too_large',
+        details: {}
+      })
+    ).toBe(false);
+
+    expect(
+      isImageValidationError({
+        name: 'ImageValidationError',
+        code: 'file_too_large',
+        details: [],
+        message: 'File is too large.'
       })
     ).toBe(false);
   });

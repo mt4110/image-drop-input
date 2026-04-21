@@ -23,17 +23,19 @@ export class ImageValidationError extends Error {
   }
 }
 
-const imageValidationErrorCodes = new Set<string>([
+const imageValidationErrorCodeList = [
   'invalid_type',
   'file_too_large',
   'image_too_small',
   'image_too_large',
   'too_many_pixels',
   'decode_failed'
-]);
+] as const satisfies readonly ImageValidationErrorCode[];
+
+const imageValidationErrorCodes = new Set<ImageValidationErrorCode>(imageValidationErrorCodeList);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function isImageValidationError(error: unknown): error is ImageValidationError {
@@ -47,8 +49,9 @@ export function isImageValidationError(error: unknown): error is ImageValidation
 
   return (
     error.name === 'ImageValidationError' &&
+    typeof error.message === 'string' &&
     typeof error.code === 'string' &&
-    imageValidationErrorCodes.has(error.code) &&
+    imageValidationErrorCodes.has(error.code as ImageValidationErrorCode) &&
     isRecord(error.details)
   );
 }
