@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent, ClipboardEvent, DragEvent, KeyboardEvent } from 'react';
+import type { ChangeEvent, ClipboardEvent, DragEvent, KeyboardEvent, RefObject } from 'react';
 import { createObjectUrl } from '../core/create-object-url';
 import { getImageMetadata } from '../core/get-image-metadata';
 import type { ImageDropInputMessages } from './customization';
@@ -104,6 +104,19 @@ function valueUsesUrl(value: ImageUploadValue | null | undefined, url: string): 
   return value?.src === url || value?.previewSrc === url;
 }
 
+interface PreparedUpload {
+  file: File;
+  originalFileName: string;
+  value: Omit<ImageUploadValue, 'key' | 'previewSrc' | 'src'>;
+}
+
+function createPreviewValue(preparedUpload: PreparedUpload, previewSrc: string): ImageUploadValue {
+  return {
+    ...preparedUpload.value,
+    previewSrc
+  };
+}
+
 export function normalizeAspectRatio(aspectRatio?: AspectRatioValue): string | number | undefined {
   if (typeof aspectRatio === 'undefined') {
     return undefined;
@@ -135,6 +148,32 @@ export interface UseImageDropInputOptions {
   onProgress?: (percent: number) => void;
 }
 
+export interface UseImageDropInputReturn {
+  accept?: string;
+  canRetryUpload: boolean;
+  cancelUpload: () => void;
+  clearError: () => void;
+  disabled: boolean;
+  displayValue: ImageUploadValue | null;
+  displaySrc?: string;
+  error: Error | null;
+  handleDragLeave: (event: DragEvent<HTMLElement>) => void;
+  handleDragOver: (event: DragEvent<HTMLElement>) => void;
+  handleDrop: (event: DragEvent<HTMLElement>) => Promise<void>;
+  handleInputChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+  handlePaste: (event: ClipboardEvent<HTMLElement>) => Promise<void>;
+  inputRef: RefObject<HTMLInputElement | null>;
+  isDragging: boolean;
+  isUploading: boolean;
+  messages: ImageDropInputMessages;
+  openFileDialog: () => void;
+  progress: number;
+  removeValue: () => void;
+  retryUpload: () => void;
+  statusMessage: string;
+}
+
 export function useImageDropInput({
   accept,
   disabled,
@@ -152,7 +191,7 @@ export function useImageDropInput({
   transform,
   upload,
   value
-}: UseImageDropInputOptions) {
+}: UseImageDropInputOptions): UseImageDropInputReturn {
   const [internalValue, setInternalValue] = useState<ImageUploadValue | null>(value ?? null);
   const [draftValue, setDraftValue] = useState<ImageUploadValue | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -163,7 +202,7 @@ export function useImageDropInput({
   const committedObjectUrlRef = useRef<ManagedObjectUrl | null>(null);
   const draftObjectUrlRef = useRef<ManagedObjectUrl | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const retryableFileRef = useRef<File | null>(null);
+  const retryableUploadRef = useRef<PreparedUpload | null>(null);
   const runIdRef = useRef(0);
   const isControlled = typeof value !== 'undefined';
   const committedValue = isControlled ? value ?? null : internalValue;
@@ -190,7 +229,7 @@ export function useImageDropInput({
   }, []);
 
   const clearRetryableUpload = useCallback(() => {
-    retryableFileRef.current = null;
+    retryableUploadRef.current = null;
   }, []);
 
   const discardDraftValue = useCallback(() => {
@@ -304,6 +343,103 @@ export function useImageDropInput({
     setCommittedValue
   ]);
 
+  const uploadPrepared = useCallback(
+    async (preparedUpload: PreparedUpload, runId: number) => {
+      if (!upload) {
+        return;
+      }
+
+      try {
+        const objectUrl = createObjectUrl(preparedUpload.file);
+
+        if (!isCurrentRun(runId)) {
+          objectUrl.revoke();
+          return;
+        }
+
+        const previewValue = createPreviewValue(preparedUpload, objectUrl.url);
+
+        retryableUploadRef.current = preparedUpload;
+        draftObjectUrlRef.current = objectUrl;
+        setDraftValue(previewValue);
+        setIsUploading(true);
+
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
+        const result = await upload(preparedUpload.file, {
+          signal: abortController.signal,
+          fileName: preparedUpload.value.fileName,
+          originalFileName: preparedUpload.originalFileName,
+          mimeType: preparedUpload.value.mimeType,
+          onProgress(percent) {
+            if (!isCurrentRun(runId)) {
+              return;
+            }
+
+            setProgress(percent);
+            onProgress?.(percent);
+          }
+        });
+
+        if (!isCurrentRun(runId)) {
+          return;
+        }
+
+        abortControllerRef.current = null;
+        setIsUploading(false);
+        setProgress(100);
+        clearRetryableUpload();
+
+        const nextValue: ImageUploadValue = {
+          ...preparedUpload.value,
+          key: result.key,
+          ...(result.src ? { src: result.src } : { previewSrc: previewValue.previewSrc }),
+        };
+
+        clearDraft();
+
+        if (result.src && result.src !== previewValue.previewSrc) {
+          releaseDraftObjectUrl();
+          setCommittedValue(nextValue);
+          return;
+        }
+
+        const ownedDraftUrl = draftObjectUrlRef.current;
+        draftObjectUrlRef.current = null;
+        setCommittedValue(nextValue, ownedDraftUrl);
+      } catch (nextError) {
+        if (!isCurrentRun(runId)) {
+          return;
+        }
+
+        if (isAbortError(nextError)) {
+          abortControllerRef.current = null;
+          resetTransientState();
+          return;
+        }
+
+        abortControllerRef.current = null;
+        setIsUploading(false);
+        setProgress(0);
+        discardDraftValue();
+        reportError(nextError);
+      }
+    },
+    [
+      clearDraft,
+      clearRetryableUpload,
+      discardDraftValue,
+      isCurrentRun,
+      onProgress,
+      releaseDraftObjectUrl,
+      reportError,
+      resetTransientState,
+      setCommittedValue,
+      upload
+    ]
+  );
+
   const handleFile = useCallback(
     async (file: File) => {
       if (disabled) {
@@ -347,6 +483,23 @@ export function useImageDropInput({
           return;
         }
 
+        const preparedUpload: PreparedUpload = {
+          file: transformedFile,
+          originalFileName: file.name,
+          value: {
+            fileName: transformedFile.name,
+            mimeType: transformedFile.type || file.type || undefined,
+            size: transformedFile.size,
+            width: metadata.width,
+            height: metadata.height
+          }
+        };
+
+        if (upload) {
+          await uploadPrepared(preparedUpload, runId);
+          return;
+        }
+
         const objectUrl = createObjectUrl(transformedFile);
 
         if (!isCurrentRun(runId)) {
@@ -355,74 +508,10 @@ export function useImageDropInput({
         }
 
         // Keep object URLs in previewSrc so src keeps its meaning as a persisted/shareable reference.
-        const previewValue: ImageUploadValue = {
-          previewSrc: objectUrl.url,
-          fileName: transformedFile.name,
-          mimeType: transformedFile.type || file.type || undefined,
-          size: transformedFile.size,
-          width: metadata.width,
-          height: metadata.height
-        };
+        const previewValue = createPreviewValue(preparedUpload, objectUrl.url);
 
-        if (!upload) {
-          clearRetryableUpload();
-          setCommittedValue(previewValue, objectUrl);
-          return;
-        }
-
-        retryableFileRef.current = file;
-        draftObjectUrlRef.current = objectUrl;
-        setDraftValue(previewValue);
-        setIsUploading(true);
-
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
-
-        const result = await upload(transformedFile, {
-          signal: abortController.signal,
-          fileName: transformedFile.name,
-          originalFileName: file.name,
-          mimeType: transformedFile.type || file.type || undefined,
-          onProgress(percent) {
-            if (!isCurrentRun(runId)) {
-              return;
-            }
-
-            setProgress(percent);
-            onProgress?.(percent);
-          }
-        });
-
-        if (!isCurrentRun(runId)) {
-          return;
-        }
-
-        abortControllerRef.current = null;
-        setIsUploading(false);
-        setProgress(100);
         clearRetryableUpload();
-
-        const nextValue: ImageUploadValue = {
-          fileName: previewValue.fileName,
-          height: previewValue.height,
-          key: result.key,
-          mimeType: previewValue.mimeType,
-          size: previewValue.size,
-          width: previewValue.width,
-          ...(result.src ? { src: result.src } : { previewSrc: previewValue.previewSrc }),
-        };
-
-        clearDraft();
-
-        if (result.src && result.src !== previewValue.previewSrc) {
-          releaseDraftObjectUrl();
-          setCommittedValue(nextValue);
-          return;
-        }
-
-        const ownedDraftUrl = draftObjectUrlRef.current;
-        draftObjectUrlRef.current = null;
-        setCommittedValue(nextValue, ownedDraftUrl);
+        setCommittedValue(previewValue, objectUrl);
       } catch (nextError) {
         if (!isCurrentRun(runId)) {
           return;
@@ -445,7 +534,6 @@ export function useImageDropInput({
       accept,
       cancelActiveUpload,
       clearRetryableUpload,
-      discardDraftValue,
       disabled,
       isCurrentRun,
       maxBytes,
@@ -454,12 +542,12 @@ export function useImageDropInput({
       maxWidth,
       minHeight,
       minWidth,
-      onProgress,
       reportError,
       resetTransientState,
       setCommittedValue,
       transform,
-      upload
+      upload,
+      uploadPrepared
     ]
   );
 
@@ -574,16 +662,23 @@ export function useImageDropInput({
 
     return resolvedMessages.statusIdle;
   }, [displayValue?.fileName, error, isUploading, progress, resolvedMessages]);
-  const canRetryUpload = Boolean(upload && error && retryableFileRef.current && !isUploading);
+  const canRetryUpload = Boolean(upload && error && retryableUploadRef.current && !isUploading);
   const retryUpload = useCallback(() => {
-    const file = retryableFileRef.current;
+    const preparedUpload = retryableUploadRef.current;
 
-    if (disabled || isUploading || !file) {
+    if (disabled || isUploading || !preparedUpload) {
       return;
     }
 
-    void handleFile(file);
-  }, [disabled, handleFile, isUploading]);
+    const runId = ++runIdRef.current;
+    cancelActiveUpload();
+    discardDraftValue();
+    clearError();
+    setIsUploading(false);
+    setProgress(0);
+
+    void uploadPrepared(preparedUpload, runId);
+  }, [cancelActiveUpload, clearError, disabled, discardDraftValue, isUploading, uploadPrepared]);
   const displaySrc = resolveDisplaySrc(displayValue);
 
   return {

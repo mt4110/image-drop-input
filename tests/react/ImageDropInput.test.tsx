@@ -202,8 +202,10 @@ describe('ImageDropInput', () => {
   it('retries a failed upload from the dedicated error action', async () => {
     const user = userEvent.setup({ document: window.document });
     const onChange = vi.fn();
+    const preparedFile = new File(['prepared'], 'avatar.webp', { type: 'image/webp' });
+    const transform = vi.fn(async () => preparedFile);
     let attempt = 0;
-    const upload = vi.fn(async () => {
+    const upload = vi.fn(async (_file: Blob) => {
       attempt += 1;
 
       if (attempt === 1) {
@@ -216,7 +218,7 @@ describe('ImageDropInput', () => {
       };
     });
 
-    render(<ImageDropInput upload={upload} onChange={onChange} />);
+    render(<ImageDropInput upload={upload} transform={transform} onChange={onChange} />);
 
     await user.upload(
       screen.getByLabelText('Choose image file'),
@@ -231,11 +233,14 @@ describe('ImageDropInput', () => {
 
     await waitFor(() => {
       expect(upload).toHaveBeenCalledTimes(2);
+      expect(transform).toHaveBeenCalledTimes(1);
+      expect(upload.mock.calls[0]?.[0]).toBe(preparedFile);
+      expect(upload.mock.calls[1]?.[0]).toBe(preparedFile);
       expect(onChange).toHaveBeenLastCalledWith(
         expect.objectContaining({
           src: 'https://cdn.example.com/avatar.png',
           key: 'avatars/avatar.png',
-          fileName: 'avatar.png'
+          fileName: 'avatar.webp'
         })
       );
     });
@@ -519,46 +524,6 @@ describe('ImageDropInput', () => {
     expect(nextValue?.src).toBeUndefined();
   });
 
-  it('shows an explicit validation error when a non-image archive is dropped', async () => {
-    const onChange = vi.fn();
-
-    render(<ImageDropInput onChange={onChange} />);
-
-    const dropzone = screen.getByRole('button', { name: 'Image upload area' });
-    const file = new File(['hello'], 'archive.zip', { type: 'application/zip' });
-
-    fireEvent.drop(dropzone, { dataTransfer: createTransfer(file) });
-
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toContain('Accepted file types: image files.');
-    });
-
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
-  it('prefers an acceptable image when mixed files are dropped together', async () => {
-    const onChange = vi.fn();
-
-    render(<ImageDropInput onChange={onChange} accept="image/png" />);
-
-    const dropzone = screen.getByRole('button', { name: 'Image upload area' });
-    const textFile = new File(['hello'], 'notes.txt', { type: 'text/plain' });
-    const pngFile = new File(['hello'], 'photo.png', { type: 'image/png' });
-
-    fireEvent.drop(dropzone, { dataTransfer: createTransfer(textFile, pngFile) });
-
-    await waitFor(() => {
-      expect(onChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          previewSrc: 'blob:preview-url',
-          fileName: 'photo.png'
-        })
-      );
-    });
-
-    expect(screen.queryByRole('alert')).toBeNull();
-  });
-
   it('keeps local-only selections in previewSrc so src stays reserved for persisted references', async () => {
     const user = userEvent.setup({ document: window.document });
     const onChange = vi.fn();
@@ -648,6 +613,61 @@ describe('ImageDropInput', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Image preview' })).toBeNull();
     });
+  });
+
+  it('does not reopen a stale preview dialog after the image value is cleared', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const { rerender } = render(
+      <ImageDropInput
+        value={{
+          src: 'https://cdn.example.com/avatar.png',
+          fileName: 'avatar.png'
+        }}
+      />
+    );
+
+    await user.click(screen.getByLabelText('Open preview'));
+    expect(await screen.findByRole('dialog', { name: 'Image preview' })).toBeTruthy();
+
+    rerender(<ImageDropInput value={null} />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Image preview' })).toBeNull();
+    });
+
+    rerender(
+      <ImageDropInput
+        value={{
+          src: 'https://cdn.example.com/new-avatar.png',
+          fileName: 'new-avatar.png'
+        }}
+      />
+    );
+
+    expect(screen.queryByRole('dialog', { name: 'Image preview' })).toBeNull();
+  });
+
+  it('keeps custom preview actions inert when previewable is disabled', async () => {
+    const user = userEvent.setup({ document: window.document });
+
+    render(
+      <ImageDropInput
+        previewable={false}
+        value={{
+          src: 'https://cdn.example.com/avatar.png',
+          fileName: 'avatar.png'
+        }}
+        renderActions={({ openPreview }) => (
+          <button type="button" aria-label="Custom preview" onClick={openPreview}>
+            Preview
+          </button>
+        )}
+      />
+    );
+
+    await user.click(screen.getByLabelText('Custom preview'));
+
+    expect(screen.queryByRole('dialog', { name: 'Image preview' })).toBeNull();
   });
 
   it('revokes object URLs when a local preview unmounts', async () => {
@@ -744,5 +764,45 @@ describe('ImageDropInput', () => {
 
     expect(footerClick).toHaveBeenCalledTimes(1);
     expect(inputClickSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows an explicit validation error when a non-image archive is dropped', async () => {
+    const onChange = vi.fn();
+
+    render(<ImageDropInput onChange={onChange} />);
+
+    const dropzone = screen.getByRole('button', { name: 'Image upload area' });
+    const file = new File(['hello'], 'archive.zip', { type: 'application/zip' });
+
+    fireEvent.drop(dropzone, { dataTransfer: createTransfer(file) });
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('Accepted file types: image files.');
+    });
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('prefers an acceptable image when mixed files are dropped together', async () => {
+    const onChange = vi.fn();
+
+    render(<ImageDropInput onChange={onChange} accept="image/png" />);
+
+    const dropzone = screen.getByRole('button', { name: 'Image upload area' });
+    const textFile = new File(['hello'], 'notes.txt', { type: 'text/plain' });
+    const pngFile = new File(['hello'], 'photo.png', { type: 'image/png' });
+
+    fireEvent.drop(dropzone, { dataTransfer: createTransfer(textFile, pngFile) });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          previewSrc: 'blob:preview-url',
+          fileName: 'photo.png'
+        })
+      );
+    });
+
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
