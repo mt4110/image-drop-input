@@ -632,7 +632,7 @@ describe('ImageDropInput', () => {
     expect(dropzone.style.minHeight).toBe('22rem');
   });
 
-  it('treats the filled dropzone as an activatable replacement button', async () => {
+  it('keeps the filled dropzone grouped around explicit action buttons', async () => {
     const user = userEvent.setup({ document: window.document });
     const inputClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click');
 
@@ -645,21 +645,21 @@ describe('ImageDropInput', () => {
       />
     );
 
-    const dropzone = screen.getByRole('button', { name: 'Selected image' });
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
 
-    expect(screen.queryByRole('group', { name: 'Selected image' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Selected image' })).toBeNull();
     expect(dropzone.tabIndex).toBe(0);
     expect(dropzone.getAttribute('aria-keyshortcuts')).toBe('Enter Space Delete Backspace');
 
     await user.click(dropzone);
-    expect(inputClickSpy).toHaveBeenCalledTimes(1);
+    expect(inputClickSpy).not.toHaveBeenCalled();
 
     dropzone.focus();
     await user.keyboard('{Enter}');
-    expect(inputClickSpy).toHaveBeenCalledTimes(2);
+    expect(inputClickSpy).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByLabelText('Replace image'));
-    expect(inputClickSpy).toHaveBeenCalledTimes(3);
+    expect(inputClickSpy).toHaveBeenCalledTimes(2);
   });
 
   it('does not activate replacement from the filled dropzone while upload is active', async () => {
@@ -726,7 +726,7 @@ describe('ImageDropInput', () => {
       />
     );
 
-    const dropzone = screen.getByRole('button', { name: 'Selected image' });
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
 
     dropzone.focus();
     await user.keyboard('{Delete}');
@@ -839,7 +839,7 @@ describe('ImageDropInput', () => {
       />
     );
 
-    const dropzone = screen.getByRole('button', { name: 'Selected image' });
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
     const file = new File(['hello'], 'pasted.png', { type: 'image/png' });
 
     dropzone.focus();
