@@ -12,9 +12,9 @@ Paste is supported on the dropzone when the clipboard contains an accepted image
 
 ## Filled state
 
-The filled state remains focusable and is exposed as a button because Enter and Space replace the image.
+The filled state remains focusable and is exposed as a button because click, Enter, and Space replace the image.
 
-Enter and Space replace the selected image.
+Click, Enter, and Space replace the selected image.
 
 Delete and Backspace remove the image when `removable` is enabled. During upload, those keys cancel the in-flight upload instead of clearing the last committed value.
 

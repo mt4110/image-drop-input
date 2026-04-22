@@ -406,7 +406,7 @@ export function ImageDropInput({
           hasImage ? resolvedMessages.dropzoneLabelFilled : resolvedMessages.dropzoneLabelEmpty
         }
         aria-disabled={isDisabled}
-        onClick={!hasImage ? openFileDialog : undefined}
+        onClick={openFileDialog}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}

@@ -34,8 +34,18 @@ const imageValidationErrorCodeList = [
 
 const imageValidationErrorCodes = new Set<ImageValidationErrorCode>(imageValidationErrorCodeList);
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (!isObjectRecord(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+
+  return prototype === Object.prototype || prototype === null;
 }
 
 export function isImageValidationError(error: unknown): error is ImageValidationError {
@@ -43,7 +53,7 @@ export function isImageValidationError(error: unknown): error is ImageValidation
     return true;
   }
 
-  if (!isRecord(error)) {
+  if (!isObjectRecord(error)) {
     return false;
   }
 
@@ -52,7 +62,7 @@ export function isImageValidationError(error: unknown): error is ImageValidation
     typeof error.message === 'string' &&
     typeof error.code === 'string' &&
     imageValidationErrorCodes.has(error.code as ImageValidationErrorCode) &&
-    isRecord(error.details)
+    isPlainRecord(error.details)
   );
 }
 

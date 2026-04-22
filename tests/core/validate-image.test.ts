@@ -242,6 +242,15 @@ describe('validateImage', () => {
         message: 'File is too large.'
       })
     ).toBe(false);
+
+    expect(
+      isImageValidationError({
+        name: 'ImageValidationError',
+        code: 'file_too_large',
+        details: new Date(),
+        message: 'File is too large.'
+      })
+    ).toBe(false);
   });
 
   it('returns image metadata when the file passes validation', async () => {

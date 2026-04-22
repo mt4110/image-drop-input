@@ -632,7 +632,7 @@ describe('ImageDropInput', () => {
     expect(dropzone.style.minHeight).toBe('22rem');
   });
 
-  it('treats the filled dropzone as a focusable button and keeps pointer replacement explicit', async () => {
+  it('treats the filled dropzone as an activatable replacement button', async () => {
     const user = userEvent.setup({ document: window.document });
     const inputClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click');
 
@@ -652,14 +652,14 @@ describe('ImageDropInput', () => {
     expect(dropzone.getAttribute('aria-keyshortcuts')).toBe('Enter Space Delete Backspace');
 
     await user.click(dropzone);
-    expect(inputClickSpy).not.toHaveBeenCalled();
+    expect(inputClickSpy).toHaveBeenCalledTimes(1);
 
     dropzone.focus();
     await user.keyboard('{Enter}');
-    expect(inputClickSpy).toHaveBeenCalledTimes(1);
+    expect(inputClickSpy).toHaveBeenCalledTimes(2);
 
     await user.click(screen.getByLabelText('Replace image'));
-    expect(inputClickSpy).toHaveBeenCalledTimes(2);
+    expect(inputClickSpy).toHaveBeenCalledTimes(3);
   });
 
   it('removes the selected image from the focused filled dropzone with Delete or Backspace', async () => {
