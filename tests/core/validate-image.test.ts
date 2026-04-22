@@ -211,7 +211,8 @@ describe('validateImage', () => {
         code: 'file_too_large',
         details: {
           actualBytes: 12,
-          maxBytes: 2
+          maxBytes: 2,
+          mimeType: 'image/png'
         },
         message: 'File is too large.'
       })
@@ -230,7 +231,8 @@ describe('validateImage', () => {
       isImageValidationError({
         name: 'ImageValidationError',
         code: 'file_too_large',
-        details: {}
+        details: {},
+        message: 'File is too large.'
       })
     ).toBe(false);
 
@@ -249,6 +251,100 @@ describe('validateImage', () => {
         code: 'file_too_large',
         details: new Date(),
         message: 'File is too large.'
+      })
+    ).toBe(false);
+  });
+
+  it('requires details that match the validation error code', () => {
+    const base = {
+      name: 'ImageValidationError',
+      message: 'Validation failed.'
+    };
+
+    expect(
+      isImageValidationError({
+        ...base,
+        code: 'invalid_type',
+        details: {
+          accept: 'image/png',
+          acceptRules: ['image/png'],
+          formattedAccept: 'PNG',
+          mimeType: 'text/plain'
+        }
+      })
+    ).toBe(true);
+
+    expect(
+      isImageValidationError({
+        ...base,
+        code: 'image_too_small',
+        details: {
+          actualHeight: 480,
+          actualWidth: 640,
+          minHeight: 600,
+          mimeType: 'image/png'
+        }
+      })
+    ).toBe(true);
+
+    expect(
+      isImageValidationError({
+        ...base,
+        code: 'image_too_large',
+        details: {
+          actualHeight: 900,
+          actualWidth: 1200,
+          maxWidth: 1000,
+          mimeType: 'image/png'
+        }
+      })
+    ).toBe(true);
+
+    expect(
+      isImageValidationError({
+        ...base,
+        code: 'too_many_pixels',
+        details: {
+          actualHeight: 900,
+          actualPixels: 1_260_000,
+          actualWidth: 1400,
+          maxPixels: 1_000_000,
+          mimeType: 'image/png'
+        }
+      })
+    ).toBe(true);
+
+    expect(
+      isImageValidationError({
+        ...base,
+        code: 'decode_failed',
+        details: {
+          actualBytes: 12,
+          mimeType: 'image/png'
+        }
+      })
+    ).toBe(true);
+
+    expect(
+      isImageValidationError({
+        ...base,
+        code: 'file_too_large',
+        details: {
+          maxBytes: 2,
+          mimeType: 'image/png'
+        }
+      })
+    ).toBe(false);
+
+    expect(
+      isImageValidationError({
+        ...base,
+        code: 'image_too_small',
+        details: {
+          actualHeight: 480,
+          actualWidth: 640,
+          mimeType: 'image/png'
+        }
       })
     ).toBe(false);
   });

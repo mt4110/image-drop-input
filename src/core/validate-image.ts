@@ -48,21 +48,90 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
-export function isImageValidationError(error: unknown): error is ImageValidationError {
-  if (error instanceof ImageValidationError) {
-    return true;
-  }
+function hasNumber(details: Record<string, unknown>, key: keyof ImageValidationErrorDetails) {
+  const value = details[key];
 
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function hasString(details: Record<string, unknown>, key: keyof ImageValidationErrorDetails) {
+  return typeof details[key] === 'string';
+}
+
+function hasStringList(details: Record<string, unknown>, key: keyof ImageValidationErrorDetails) {
+  const value = details[key];
+
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function hasDimensionDetails(details: Record<string, unknown>) {
+  return (
+    hasNumber(details, 'actualHeight') &&
+    hasNumber(details, 'actualWidth') &&
+    hasString(details, 'mimeType')
+  );
+}
+
+function hasExpectedDetails(
+  code: ImageValidationErrorCode,
+  details: Record<string, unknown>
+): boolean {
+  switch (code) {
+    case 'invalid_type':
+      return (
+        hasString(details, 'accept') &&
+        hasStringList(details, 'acceptRules') &&
+        hasString(details, 'formattedAccept') &&
+        hasString(details, 'mimeType')
+      );
+    case 'file_too_large':
+      return (
+        hasNumber(details, 'actualBytes') &&
+        hasNumber(details, 'maxBytes') &&
+        hasString(details, 'mimeType')
+      );
+    case 'image_too_small':
+      return (
+        hasDimensionDetails(details) &&
+        (hasNumber(details, 'minHeight') || hasNumber(details, 'minWidth'))
+      );
+    case 'image_too_large':
+      return (
+        hasDimensionDetails(details) &&
+        (hasNumber(details, 'maxHeight') || hasNumber(details, 'maxWidth'))
+      );
+    case 'too_many_pixels':
+      return (
+        hasDimensionDetails(details) &&
+        hasNumber(details, 'actualPixels') &&
+        hasNumber(details, 'maxPixels')
+      );
+    case 'decode_failed':
+      return hasNumber(details, 'actualBytes') && hasString(details, 'mimeType');
+    default:
+      return false;
+  }
+}
+
+export function isImageValidationError(error: unknown): error is ImageValidationError {
   if (!isObjectRecord(error)) {
     return false;
   }
 
+  if (
+    error.name !== 'ImageValidationError' ||
+    typeof error.message !== 'string' ||
+    typeof error.code !== 'string'
+  ) {
+    return false;
+  }
+
+  const code = error.code as ImageValidationErrorCode;
+
   return (
-    error.name === 'ImageValidationError' &&
-    typeof error.message === 'string' &&
-    typeof error.code === 'string' &&
-    imageValidationErrorCodes.has(error.code as ImageValidationErrorCode) &&
-    isPlainRecord(error.details)
+    imageValidationErrorCodes.has(code) &&
+    isPlainRecord(error.details) &&
+    hasExpectedDetails(code, error.details)
   );
 }
 
