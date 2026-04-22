@@ -12,13 +12,15 @@ Paste is supported on the dropzone when the clipboard contains an accepted image
 
 ## Filled state
 
-The filled state remains focusable and is exposed as a button because click, Enter, and Space replace the image.
+The filled state remains focusable and is exposed as a button when replacement is available because click, Enter, and Space replace the image.
 
 Click, Enter, and Space replace the selected image.
 
 Delete and Backspace remove the image when `removable` is enabled. During upload, those keys cancel the in-flight upload instead of clearing the last committed value.
 
-Paste can replace the current image with a supported clipboard image.
+When upload is idle, paste can replace the current image with a supported clipboard image.
+
+During upload, the filled surface is exposed as a focusable group instead of a replacement button. Click, Enter, Space, paste, and drop do not start a new replacement while the upload is active.
 
 The default surface also sets `aria-keyshortcuts` so keyboard behavior is discoverable to assistive technology.
 

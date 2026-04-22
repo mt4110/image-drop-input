@@ -573,12 +573,12 @@ export function useImageDropInput({
   );
 
   const openFileDialog = useCallback(() => {
-    if (disabled) {
+    if (disabled || isUploading) {
       return;
     }
 
     inputRef.current?.click();
-  }, [disabled]);
+  }, [disabled, isUploading]);
 
   const handleInputChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -596,7 +596,7 @@ export function useImageDropInput({
     (event: DragEvent<HTMLElement>) => {
       event.preventDefault();
 
-      if (disabled) {
+      if (disabled || isUploading) {
         event.dataTransfer.dropEffect = 'none';
         setIsDragging(false);
         return;
@@ -605,7 +605,7 @@ export function useImageDropInput({
       event.dataTransfer.dropEffect = 'copy';
       setIsDragging(true);
     },
-    [disabled]
+    [disabled, isUploading]
   );
 
   const handleDragLeave = useCallback((event: DragEvent<HTMLElement>) => {
@@ -619,7 +619,7 @@ export function useImageDropInput({
       event.preventDefault();
       setIsDragging(false);
 
-      if (disabled) {
+      if (disabled || isUploading) {
         return;
       }
 
@@ -629,12 +629,12 @@ export function useImageDropInput({
         await handleFile(nextFile);
       }
     },
-    [accept, disabled, handleFile]
+    [accept, disabled, handleFile, isUploading]
   );
 
   const handlePaste = useCallback(
     async (event: ClipboardEvent<HTMLElement>) => {
-      if (disabled) {
+      if (disabled || isUploading) {
         return;
       }
 
@@ -645,7 +645,7 @@ export function useImageDropInput({
         await handleFile(nextFile);
       }
     },
-    [accept, disabled, handleFile]
+    [accept, disabled, handleFile, isUploading]
   );
 
   const handleKeyDown = useCallback(
@@ -656,7 +656,9 @@ export function useImageDropInput({
 
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        openFileDialog();
+        if (!isUploading) {
+          openFileDialog();
+        }
         return;
       }
 

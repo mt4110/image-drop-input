@@ -219,6 +219,14 @@ export function ImageDropInput({
     progress
   };
   const hasDeterminateProgress = isUploading && progress > 0;
+  const canActivateDropzone = !isUploading;
+  const dropzoneKeyShortcuts = isUploading
+    ? hasImage && removable
+      ? 'Delete Backspace'
+      : undefined
+    : hasImage && removable
+      ? 'Enter Space Delete Backspace'
+      : 'Enter Space';
 
   const placeholderContent = hasImage
     ? null
@@ -399,14 +407,14 @@ export function ImageDropInput({
         data-disabled={isDisabled}
         data-dragging={isDragging}
         data-has-image={hasImage}
-        role="button"
+        role={canActivateDropzone ? 'button' : 'group'}
         tabIndex={!isDisabled ? 0 : undefined}
-        aria-keyshortcuts={hasImage && removable ? 'Enter Space Delete Backspace' : 'Enter Space'}
+        aria-keyshortcuts={dropzoneKeyShortcuts}
         aria-label={
           hasImage ? resolvedMessages.dropzoneLabelFilled : resolvedMessages.dropzoneLabelEmpty
         }
         aria-disabled={isDisabled}
-        onClick={openFileDialog}
+        onClick={canActivateDropzone ? openFileDialog : undefined}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}

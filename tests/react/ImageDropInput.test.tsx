@@ -662,6 +662,56 @@ describe('ImageDropInput', () => {
     expect(inputClickSpy).toHaveBeenCalledTimes(3);
   });
 
+  it('does not activate replacement from the filled dropzone while upload is active', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const inputClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click');
+    const upload = vi.fn(
+      (_file: Blob, context: { signal?: AbortSignal }) =>
+        new Promise<never>((_resolve, reject) => {
+          context.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Upload aborted.', 'AbortError'));
+          });
+        })
+    );
+
+    render(
+      <ImageDropInput
+        value={{
+          src: 'https://cdn.example.com/avatar.png',
+          fileName: 'avatar.png'
+        }}
+        upload={upload}
+      />
+    );
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['replacement'], 'replacement.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(upload).toHaveBeenCalledTimes(1);
+    });
+
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
+    const nextFile = new File(['next'], 'next.png', { type: 'image/png' });
+
+    expect(screen.queryByRole('button', { name: 'Selected image' })).toBeNull();
+    expect(dropzone.getAttribute('aria-keyshortcuts')).toBe('Delete Backspace');
+
+    inputClickSpy.mockClear();
+
+    await user.click(dropzone);
+    dropzone.focus();
+    await user.keyboard('{Enter}');
+    await user.keyboard(' ');
+    fireEvent.paste(dropzone, { clipboardData: createTransfer(nextFile) });
+    fireEvent.drop(dropzone, { dataTransfer: createTransfer(nextFile) });
+
+    expect(inputClickSpy).not.toHaveBeenCalled();
+    expect(upload).toHaveBeenCalledTimes(1);
+  });
+
   it('removes the selected image from the focused filled dropzone with Delete or Backspace', async () => {
     const user = userEvent.setup({ document: window.document });
     const onChange = vi.fn();
@@ -718,7 +768,7 @@ describe('ImageDropInput', () => {
       );
     });
 
-    const dropzone = screen.getByRole('button', { name: 'Selected image' });
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
 
     dropzone.focus();
     await user.keyboard('{Delete}');
