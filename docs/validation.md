@@ -82,11 +82,11 @@ function toMessage(error: Error) {
 
 | Code | Meaning | Details |
 | --- | --- | --- |
-| `invalid_type` | unsupported MIME or extension | `accept`, `acceptRules`, `mimeType` |
-| `file_too_large` | byte budget exceeded | `actualBytes`, `maxBytes` |
-| `image_too_small` | min dimensions missed | `actualWidth`, `actualHeight`, `minWidth`, `minHeight` |
-| `image_too_large` | max dimensions exceeded | `actualWidth`, `actualHeight`, `maxWidth`, `maxHeight` |
-| `too_many_pixels` | pixel budget exceeded | `actualPixels`, `maxPixels` |
+| `invalid_type` | unsupported MIME or extension | `accept`, `acceptRules`, `formattedAccept`, `mimeType` |
+| `file_too_large` | byte budget exceeded | `actualBytes`, `maxBytes`, `mimeType` |
+| `image_too_small` | min dimensions missed | `actualWidth`, `actualHeight`, `minWidth` or `minHeight`, `mimeType` |
+| `image_too_large` | max dimensions exceeded | `actualWidth`, `actualHeight`, `maxWidth` or `maxHeight`, `mimeType` |
+| `too_many_pixels` | pixel budget exceeded | `actualWidth`, `actualHeight`, `actualPixels`, `maxPixels`, `mimeType` |
 | `decode_failed` | metadata read failed | `actualBytes`, `mimeType` |
 
 ## Localization
