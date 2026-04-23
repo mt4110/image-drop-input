@@ -149,4 +149,36 @@ describe('compressImage', () => {
     expect(result.type).toBe('image/webp');
     expect(close).toHaveBeenCalledTimes(1);
   });
+
+  it('rejects explicit output types when canvas encoding falls back to another type', async () => {
+    class FallbackOffscreenCanvas extends MockOffscreenCanvas {
+      convertToBlob() {
+        return Promise.resolve(new Blob(['fallback'], { type: 'image/png' }));
+      }
+    }
+
+    const close = vi.fn();
+    const bitmap = {
+      width: 1200,
+      height: 900,
+      close
+    } as ImageBitmap;
+    const createImageBitmap = vi.fn(async () => bitmap);
+
+    Object.defineProperty(globalThis, 'OffscreenCanvas', {
+      configurable: true,
+      value: FallbackOffscreenCanvas
+    });
+    Object.defineProperty(globalThis, 'createImageBitmap', {
+      configurable: true,
+      value: createImageBitmap
+    });
+
+    const source = new File(['hello'], 'avatar.jpg', { type: 'image/jpeg' });
+
+    await expect(
+      compressImage(source, { maxWidth: 600, outputType: 'image/webp' })
+    ).rejects.toThrow('Unable to encode image/webp in this environment.');
+    expect(close).toHaveBeenCalledTimes(1);
+  });
 });

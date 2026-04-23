@@ -5,21 +5,28 @@ import {
   createMultipartUploader,
   createPresignedPutUploader,
   createRawPutUploader,
-  useImageDropInput,
   type UploadRequest,
   type UploadResponse
 } from 'image-drop-input/headless';
+import {
+  AvatarRecipe,
+  CompressionRecipe,
+  HeadlessRecipe,
+  HeadlessRecipeCard,
+  LocalPreviewRecipe,
+  MultipartRecipe,
+  PresignedPutRecipe,
+  RawPutRecipe,
+  WebPRecipe,
+  copy,
+  type Locale,
+  type LocalizedText
+} from './recipes';
 import 'image-drop-input/style.css';
 import './demo.css';
 
-type Locale = 'en' | 'jp';
 type FlowMode = 'preview' | 'presigned' | 'multipart' | 'raw';
 type SurfaceMode = 'avatar' | 'cover';
-
-type LocalizedText = {
-  en: string;
-  jp: string;
-};
 
 interface DemoAppProps {
   consumerName: string;
@@ -219,15 +226,6 @@ const TEXT = {
     en: 'These snippets use only the published API: local preview, WebP transform, signed upload, multipart upload, raw PUT, and headless UI.',
     jp: 'local preview、WebP transform、signed upload、multipart upload、raw PUT、headless UI を、公開 API だけで確認できます。'
   },
-  headlessEyebrow: { en: 'Headless UI', jp: 'Headless UI' },
-  headlessTitle: { en: 'Own the markup, keep the pipeline.', jp: 'markup は自前で、pipeline はそのまま。' },
-  headlessBody: {
-    en: '`useImageDropInput()` exposes the state machine when the default surface is not the right fit.',
-    jp: 'default surface が合わない場合は、`useImageDropInput()` で state machine だけを使えます。'
-  },
-  headlessPlaceholder: { en: 'Drop, browse, or paste', jp: 'drop / browse / paste' },
-  headlessBrowse: { en: 'Browse', jp: 'Browse' },
-  headlessRemove: { en: 'Remove', jp: 'Remove' },
   shipTitle: { en: 'Demo to publish', jp: 'demo から publish まで' },
   shipBody: {
     en: 'The demo command, the package check, and the publish command now line up in one short path.',
@@ -313,96 +311,6 @@ const PROOF_ITEMS = [
   body: LocalizedText;
 }>;
 
-const RECIPE_ITEMS = [
-  {
-    title: { en: 'Local preview', jp: 'Local preview' },
-    body: {
-      en: 'No uploader. The component emits a temporary preview value.',
-      jp: 'uploader なし。一時 preview value を返します。'
-    },
-    snippet: `<ImageDropInput
-  value={value}
-  onChange={setValue}
-/>`
-  },
-  {
-    title: { en: 'WebP transform', jp: 'WebP transform' },
-    body: {
-      en: 'Compress and convert before the file reaches upload.',
-      jp: 'upload に渡る前に圧縮と変換を行います。'
-    },
-    snippet: `transform={async (file) => ({
-  file: await compressImage(file, {
-    maxWidth: 1600,
-    maxHeight: 900,
-    outputType: 'image/webp',
-    quality: 0.86
-  }),
-  fileName: file.name.replace(/\\.[^.]+$/, '.webp'),
-  mimeType: 'image/webp'
-})}`
-  },
-  {
-    title: { en: 'Presigned PUT', jp: 'Presigned PUT' },
-    body: {
-      en: 'Use signed object-storage targets without bundling a provider SDK.',
-      jp: 'provider SDK を bundle せずに signed target へ PUT します。'
-    },
-    snippet: `const upload = createPresignedPutUploader({
-  async getTarget(file, context) {
-    return fetch('/api/uploads/presign', {
-      method: 'POST',
-      body: JSON.stringify({
-        fileName: context.fileName,
-        mimeType: context.mimeType
-      })
-    }).then((response) => response.json());
-  }
-});`
-  },
-  {
-    title: { en: 'Multipart POST', jp: 'Multipart POST' },
-    body: {
-      en: 'Send FormData to an application server and map the response.',
-      jp: 'FormData を app server に送り、response を mapping します。'
-    },
-    snippet: `const upload = createMultipartUploader({
-  endpoint: '/api/upload',
-  fieldName: 'file',
-  mapResponse(body) {
-    const result = body as { imageUrl: string; imageKey: string };
-    return { src: result.imageUrl, key: result.imageKey };
-  }
-});`
-  },
-  {
-    title: { en: 'Raw PUT', jp: 'Raw PUT' },
-    body: {
-      en: 'Upload to a direct endpoint and keep the returned object key explicit.',
-      jp: 'direct endpoint に upload し、object key を明示的に扱います。'
-    },
-    snippet: `const upload = createRawPutUploader({
-  endpoint: '/api/avatar',
-  objectKey: 'avatars/current-user.webp'
-});`
-  },
-  {
-    title: { en: 'Headless UI', jp: 'Headless UI' },
-    body: {
-      en: 'Bring your own markup while reusing the image input state machine.',
-      jp: 'markup は自前で、image input の state machine を再利用します。'
-    },
-    snippet: `const imageInput = useImageDropInput({
-  accept: 'image/*',
-  maxBytes: 5 * 1024 * 1024
-});`
-  }
-] satisfies Array<{
-  title: LocalizedText;
-  body: LocalizedText;
-  snippet: string;
-}>;
-
 const INPUT_CLASS_NAMES = {
   dropzone: 'demo-idiDropzone',
   preview: 'demo-idiPreview',
@@ -417,10 +325,6 @@ const INPUT_CLASS_NAMES = {
   dialog: 'demo-idiDialog',
   dialogImage: 'demo-idiDialogImage'
 } as const;
-
-function copy(locale: Locale, text: LocalizedText): string {
-  return text[locale];
-}
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -611,100 +515,6 @@ function createThemeStyle(surface: SurfaceOption): CSSProperties {
     '--idi-shadow-float': '0 8px 16px rgba(15, 23, 42, 0.06)',
     '--idi-dialog-shadow': '0 24px 48px rgba(15, 23, 42, 0.16)'
   } as CSSProperties;
-}
-
-function HeadlessCustomDemo({ locale }: { locale: Locale }) {
-  const [value, setValue] = useState<ImageUploadValue | null>(null);
-  const imageInput = useImageDropInput({
-    accept: 'image/png,image/jpeg,image/webp',
-    maxBytes: 5 * 1024 * 1024,
-    messages: {
-      placeholderTitle: copy(locale, TEXT.headlessPlaceholder),
-      statusIdle: copy(locale, TEXT.idleStatusPreview)
-    },
-    onChange: setValue,
-    transform: async (file) => {
-      const prepared = await compressImage(file, {
-        maxWidth: 960,
-        maxHeight: 960,
-        outputType: 'image/webp',
-        quality: 0.84
-      });
-
-      return {
-        file: prepared,
-        fileName: `${slugify(stripExtension(file.name)) || 'image'}-headless.webp`,
-        mimeType: prepared.type || 'image/webp'
-      };
-    },
-    value
-  });
-
-  return (
-    <section className="demo-headless">
-      <div className="demo-sectionHeader">
-        <p className="demo-eyebrow">{copy(locale, TEXT.headlessEyebrow)}</p>
-        <h2 className="demo-sectionTitle">{copy(locale, TEXT.headlessTitle)}</h2>
-        <p className="demo-sectionBody">{copy(locale, TEXT.headlessBody)}</p>
-      </div>
-
-      <div className="demo-headlessGrid">
-        <div>
-          <input
-            ref={imageInput.inputRef}
-            className="demo-headlessInput"
-            type="file"
-            accept={imageInput.accept}
-            onChange={imageInput.handleInputChange}
-            hidden
-          />
-          <div
-            className="demo-headlessSurface"
-            data-dragging={imageInput.isDragging}
-            role="button"
-            tabIndex={0}
-            aria-disabled={imageInput.disabled}
-            onClick={imageInput.openFileDialog}
-            onKeyDown={imageInput.handleKeyDown}
-            onDragLeave={imageInput.handleDragLeave}
-            onDragOver={imageInput.handleDragOver}
-            onDrop={imageInput.handleDrop}
-            onPaste={imageInput.handlePaste}
-          >
-            {imageInput.displaySrc ? (
-              <img
-                className="demo-headlessImage"
-                src={imageInput.displaySrc}
-                alt={imageInput.messages.selectedImageAlt}
-                draggable={false}
-              />
-            ) : (
-              <span className="demo-headlessPlaceholder">
-                {imageInput.messages.placeholderTitle}
-              </span>
-            )}
-          </div>
-          <div className="demo-headlessControls">
-            <button type="button" onClick={imageInput.openFileDialog}>
-              {copy(locale, TEXT.headlessBrowse)}
-            </button>
-            <button
-              type="button"
-              disabled={!imageInput.displayValue}
-              onClick={imageInput.removeValue}
-            >
-              {copy(locale, TEXT.headlessRemove)}
-            </button>
-            <span>{imageInput.statusMessage}</span>
-          </div>
-        </div>
-
-        <pre className="demo-json">
-          {JSON.stringify(summarizeValue(imageInput.displayValue, locale), null, 2)}
-        </pre>
-      </div>
-    </section>
-  );
 }
 
 export function DemoApp({
@@ -1233,19 +1043,18 @@ export function DemoApp({
           </div>
 
           <div className="demo-recipeGrid">
-            {RECIPE_ITEMS.map((item) => (
-              <article key={copy('en', item.title)} className="demo-recipeCard">
-                <div>
-                  <h3>{copy(locale, item.title)}</h3>
-                  <p>{copy(locale, item.body)}</p>
-                </div>
-                <pre className="demo-code">{item.snippet}</pre>
-              </article>
-            ))}
+            <LocalPreviewRecipe locale={locale} />
+            <AvatarRecipe locale={locale} />
+            <CompressionRecipe locale={locale} />
+            <WebPRecipe locale={locale} />
+            <PresignedPutRecipe locale={locale} />
+            <MultipartRecipe locale={locale} />
+            <RawPutRecipe locale={locale} />
+            <HeadlessRecipeCard locale={locale} />
           </div>
         </section>
 
-        <HeadlessCustomDemo locale={locale} />
+        <HeadlessRecipe locale={locale} />
 
         <section className="demo-ship">
           <div className="demo-shipHeader">

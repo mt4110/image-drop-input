@@ -95,8 +95,8 @@ Each package repo can still keep a local override when its wording needs to be s
 
 For example:
 
-- `image-drop-input` should keep its current bug and feature request forms locally
-- `image-drop-input` may keep its local `SUPPORT.md` if the package-specific guidance is more useful than the shared default
+- `image-drop-input` can add local bug and feature request forms when package-specific prompts become useful
+- `image-drop-input` can add a local `SUPPORT.md` if package-specific guidance becomes more useful than the shared default
 - a future tiny utility repo can rely on the shared defaults with fewer local files
 
 ### Quality bar
@@ -193,11 +193,10 @@ These files are good extraction candidates from `image-drop-input`:
 - `.github/PULL_REQUEST_TEMPLATE/release.md`
 - `RELEASING.md`
 - `scripts/prepare-release.mjs`
-- `CHANGELOG.md`
 
 These should remain local to `image-drop-input`:
 
-- issue forms under `.github/ISSUE_TEMPLATE/`
+- issue forms under `.github/ISSUE_TEMPLATE/`, if package-specific forms are added later
 - package README product copy
 - package-specific examples
 - release notes that speak in this package's voice

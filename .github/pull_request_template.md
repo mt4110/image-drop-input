@@ -16,7 +16,7 @@
 ## Checks
 
 - [ ] docs are updated when public behavior changes
-- [ ] `CHANGELOG.md` is updated when the release notes should mention this
+- [ ] release-facing notes are included when the change should be mentioned later
 - [ ] `npm run verify`
 - [ ] demo still looks right in the consumer you care about
 

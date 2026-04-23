@@ -86,7 +86,8 @@ export async function compressImage(source: Blob, options: CompressImageOptions 
     const scale = Math.min(1, maxWidth / decodedImage.width, maxHeight / decodedImage.height);
     const width = Math.max(1, Math.round(decodedImage.width * scale));
     const height = Math.max(1, Math.round(decodedImage.height * scale));
-    const outputType = pickOutputType(source.type, options.outputType ?? 'auto');
+    const requestedOutputType = options.outputType ?? 'auto';
+    const outputType = pickOutputType(source.type, requestedOutputType);
     const quality = outputType === 'image/png' ? undefined : options.quality ?? 0.86;
 
     if (scale === 1 && outputType === source.type && typeof options.quality !== 'number') {
@@ -96,7 +97,13 @@ export async function compressImage(source: Blob, options: CompressImageOptions 
     const { context, toBlob } = createCanvas(width, height);
 
     context.drawImage(decodedImage.drawSource, 0, 0, width, height);
-    return await toBlob(outputType, quality);
+    const blob = await toBlob(outputType, quality);
+
+    if (requestedOutputType !== 'auto' && blob.type !== outputType) {
+      throw new Error(`Unable to encode ${outputType} in this environment.`);
+    }
+
+    return blob;
   } finally {
     decodedImage.cleanup();
   }

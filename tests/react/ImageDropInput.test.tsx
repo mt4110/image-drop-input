@@ -124,6 +124,88 @@ describe('ImageDropInput', () => {
     );
   });
 
+  it('guarantees external upload progress reaches 100 on success', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onChange = vi.fn();
+    const onProgress = vi.fn();
+    const upload = vi.fn(async (_file: Blob, context: { onProgress?: (percent: number) => void }) => {
+      context.onProgress?.(45);
+
+      return {
+        src: 'https://cdn.example.com/avatar.png'
+      };
+    });
+
+    render(<ImageDropInput upload={upload} onChange={onChange} onProgress={onProgress} />);
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['hello'], 'avatar.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          src: 'https://cdn.example.com/avatar.png'
+        })
+      );
+    });
+
+    expect(onProgress.mock.calls.map(([percent]) => percent)).toEqual([45, 100]);
+  });
+
+  it('does not duplicate the final external progress event when the adapter already reported 100', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onProgress = vi.fn();
+    const upload = vi.fn(async (_file: Blob, context: { onProgress?: (percent: number) => void }) => {
+      context.onProgress?.(45);
+      context.onProgress?.(100);
+
+      return {
+        src: 'https://cdn.example.com/avatar.png'
+      };
+    });
+
+    render(<ImageDropInput upload={upload} onProgress={onProgress} />);
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['hello'], 'avatar.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(upload).toHaveBeenCalledTimes(1);
+    });
+
+    expect(onProgress.mock.calls.map(([percent]) => percent)).toEqual([45, 100]);
+  });
+
+  it('clamps adapter progress values and treats over-100 progress as final', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onProgress = vi.fn();
+    const upload = vi.fn(async (_file: Blob, context: { onProgress?: (percent: number) => void }) => {
+      context.onProgress?.(-10);
+      context.onProgress?.(101);
+
+      return {
+        src: 'https://cdn.example.com/avatar.png'
+      };
+    });
+
+    render(<ImageDropInput upload={upload} onProgress={onProgress} />);
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['hello'], 'avatar.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(upload).toHaveBeenCalledTimes(1);
+    });
+
+    expect(onProgress.mock.calls.map(([percent]) => percent)).toEqual([0, 100]);
+  });
+
   it('keeps previewSrc separate when upload finishes without a persisted src', async () => {
     const user = userEvent.setup({ document: window.document });
     const onChange = vi.fn();
@@ -350,6 +432,100 @@ describe('ImageDropInput', () => {
     });
   });
 
+  it('keeps maxBytes as a source and transformed output limit for compatibility', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onError = vi.fn();
+    const transform = vi.fn(() => new File(['ok'], 'avatar.webp', { type: 'image/webp' }));
+
+    render(<ImageDropInput maxBytes={2} transform={transform} onError={onError} />);
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['hello'], 'avatar.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toContain('Select an image smaller than 2 B.');
+    });
+
+    expect(transform).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'file_too_large',
+        details: expect.objectContaining({
+          actualBytes: 5,
+          maxBytes: 2
+        })
+      })
+    );
+  });
+
+  it('allows outputMaxBytes to limit the transformed file without rejecting a larger source', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onChange = vi.fn();
+    const transformedFile = new File(['ok'], 'avatar.webp', { type: 'image/webp' });
+    const transform = vi.fn(() => transformedFile);
+
+    render(
+      <ImageDropInput
+        outputMaxBytes={3}
+        transform={transform}
+        onChange={onChange}
+      />
+    );
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['large source'], 'avatar.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(transform).toHaveBeenCalledTimes(1);
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fileName: 'avatar.webp',
+          size: transformedFile.size
+        })
+      );
+    });
+  });
+
+  it('rejects transformed files that exceed outputMaxBytes', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onChange = vi.fn();
+    const onError = vi.fn();
+    const transform = vi.fn(() => new File(['still too large'], 'avatar.webp', { type: 'image/webp' }));
+
+    render(
+      <ImageDropInput
+        inputMaxBytes={20}
+        outputMaxBytes={2}
+        transform={transform}
+        onChange={onChange}
+        onError={onError}
+      />
+    );
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['source'], 'avatar.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'file_too_large',
+          details: expect.objectContaining({
+            maxBytes: 2
+          })
+        })
+      );
+    });
+
+    expect(transform).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('does not let disabled action buttons mutate state', async () => {
     const user = userEvent.setup({ document: window.document });
     const onChange = vi.fn();
@@ -456,7 +632,7 @@ describe('ImageDropInput', () => {
     expect(dropzone.style.minHeight).toBe('22rem');
   });
 
-  it('treats the filled dropzone as a group and reopens the picker through a replace button', async () => {
+  it('keeps the filled dropzone grouped around explicit action buttons', async () => {
     const user = userEvent.setup({ document: window.document });
     const inputClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click');
 
@@ -472,12 +648,138 @@ describe('ImageDropInput', () => {
     const dropzone = screen.getByRole('group', { name: 'Selected image' });
 
     expect(screen.queryByRole('button', { name: 'Selected image' })).toBeNull();
+    expect(dropzone.tabIndex).toBe(0);
+    expect(dropzone.getAttribute('aria-keyshortcuts')).toBe('Enter Space Delete Backspace');
 
     await user.click(dropzone);
     expect(inputClickSpy).not.toHaveBeenCalled();
 
-    await user.click(screen.getByLabelText('Replace image'));
+    dropzone.focus();
+    await user.keyboard('{Enter}');
     expect(inputClickSpy).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByLabelText('Replace image'));
+    expect(inputClickSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not activate replacement from the filled dropzone while upload is active', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const inputClickSpy = vi.spyOn(HTMLInputElement.prototype, 'click');
+    const upload = vi.fn(
+      (_file: Blob, context: { signal?: AbortSignal }) =>
+        new Promise<never>((_resolve, reject) => {
+          context.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Upload aborted.', 'AbortError'));
+          });
+        })
+    );
+
+    render(
+      <ImageDropInput
+        value={{
+          src: 'https://cdn.example.com/avatar.png',
+          fileName: 'avatar.png'
+        }}
+        upload={upload}
+      />
+    );
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['replacement'], 'replacement.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(upload).toHaveBeenCalledTimes(1);
+    });
+
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
+    const nextFile = new File(['next'], 'next.png', { type: 'image/png' });
+
+    expect(screen.queryByRole('button', { name: 'Selected image' })).toBeNull();
+    expect(dropzone.getAttribute('aria-keyshortcuts')).toBe('Delete Backspace');
+
+    inputClickSpy.mockClear();
+
+    await user.click(dropzone);
+    dropzone.focus();
+    await user.keyboard('{Enter}');
+    await user.keyboard(' ');
+    fireEvent.paste(dropzone, { clipboardData: createTransfer(nextFile) });
+    fireEvent.drop(dropzone, { dataTransfer: createTransfer(nextFile) });
+
+    expect(inputClickSpy).not.toHaveBeenCalled();
+    expect(upload).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes the selected image from the focused filled dropzone with Delete or Backspace', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onChange = vi.fn();
+
+    render(
+      <ImageDropInput
+        value={{
+          src: 'https://cdn.example.com/avatar.png',
+          fileName: 'avatar.png'
+        }}
+        onChange={onChange}
+      />
+    );
+
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
+
+    dropzone.focus();
+    await user.keyboard('{Delete}');
+
+    expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it('cancels an in-flight keyboard replacement without clearing the committed image', async () => {
+    const user = userEvent.setup({ document: window.document });
+    const onChange = vi.fn();
+    const upload = vi.fn(
+      (_file: Blob, context: { signal?: AbortSignal }) =>
+        new Promise<never>((_resolve, reject) => {
+          context.signal?.addEventListener('abort', () => {
+            reject(new DOMException('Upload aborted.', 'AbortError'));
+          });
+        })
+    );
+
+    render(
+      <ImageDropInput
+        value={{
+          src: 'https://cdn.example.com/avatar.png',
+          fileName: 'avatar.png'
+        }}
+        onChange={onChange}
+        upload={upload}
+      />
+    );
+
+    await user.upload(
+      screen.getByLabelText('Choose image file'),
+      new File(['replacement'], 'replacement.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected image preview').getAttribute('src')).toBe(
+        'blob:preview-url'
+      );
+    });
+
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
+
+    dropzone.focus();
+    await user.keyboard('{Delete}');
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected image preview').getAttribute('src')).toBe(
+        'https://cdn.example.com/avatar.png'
+      );
+    });
+
+    expect(onChange).not.toHaveBeenCalledWith(null);
   });
 
   it('does not enter drag state or accept drops while disabled', async () => {
@@ -522,6 +824,35 @@ describe('ImageDropInput', () => {
     const nextValue = onChange.mock.lastCall?.[0] as { previewSrc?: string; src?: string } | undefined;
 
     expect(nextValue?.src).toBeUndefined();
+  });
+
+  it('replaces the selected image when an image is pasted into the focused filled dropzone', async () => {
+    const onChange = vi.fn();
+
+    render(
+      <ImageDropInput
+        value={{
+          src: 'https://cdn.example.com/avatar.png',
+          fileName: 'avatar.png'
+        }}
+        onChange={onChange}
+      />
+    );
+
+    const dropzone = screen.getByRole('group', { name: 'Selected image' });
+    const file = new File(['hello'], 'pasted.png', { type: 'image/png' });
+
+    dropzone.focus();
+    fireEvent.paste(dropzone, { clipboardData: createTransfer(file) });
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          previewSrc: 'blob:preview-url',
+          fileName: 'pasted.png'
+        })
+      );
+    });
   });
 
   it('keeps local-only selections in previewSrc so src stays reserved for persisted references', async () => {

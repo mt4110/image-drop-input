@@ -18,6 +18,14 @@ function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error('Something went wrong while processing the image.');
 }
 
+function clampProgressPercent(percent: number): number {
+  if (!Number.isFinite(percent)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, percent));
+}
+
 function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError';
 }
@@ -135,7 +143,9 @@ export interface UseImageDropInputOptions {
   upload?: UploadAdapter;
   transform?: (file: File) => Promise<ImageTransformResult> | ImageTransformResult;
   accept?: string;
+  inputMaxBytes?: number;
   maxBytes?: number;
+  outputMaxBytes?: number;
   minWidth?: number;
   minHeight?: number;
   maxWidth?: number;
@@ -178,7 +188,9 @@ export function useImageDropInput({
   accept,
   disabled,
   messages,
+  inputMaxBytes,
   maxBytes,
+  outputMaxBytes,
   maxHeight,
   maxPixels,
   maxWidth,
@@ -366,6 +378,7 @@ export function useImageDropInput({
 
         const abortController = new AbortController();
         abortControllerRef.current = abortController;
+        let lastProgressPercent = 0;
 
         const result = await upload(preparedUpload.file, {
           signal: abortController.signal,
@@ -377,8 +390,11 @@ export function useImageDropInput({
               return;
             }
 
-            setProgress(percent);
-            onProgress?.(percent);
+            const nextPercent = clampProgressPercent(percent);
+
+            lastProgressPercent = nextPercent;
+            setProgress(nextPercent);
+            onProgress?.(nextPercent);
           }
         });
 
@@ -389,6 +405,9 @@ export function useImageDropInput({
         abortControllerRef.current = null;
         setIsUploading(false);
         setProgress(100);
+        if (lastProgressPercent < 100) {
+          onProgress?.(100);
+        }
         clearRetryableUpload();
 
         const nextValue: ImageUploadValue = {
@@ -453,7 +472,7 @@ export function useImageDropInput({
       try {
         await validateImage(file, {
           accept,
-          maxBytes,
+          maxBytes: inputMaxBytes ?? maxBytes,
           maxHeight,
           maxPixels,
           maxWidth,
@@ -471,7 +490,7 @@ export function useImageDropInput({
         const metadata =
           (await validateImage(transformedFile, {
             accept,
-            maxBytes,
+            maxBytes: outputMaxBytes ?? maxBytes,
             maxHeight,
             maxPixels,
             maxWidth,
@@ -536,12 +555,14 @@ export function useImageDropInput({
       clearRetryableUpload,
       disabled,
       isCurrentRun,
+      inputMaxBytes,
       maxBytes,
       maxHeight,
       maxPixels,
       maxWidth,
       minHeight,
       minWidth,
+      outputMaxBytes,
       reportError,
       resetTransientState,
       setCommittedValue,
@@ -552,12 +573,12 @@ export function useImageDropInput({
   );
 
   const openFileDialog = useCallback(() => {
-    if (disabled) {
+    if (disabled || isUploading) {
       return;
     }
 
     inputRef.current?.click();
-  }, [disabled]);
+  }, [disabled, isUploading]);
 
   const handleInputChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -575,7 +596,7 @@ export function useImageDropInput({
     (event: DragEvent<HTMLElement>) => {
       event.preventDefault();
 
-      if (disabled) {
+      if (disabled || isUploading) {
         event.dataTransfer.dropEffect = 'none';
         setIsDragging(false);
         return;
@@ -584,7 +605,7 @@ export function useImageDropInput({
       event.dataTransfer.dropEffect = 'copy';
       setIsDragging(true);
     },
-    [disabled]
+    [disabled, isUploading]
   );
 
   const handleDragLeave = useCallback((event: DragEvent<HTMLElement>) => {
@@ -598,7 +619,7 @@ export function useImageDropInput({
       event.preventDefault();
       setIsDragging(false);
 
-      if (disabled) {
+      if (disabled || isUploading) {
         return;
       }
 
@@ -608,12 +629,12 @@ export function useImageDropInput({
         await handleFile(nextFile);
       }
     },
-    [accept, disabled, handleFile]
+    [accept, disabled, handleFile, isUploading]
   );
 
   const handlePaste = useCallback(
     async (event: ClipboardEvent<HTMLElement>) => {
-      if (disabled) {
+      if (disabled || isUploading) {
         return;
       }
 
@@ -624,7 +645,7 @@ export function useImageDropInput({
         await handleFile(nextFile);
       }
     },
-    [accept, disabled, handleFile]
+    [accept, disabled, handleFile, isUploading]
   );
 
   const handleKeyDown = useCallback(
@@ -635,16 +656,23 @@ export function useImageDropInput({
 
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        openFileDialog();
+        if (!isUploading) {
+          openFileDialog();
+        }
         return;
       }
 
       if ((event.key === 'Backspace' || event.key === 'Delete') && removable && displayValue) {
         event.preventDefault();
+        if (isUploading) {
+          cancelUpload();
+          return;
+        }
+
         removeValue();
       }
     },
-    [disabled, displayValue, openFileDialog, removable, removeValue]
+    [cancelUpload, disabled, displayValue, isUploading, openFileDialog, removable, removeValue]
   );
 
   const statusMessage = useMemo(() => {

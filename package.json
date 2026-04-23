@@ -1,7 +1,7 @@
 {
   "name": "image-drop-input",
   "version": "0.1.1",
-  "description": "React image input for pre-upload preview, validation, compression, paste, and signed uploads.",
+  "description": "Product-safe React image input for preview, validation, compression, paste, and signed uploads.",
   "license": "MIT",
   "type": "module",
   "homepage": "https://mt4110.github.io/image-drop-input/",
@@ -46,7 +46,7 @@
     "dist",
     "README.md",
     "README.ja.md",
-    "ROADMAP.md"
+    "docs"
   ],
   "keywords": [
     "react",
@@ -59,10 +59,14 @@
     "drag-and-drop",
     "clipboard-paste",
     "presigned-url",
+    "object-storage",
     "s3",
     "r2",
     "webp",
     "avatar-upload",
+    "avatar",
+    "cms",
+    "form-input",
     "uploader"
   ],
   "sideEffects": [
@@ -73,7 +77,7 @@
   },
   "packageManager": "npm@11.10.1",
   "engines": {
-    "node": ">=22.18.0"
+    "node": ">=20"
   },
   "workspaces": [
     "examples/*"

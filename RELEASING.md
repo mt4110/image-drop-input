@@ -31,7 +31,8 @@ Use these sources for context:
    npm run release:pr:check
    ```
 
-3. Update `CHANGELOG.md` with the release-facing notes.
+3. Add release-facing notes to the release PR body.
+   If this repository later adds a `CHANGELOG.md`, update it in the same PR.
 
 4. Open a pull request with the `Release` template.
    Use a short release branch and a neutral title such as `release/0.2.0` and `release: 0.2.0`.

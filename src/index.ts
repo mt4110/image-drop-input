@@ -11,8 +11,11 @@ export type {
 export type {
   AspectRatioValue,
   ImageTransformResult,
-  ImageUploadValue
+  ImageUploadValue,
+  ImageValidationErrorCode,
+  ImageValidationErrorDetails
 } from './core/types';
+export { ImageValidationError, isImageValidationError } from './core/validate-image';
 export type {
   UploadAdapter,
   UploadContext,
