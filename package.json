@@ -1,6 +1,6 @@
 {
   "name": "image-drop-input",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Product-safe React image input for preview, validation, compression, paste, and signed uploads.",
   "license": "MIT",
   "type": "module",
