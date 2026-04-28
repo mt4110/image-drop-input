@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "image-drop-input": "file:../../.artifacts/image-drop-input.tgz",
+    "react": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.79",
+    "typescript": "5.6.3"
+  }
+}
