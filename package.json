@@ -77,7 +77,7 @@
   },
   "packageManager": "npm@11.10.1",
   "engines": {
-    "node": ">=20"
+    "node": ">=18.18.0"
   },
   "workspaces": [
     "examples/*"
@@ -93,6 +93,10 @@
     "prepublishOnly": "npm run check:package",
     "release:prepare": "node scripts/prepare-release.mjs",
     "verify": "npm run typecheck && npm test && npm run build:examples && npm run check:package",
+    "pack:consumer-smoke": "npm run build:lib && node scripts/prepare-consumer-smoke-artifact.mjs",
+    "smoke:consumer:root-types": "npm install --prefix consumer-fixtures/root-types --no-package-lock && npm run typecheck --prefix consumer-fixtures/root-types",
+    "smoke:consumer:headless-cjs": "npm install --prefix consumer-fixtures/headless-cjs --no-package-lock && npm run smoke --prefix consumer-fixtures/headless-cjs",
+    "smoke:consumer": "npm run pack:consumer-smoke && npm run smoke:consumer:root-types && npm run smoke:consumer:headless-cjs",
     "publish:check": "npm pack --dry-run",
     "release:pr:check": "npm run verify && npm run publish:check",
     "typecheck:examples": "npm run typecheck --workspace examples/vite && npm run typecheck --workspace examples/rsbuild",

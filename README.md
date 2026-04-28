@@ -42,6 +42,17 @@ Import the default CSS once:
 import 'image-drop-input/style.css';
 ```
 
+## Runtime support
+
+The package separates the repo toolchain from the install floor for apps that consume the published tarball.
+
+| Layer | Policy |
+| --- | --- |
+| Maintainer toolchain | Node 22.x with the npm version pinned by `packageManager`. This is for contributors running the full repo, examples, and release checks. |
+| Published package consumers | Node `>=18.18.0` for package install, type resolution, and CJS/ESM subpath loading. React is a peer dependency. |
+
+The library is built to ES2020 and keeps cloud SDKs out of the bundle. CI verifies the packed package in Node 18.18.x, 20.x, and 22.x without running the root repo install in those consumer jobs.
+
 ## 30-second quick start
 
 Use it as a local-preview-only image input:
@@ -297,6 +308,8 @@ Use another tool if you need:
 This package is intentionally single-image first.
 
 ## Development
+
+Development uses the maintainer toolchain above, which is intentionally stricter than the consumer install floor.
 
 ```bash
 npm ci

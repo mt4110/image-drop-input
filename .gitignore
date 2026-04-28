@@ -6,6 +6,7 @@ dist/
 coverage/
 .nyc_output/
 .storybook-static/
+.artifacts/
 *.tgz
 
 # examples build cache
@@ -43,3 +44,7 @@ pnpm-debug.log*
 # os
 .DS_Store
 Thumbs.db
+
+# private
+.private_docs
+.private_docs/*

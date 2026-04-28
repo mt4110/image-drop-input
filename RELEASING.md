@@ -43,10 +43,23 @@ Use these sources for context:
    - first with `publish` turned off for a rehearsal
    - then with `publish` turned on for the real publish
 
+## Runtime support checks
+
+The repo maintainer toolchain is Node 22.x with the npm version pinned by `packageManager`.
+The published package consumer floor is Node `>=18.18.0`.
+
+Before publishing, keep both lanes green:
+
+- maintainer verification: `npm run release:pr:check`
+- packed consumer smoke: `npm run smoke:consumer`
+
+Do not change `engines.node` unless the packed tarball smoke fixtures support the new value.
+
 ## Commands
 
 ```bash
 npm run release:prepare -- patch
 npm run release:pr:check
+npm run smoke:consumer
 npm run publish:check
 ```

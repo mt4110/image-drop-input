@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "smoke": "node index.cjs"
+  },
+  "dependencies": {
+    "image-drop-input": "file:../../.artifacts/image-drop-input.tgz",
+    "react": "18.2.0"
+  }
+}
