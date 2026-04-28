@@ -43,3 +43,7 @@ pnpm-debug.log*
 # os
 .DS_Store
 Thumbs.db
+
+# private
+.private_docs
+.private_docs/*
