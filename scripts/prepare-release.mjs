@@ -24,3 +24,4 @@ console.log('Next steps:');
 console.log('  1. Review package.json, package-lock.json, and CHANGELOG.md.');
 console.log('  2. Run: npm run release:pr:check');
 console.log(`  3. Open a release PR with the Release template and a neutral title like \`release: ${nextVersion}\`.`);
+console.log('  4. Follow RELEASING.md for the trusted publish rehearsal, publish run, and npm page check.');
