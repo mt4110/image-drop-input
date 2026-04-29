@@ -3,6 +3,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const npmPackArgs = ['pack', '--json', '--dry-run', '--workspaces=false'];
+const npmWorkspaceConfigKeys = new Set([
+  'npm_config_include_workspace_root',
+  'npm_config_workspace',
+  'npm_config_workspaces'
+]);
 const packageJsonPath = resolve(process.cwd(), 'package.json');
 const readmePath = resolve(process.cwd(), 'README.md');
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
@@ -56,6 +62,18 @@ const failures = [];
 
 function fail(message) {
   failures.push(message);
+}
+
+function getRootPackEnv() {
+  const env = { ...process.env };
+
+  for (const key of Object.keys(env)) {
+    if (npmWorkspaceConfigKeys.has(key.toLowerCase())) {
+      delete env[key];
+    }
+  }
+
+  return env;
 }
 
 function parsePackOutput(output) {
@@ -203,8 +221,9 @@ function verifyFiles(files) {
 let packOutput = '';
 
 try {
-  packOutput = execFileSync(npmExecutable, ['pack', '--json', '--dry-run'], {
-    encoding: 'utf8'
+  packOutput = execFileSync(npmExecutable, npmPackArgs, {
+    encoding: 'utf8',
+    env: getRootPackEnv()
   });
 } catch (error) {
   process.stdout.write(error.stdout ?? '');
