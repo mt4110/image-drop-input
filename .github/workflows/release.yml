@@ -12,14 +12,14 @@ on:
         default: false
         type: boolean
 
+env:
+  NODE_VERSION: 22.14.0
+
 jobs:
-  publish:
+  verify:
     runs-on: ubuntu-latest
-    env:
-      NODE_VERSION: 22
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +43,33 @@ jobs:
       - run: npm test
       - run: npm run build:examples
       - run: npm run check:package
-      - run: npm publish --access public
-        if: ${{ github.event_name == 'release' || inputs.publish == true || inputs.publish == 'true' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish:
+    needs: verify
+    if: ${{ github.event_name == 'release' || github.event.inputs.publish == 'true' }}
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Resolve npm version from packageManager
+        run: |
+          NPM_VERSION="$(node -p 'require("./package.json").packageManager.split("@")[1]')"
+          echo "NPM_VERSION=${NPM_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Install pinned npm
+        run: npm install --global "npm@${NPM_VERSION}"
+
+      - run: npm --version
+      - run: npm ci
+      - name: Publish to npm
+        run: npm publish --access public
