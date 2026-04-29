@@ -68,6 +68,9 @@ Use these sources for context:
    npm run release:pr:check
    ```
 
+   This includes the packed package face check: `npm pack --json --dry-run`, README inclusion,
+   package metadata links, and deny-list validation for files that must stay out of the published tarball.
+
 3. Add release-facing notes to the release PR body.
    Update `CHANGELOG.md` in the same PR.
 
@@ -82,7 +85,13 @@ Use these sources for context:
 
 6. After publishing, check the npm package page:
 
-   - the expected version is live
+   - the expected version matches `package.json` on `main`
+   - the README shown by npm starts with the English canonical face from `README.md`
+   - the install snippet is `npm install image-drop-input react`
+   - the homepage link opens the GitHub Pages demo
+   - the repository link opens `mt4110/image-drop-input`
+   - the bugs link opens the GitHub issue tracker
+   - the docs link from the README opens successfully
    - provenance is visible for the published version
    - the provenance details point back to the expected GitHub workflow run
 

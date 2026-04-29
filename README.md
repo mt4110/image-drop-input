@@ -318,7 +318,7 @@ npm test
 npm run build:lib
 npm run build:examples
 npm run check:package
-npm pack --dry-run
+npm run publish:check
 ```
 
 Release planning stays outside the npm package, so this README can stay focused on what works today.
