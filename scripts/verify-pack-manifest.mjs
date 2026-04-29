@@ -20,7 +20,7 @@ const expectedMetadata = [
 const requiredFiles = ['LICENSE', 'README.md', 'README.ja.md', 'package.json'];
 const requiredPrefixes = ['dist/', 'docs/'];
 const allowedFiles = new Set(requiredFiles);
-const allowedPrefixes = ['dist/', 'docs/'];
+const allowedPrefixes = requiredPrefixes;
 const deniedFiles = new Set([
   'OSS_FOUNDATION_PLAN.md',
   'README_en.md',
@@ -194,9 +194,7 @@ function verifyFiles(files) {
   for (const file of files) {
     if (isDeniedPackPath(file)) {
       fail(`Packed package must not include ${file}.`);
-    }
-
-    if (!isAllowedPackPath(file)) {
+    } else if (!isAllowedPackPath(file)) {
       fail(`Packed package includes unexpected file: ${file}.`);
     }
   }
