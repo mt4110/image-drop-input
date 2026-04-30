@@ -1,0 +1,96 @@
+name: Usage report
+description: Share real-world usage signals for product prioritization.
+title: "usage: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing how image-drop-input is being used. These reports help prioritize docs, compatibility, and release polish. They are product signals, not a showcase requirement.
+  - type: dropdown
+    id: use-case
+    attributes:
+      label: Use case
+      options:
+        - Avatar
+        - CMS cover
+        - Thumbnail
+        - Admin form
+        - Product image
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: framework-bundler
+    attributes:
+      label: Framework or bundler
+      placeholder: "Next.js, Vite, Rsbuild, Remix, plain React..."
+    validations:
+      required: true
+  - type: dropdown
+    id: integration-mode
+    attributes:
+      label: Integration mode
+      options:
+        - Local preview only
+        - Upload after prepare
+        - Both local preview and upload
+        - Evaluating
+    validations:
+      required: true
+  - type: dropdown
+    id: upload-pattern
+    attributes:
+      label: Upload pattern
+      options:
+        - Local preview only
+        - Presigned PUT
+        - Multipart POST
+        - Raw PUT
+        - Custom adapter
+        - Not sure yet
+    validations:
+      required: true
+  - type: textarea
+    id: what-worked
+    attributes:
+      label: What worked well?
+      description: Short notes are fine. Focus on concrete integration details.
+    validations:
+      required: false
+  - type: textarea
+    id: pain-points
+    attributes:
+      label: Pain points, missing docs, or adoption blockers
+      description: What slowed adoption, caused uncertainty, or needed extra local code? Leave this blank if nothing blocked you.
+    validations:
+      required: false
+  - type: input
+    id: project-name
+    attributes:
+      label: Company or project name
+      description: Optional. Leave blank if the project should stay private.
+    validations:
+      required: false
+  - type: input
+    id: website-url
+    attributes:
+      label: Website URL
+      description: Optional. Share only if it is public and appropriate.
+      placeholder: "https://example.com"
+    validations:
+      required: false
+  - type: checkboxes
+    id: public-quotation
+    attributes:
+      label: Public quotation permission
+      description: GitHub issues are public. This controls whether maintainers may quote the report elsewhere.
+      options:
+        - label: Maintainers may quote this report publicly, using only the company/project name and URL I provided above.
+          required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Anything else that would help prioritize docs, compatibility, or release polish.
+    validations:
+      required: false

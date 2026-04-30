@@ -10,7 +10,7 @@ Preview, validate, compress, and upload a single image safely before your form e
 
 **Built for:** avatars, CMS thumbnails, article covers, product images, and admin forms.
 
-[Demo](https://mt4110.github.io/image-drop-input/) · [Docs](./docs/README.md) · [Recipes](#recipes) · [Japanese README](./README.ja.md) · [Issues](https://github.com/mt4110/image-drop-input/issues)
+[Demo](https://mt4110.github.io/image-drop-input/) · [Docs](./docs/README.md) · [Recipes](#recipes) · [Usage reports](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) · [Japanese README](./README.ja.md) · [Issues](https://github.com/mt4110/image-drop-input/issues)
 
 ![image-drop-input demo showing preview, prepared metadata, and upload state](./docs/assets/demo-light.png)
 
@@ -313,6 +313,12 @@ import {
 ```
 
 The root entry stays UI-first. Low-level utilities live under `/headless`.
+
+## Usage reports welcome
+
+Using this package in a real product? Open a [usage report](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) so docs, compatibility, and release polish can be prioritized from real integrations.
+
+Useful reports include the use case, framework or bundler, upload pattern, and anything that slowed adoption. Public quotation is opt-in.
 
 ## When not to use this
 

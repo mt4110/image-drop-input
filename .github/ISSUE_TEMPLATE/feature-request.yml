@@ -1,0 +1,80 @@
+name: Feature request
+description: Request an improvement tied to a real image input workflow.
+title: "feature: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Please describe the product workflow first; that makes it easier to keep the API small and predictable.
+  - type: dropdown
+    id: use-case
+    attributes:
+      label: Use case
+      options:
+        - Avatar
+        - CMS cover
+        - Thumbnail
+        - Admin form
+        - Product image
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: framework-bundler
+    attributes:
+      label: Framework or bundler
+      placeholder: "Next.js, Vite, Rsbuild, Remix, plain React..."
+    validations:
+      required: false
+  - type: dropdown
+    id: upload-pattern
+    attributes:
+      label: Upload pattern
+      options:
+        - Local preview only
+        - Presigned PUT
+        - Multipart POST
+        - Raw PUT
+        - Custom adapter
+        - Not sure yet
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard, missing, or too easy to get wrong today?
+    validations:
+      required: true
+  - type: textarea
+    id: requested-behavior
+    attributes:
+      label: Requested behavior
+      description: Describe the smallest change that would help.
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Current workaround
+      description: If you have one, share the code shape or docs you are leaning on now.
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include libraries, local helpers, or API shapes you tried.
+    validations:
+      required: false
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This request is for a single-image input workflow.
+          required: true
+        - label: This request does not require adding a cloud SDK to the runtime bundle.
+          required: true
