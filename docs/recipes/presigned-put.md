@@ -16,7 +16,7 @@ const upload = createPresignedPutUploader({
       body: JSON.stringify({
         fileName: context.fileName,
         originalFileName: context.originalFileName,
-        mimeType: context.mimeType,
+        mimeType: context.mimeType ?? file.type,
         size: file.size
       })
     });
@@ -48,3 +48,5 @@ type PresignedPutTarget = {
 The package does not infer public URLs.
 
 Return `publicUrl` when the image can be rendered after upload. Return `objectKey` when your application resolves the final URL later.
+
+If your backend signs `Content-Type` or custom storage headers, return those same headers from the presign endpoint. The uploader sends exactly the `headers` it receives.

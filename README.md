@@ -30,6 +30,17 @@ A product image field usually needs more:
 
 `image-drop-input` is a small React image input for that pre-upload flow.
 
+## Native input vs image-drop-input
+
+| Need | Native `<input type="file">` | `image-drop-input` |
+| --- | --- | --- |
+| Local preview | Manual object URL handling | Built-in `previewSrc` pattern |
+| Validation before and after compression | Manual | Built-in |
+| `src` vs `previewSrc` separation | Manual convention | Explicit value model |
+| Signed upload wiring | Manual | Upload adapter contract |
+| Paste support | Manual | Included |
+| Keyboard and dialog behavior | Browser default only | Included in the default surface |
+
 ## Install
 
 ```bash
@@ -41,6 +52,12 @@ Import the default CSS once:
 ```tsx
 import 'image-drop-input/style.css';
 ```
+
+## Browser/client boundary
+
+`ImageDropInput` is a browser component. In Next.js App Router, render it from a Client Component with `'use client'`; keep server work in routes, server actions, or loaders.
+
+The built-in transform helpers use browser image decoding and canvas encoding. Run presign, auth, persistence, and storage policy on the server, but keep `transform` and `previewSrc` handling in the browser. Persist `src`, `key`, and metadata after upload; do not save `previewSrc`.
 
 ## Runtime support
 
@@ -179,7 +196,7 @@ const upload = createPresignedPutUploader({
       body: JSON.stringify({
         fileName: context.fileName,
         originalFileName: context.originalFileName,
-        mimeType: context.mimeType,
+        mimeType: context.mimeType ?? file.type,
         size: file.size
       })
     });
@@ -243,6 +260,9 @@ Read more in [docs/transforms.md](./docs/transforms.md).
 - [Compression](./docs/recipes/compression.md)
 - [WebP transform](./docs/recipes/webp.md)
 - [Presigned PUT](./docs/recipes/presigned-put.md)
+- [Next.js App Router](./docs/recipes/nextjs-app-router.md)
+- [Next.js presign route](./docs/recipes/nextjs-presign-route.md)
+- [React Hook Form and Zod](./docs/recipes/react-hook-form-zod.md)
 - [Multipart POST](./docs/recipes/multipart-post.md)
 - [Raw PUT](./docs/recipes/raw-put.md)
 - [Headless UI](./docs/recipes/headless-ui.md)

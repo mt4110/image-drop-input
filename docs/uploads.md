@@ -51,7 +51,7 @@ const upload = createPresignedPutUploader({
       body: JSON.stringify({
         fileName: context.fileName,
         originalFileName: context.originalFileName,
-        mimeType: context.mimeType,
+        mimeType: context.mimeType ?? file.type,
         size: file.size
       })
     });
@@ -77,6 +77,12 @@ type PresignedPutTarget = {
 ```
 
 Return `publicUrl` when the uploaded image can be rendered immediately. Return `objectKey` when your app resolves the image later.
+
+### Header matching
+
+Presigned URLs are sensitive to the exact request shape. If your server signs `Content-Type`, custom metadata, or provider headers such as `x-amz-*`, return those same headers in `headers`.
+
+The built-in presigned uploader sends the prepared file with exactly the `headers` returned by `getTarget`. A common mismatch is signing `Content-Type: image/jpeg` before a WebP transform, then uploading a prepared `image/webp` file. Use `context.mimeType ?? file.type` when creating the presign request, and sign the same value you return in `headers`.
 
 ## Multipart POST
 
