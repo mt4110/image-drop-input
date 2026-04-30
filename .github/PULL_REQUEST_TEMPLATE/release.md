@@ -21,17 +21,32 @@
 - [ ] packed package contains the English canonical `README.md`, docs, license, dist files, and no local-only files
 - [ ] demo still looks right in the consumer you care about
 
-## Publish Plan
+## Publish Readiness
 
 - [ ] npm Trusted Publisher is configured for `mt4110/image-drop-input`, workflow filename `release.yml`, and environment `npm-publish`
+- [ ] the release workflow uses OIDC for publish and does not depend on `NPM_TOKEN` or `NODE_AUTH_TOKEN`
+
+## Publish Plan
+
 - [ ] merge to `main`
-- [ ] run the `Release` workflow from `main`
-- [ ] leave `publish` off for rehearsal, then rerun with `publish` on
+- [ ] run the `Release` workflow from `main` with `publish` off and confirm the rehearsal passed
+- [ ] rerun the `Release` workflow from `main` with `publish` on
 - [ ] confirm the publish job used the `npm-publish` environment
-- [ ] confirm the npm package page version, README face, homepage, repository, bugs, docs link, and install snippet
-- [ ] confirm npm provenance is visible for the published version
-- [ ] after the first trusted publish, revoke the old npm automation token
-- [ ] after the first trusted publish, enable npm publishing access that requires 2FA and disallows tokens
+
+## Post-publish Checks
+
+- [ ] npm package page version matches `package.json` on `main`
+- [ ] npm package page README starts with the English canonical `README.md`
+- [ ] npm install snippet is `npm install image-drop-input react`
+- [ ] npm homepage link opens the GitHub Pages demo
+- [ ] npm repository link opens `mt4110/image-drop-input`
+- [ ] npm bugs link opens the GitHub issue tracker
+- [ ] docs link from the npm README opens successfully
+- [ ] npm provenance is visible for the published version
+- [ ] npm provenance details point back to the expected GitHub workflow run
+- [ ] if this is the first trusted publish, the old npm automation token is revoked and removed from GitHub Actions secrets or environment secrets
+- [ ] if this is the first trusted publish, npm publishing access requires 2FA and disallows tokens
+- [ ] initial usage report follow-up is linked in Notes or explicitly queued
 
 ## Notes
 
