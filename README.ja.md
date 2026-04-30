@@ -38,6 +38,12 @@ default CSS を一度 import してください。
 import 'image-drop-input/style.css';
 ```
 
+## Browser / client 境界
+
+`ImageDropInput` は browser component です。Next.js App Router では `'use client'` を付けた Client Component から描画し、server 側には presign、auth、persistence、storage policy を置いてください。
+
+組み込みの transform helper は browser の画像 decode と canvas encode に依存します。`transform` と `previewSrc` の扱いは browser 側に寄せ、保存するのは upload 後の `src` / `key` / metadata にしてください。`previewSrc` は DB や API payload に保存しません。
+
 ## 最短導入
 
 `upload` を省略すると、local-preview-only の画像 input として使えます。
@@ -147,7 +153,15 @@ type ImageUploadValue = {
 
 この 2 つを分けることで、「見た目は保存済みに見えるが実際は upload できていない」という事故を避けます。
 
+`previewSrc` は一時的な UI state です。保存 payload からは外し、upload 後に得られた `src` / `key` / metadata を保存してください。
+
 upload が失敗した場合、component は最後に commit 済みの値へ戻り、Retry では同じ prepared file を再送します。
+
+## Recipes
+
+- [Next.js App Router](./docs/recipes/nextjs-app-router.md)
+- [Next.js presign route](./docs/recipes/nextjs-presign-route.md)
+- [React Hook Form and Zod](./docs/recipes/react-hook-form-zod.md)
 
 ## Upload examples
 
@@ -173,7 +187,7 @@ const upload = createPresignedPutUploader({
       body: JSON.stringify({
         fileName: context.fileName,
         originalFileName: context.originalFileName,
-        mimeType: context.mimeType,
+        mimeType: context.mimeType ?? file.type,
         size: file.size
       })
     });

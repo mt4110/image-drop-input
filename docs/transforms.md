@@ -8,6 +8,12 @@ They may return:
 Blob | File | { file: Blob | File; fileName?: string; mimeType?: string }
 ```
 
+## Browser-only boundary
+
+Transforms run from the browser image input flow. The built-in `compressImage()` helper uses browser image decoding and canvas encoding, so it is not a Node, Server Component, or route-handler image pipeline.
+
+Keep server work focused on presign, auth, persistence, and storage policy. If your product needs server-side image processing, run that as a separate upload pipeline after the browser has submitted the file.
+
 ## Basic compression
 
 ```tsx
@@ -66,3 +72,5 @@ Return `{ file, fileName, mimeType }` when format conversion should be visible i
 The prepared file is validated after transform. This is where `outputMaxBytes`, final dimensions, MIME type, and pixel budget are enforced.
 
 That means `onChange` describes the exact file that was previewed or uploaded.
+
+`previewSrc` remains temporary UI state even after transform. Persist upload results such as `src`, `key`, and metadata instead of storing a local `blob:` URL.
