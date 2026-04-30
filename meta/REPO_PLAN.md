@@ -54,11 +54,14 @@ image-drop-input/
 ├─ .nvmrc
 ├─ .cspell.json
 ├─ CONTRIBUTING.md
+├─ meta/
+│  ├─ OSS_FOUNDATION_PLAN.md
+│  ├─ README.md
+│  ├─ REPO_PLAN.md
+│  └─ ROADMAP.md
 ├─ README.md
 ├─ README.ja.md
-├─ README_en.md  # redirect to README.md
 ├─ RELEASING.md
-├─ ROADMAP.md
 ├─ LICENSE
 ├─ package.json
 ├─ package-lock.json

@@ -8,122 +8,24 @@ import type {
   AspectRatioValue,
   ImageTransformResult,
   ImageUploadValue,
-  ManagedObjectUrl,
-  TransformedImageFile
+  ManagedObjectUrl
 } from '../core/types';
-import { matchesAcceptRule, splitAcceptRules, validateImage } from '../core/validate-image';
+import { validateImage } from '../core/validate-image';
 import type { UploadAdapter } from '../upload/types';
-
-function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error('Something went wrong while processing the image.');
-}
-
-function clampProgressPercent(percent: number): number {
-  if (!Number.isFinite(percent)) {
-    return 0;
-  }
-
-  return Math.min(100, Math.max(0, percent));
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof Error && error.name === 'AbortError';
-}
-
-function extractFileName(file: Blob, fallback: string): string {
-  return 'name' in file && typeof file.name === 'string' && file.name.length > 0 ? file.name : fallback;
-}
-
-function isTransformedImageFile(value: ImageTransformResult): value is TransformedImageFile {
-  return typeof value === 'object' && value !== null && 'file' in value && value.file instanceof Blob;
-}
-
-function normalizeTransformedFile(originalFile: File, transformed: ImageTransformResult): File {
-  const normalized = isTransformedImageFile(transformed) ? transformed : { file: transformed };
-  const nextFile = normalized.file;
-
-  if (!(nextFile instanceof Blob)) {
-    throw new Error('transform must return a Blob, File, or { file, fileName?, mimeType? }.');
-  }
-
-  const fileName = normalized.fileName ?? extractFileName(nextFile, originalFile.name);
-  const mimeType =
-    normalized.mimeType || nextFile.type || originalFile.type || 'application/octet-stream';
-
-  if (nextFile instanceof File && nextFile.name === fileName && nextFile.type === mimeType) {
-    return nextFile;
-  }
-
-  return new File([nextFile], fileName, {
-    lastModified: originalFile.lastModified,
-    type: mimeType
-  });
-}
-
-function extractFiles(dataTransfer: DataTransfer | null): File[] {
-  if (!dataTransfer) {
-    return [];
-  }
-
-  const files: File[] = [];
-
-  for (const item of Array.from(dataTransfer.items)) {
-    if (item.kind === 'file') {
-      const file = item.getAsFile();
-
-      if (file) {
-        files.push(file);
-      }
-    }
-  }
-
-  return files.length > 0 ? files : Array.from(dataTransfer.files);
-}
-
-function extractFile(dataTransfer: DataTransfer | null, accept?: string): File | null {
-  const files = extractFiles(dataTransfer);
-
-  if (files.length === 0) {
-    return null;
-  }
-
-  const acceptRules = accept ? splitAcceptRules(accept) : [];
-
-  if (acceptRules.length > 0) {
-    const acceptedFile = files.find((file) =>
-      acceptRules.some((rule) => matchesAcceptRule(file, rule))
-    );
-
-    if (acceptedFile) {
-      return acceptedFile;
-    }
-
-    const imageFile = files.find((file) => file.type.startsWith('image/'));
-
-    return imageFile ?? files[0] ?? null;
-  }
-
-  const imageFile = files.find((file) => file.type.startsWith('image/'));
-
-  return imageFile ?? null;
-}
-
-function valueUsesUrl(value: ImageUploadValue | null | undefined, url: string): boolean {
-  return value?.src === url || value?.previewSrc === url;
-}
-
-interface PreparedUpload {
-  file: File;
-  originalFileName: string;
-  value: Omit<ImageUploadValue, 'key' | 'previewSrc' | 'src'>;
-}
-
-function createPreviewValue(preparedUpload: PreparedUpload, previewSrc: string): ImageUploadValue {
-  return {
-    ...preparedUpload.value,
-    previewSrc
-  };
-}
+import {
+  clampProgressPercent,
+  isAbortError,
+  toError
+} from './use-image-drop-input-internal/errors';
+import { extractFile } from './use-image-drop-input-internal/file-intake';
+import {
+  createPreviewValue,
+  getValueFingerprint,
+  valueUsesUrl,
+  valueMatchesPendingCommit,
+  type PreparedUpload
+} from './use-image-drop-input-internal/preview-value';
+import { normalizeTransformedFile } from './use-image-drop-input-internal/transform-result';
 
 export function normalizeAspectRatio(aspectRatio?: AspectRatioValue): string | number | undefined {
   if (typeof aspectRatio === 'undefined') {
@@ -216,6 +118,8 @@ export function useImageDropInput({
   const abortControllerRef = useRef<AbortController | null>(null);
   const retryableUploadRef = useRef<PreparedUpload | null>(null);
   const runIdRef = useRef(0);
+  const controlledValueFingerprintRef = useRef<string | undefined>(getValueFingerprint(value));
+  const pendingControlledCommitRef = useRef<ImageUploadValue | null | undefined>(undefined);
   const isControlled = typeof value !== 'undefined';
   const committedValue = isControlled ? value ?? null : internalValue;
   const resolvedMessages = useMemo(() => resolveImageDropInputMessages(messages), [messages]);
@@ -280,6 +184,9 @@ export function useImageDropInput({
 
       if (!isControlled) {
         setInternalValue(next);
+      } else {
+        pendingControlledCommitRef.current = next;
+        controlledValueFingerprintRef.current = getValueFingerprint(next);
       }
 
       onChange?.(next);
@@ -323,6 +230,38 @@ export function useImageDropInput({
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
   }, []);
+
+  useEffect(() => {
+    if (!isControlled) {
+      controlledValueFingerprintRef.current = undefined;
+      pendingControlledCommitRef.current = undefined;
+      return;
+    }
+
+    const nextValueFingerprint = getValueFingerprint(value);
+
+    if (controlledValueFingerprintRef.current === nextValueFingerprint) {
+      pendingControlledCommitRef.current = undefined;
+      return;
+    }
+
+    const pendingControlledCommit = pendingControlledCommitRef.current;
+    pendingControlledCommitRef.current = undefined;
+
+    if (
+      typeof pendingControlledCommit !== 'undefined' &&
+      valueMatchesPendingCommit(value, pendingControlledCommit)
+    ) {
+      controlledValueFingerprintRef.current = nextValueFingerprint;
+      return;
+    }
+
+    controlledValueFingerprintRef.current = nextValueFingerprint;
+
+    runIdRef.current += 1;
+    cancelActiveUpload();
+    resetTransientState();
+  }, [cancelActiveUpload, isControlled, resetTransientState, value]);
 
   const isCurrentRun = useCallback((runId: number) => runIdRef.current === runId, []);
 
