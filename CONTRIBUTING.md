@@ -11,13 +11,27 @@ This project is intentionally small in scope:
 
 ## Before you start
 
-- open an issue for bug reports and concrete feature requests
-- use GitHub Discussions for broad ideas or usage questions if Discussions are enabled
+- use the bug report form for reproducible defects
+- use the feature request form for concrete product workflow improvements
+- use the usage report form to share real integration signals
+- do not open a public issue for suspected security vulnerabilities
 - open an issue first for larger concrete changes
 - keep pull requests focused
 - prefer the existing API and design language over new abstraction layers
 
 Please keep issues, pull requests, and review calm, respectful, and specific.
+
+## Issues and usage reports
+
+[Bug reports](https://github.com/mt4110/image-drop-input/issues/new?template=bug-report.yml) should include package, React, framework or bundler, Node, browser, upload pattern, expected behavior, actual behavior, and a minimal reproduction when possible.
+
+[Feature requests](https://github.com/mt4110/image-drop-input/issues/new?template=feature-request.yml) should start from the product workflow: what the image field needs to do, what is hard today, and the smallest behavior change that would help.
+
+[Usage reports](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) are welcome when you are using or evaluating the package in a real product. They are product signal intake, not testimonial collection. Useful signals include use case, framework or bundler, local-preview-only versus upload integration, upload pattern, missing docs, and adoption blockers.
+
+Public quotation from a usage report is opt-in. Company name, project name, and website URL are optional.
+
+For suspected security vulnerabilities, do not open a public issue. Follow [SECURITY.md](./SECURITY.md) and share exploit details privately.
 
 ## Local setup
 

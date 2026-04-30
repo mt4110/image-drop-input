@@ -1,0 +1,108 @@
+name: Bug report
+description: Report a reproducible problem with image-drop-input.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please keep the reproduction small and include the environment where it fails.
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      description: The installed image-drop-input version.
+      placeholder: "0.2.x"
+    validations:
+      required: true
+  - type: input
+    id: react-version
+    attributes:
+      label: React version
+      placeholder: "18.3.1 or 19.0.0"
+    validations:
+      required: true
+  - type: input
+    id: framework-bundler
+    attributes:
+      label: Framework or bundler
+      description: Include the version when it matters.
+      placeholder: "Next.js 15, Vite 6, Rsbuild, Remix, plain React..."
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node version
+      placeholder: "20.18.1"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: "Safari 18, Chrome 131, Firefox 133..."
+    validations:
+      required: true
+  - type: dropdown
+    id: upload-pattern
+    attributes:
+      label: Upload pattern
+      options:
+        - Local preview only
+        - Presigned PUT
+        - Multipart POST
+        - Raw PUT
+        - Custom adapter
+        - Not sure yet
+    validations:
+      required: true
+  - type: input
+    id: reproduction
+    attributes:
+      label: Reproduction repo or sandbox
+      description: A minimal reproduction is the fastest path to a fix.
+      placeholder: "https://github.com/you/minimal-repro"
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Minimal steps to reproduce
+      description: Include the smallest component or code path that triggers the problem.
+      placeholder: |
+        1. Render ImageDropInput with ...
+        2. Drop a ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Is this a regression?
+      options:
+        - Not sure
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, storage provider details, or related constraints.
+    validations:
+      required: false
