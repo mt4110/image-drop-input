@@ -2,6 +2,17 @@
 
 Notable changes for `image-drop-input` are tracked here.
 
+## 0.3.1 - 2026-05-01
+
+### Changed
+
+- Documented typed upload error handling patterns for product copy, retry presentation, and telemetry.
+- Updated GitHub Actions workflows to official Node 24 runtime action majors.
+
+### Fixed
+
+- Hardened the release workflow so npm publish artifacts are resolved as exactly one tarball before upload and publish.
+
 ## 0.3.0 - 2026-05-01
 
 ### Added
