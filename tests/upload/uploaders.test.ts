@@ -494,6 +494,19 @@ describe('upload adapters', () => {
     expect(
       isImageUploadError({
         name: 'ImageUploadError',
+        message: 'Upload failed due to a network error.',
+        code: 'network_error',
+        details: {
+          stage: 'request',
+          method: 'POST',
+          body: { error: 'temporary_unavailable' },
+          rawBody: '{"error":"temporary_unavailable"}'
+        }
+      })
+    ).toBe(true);
+    expect(
+      isImageUploadError({
+        name: 'ImageUploadError',
         message: 'Upload failed.',
         code: 'http_error',
         details: {

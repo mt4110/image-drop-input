@@ -156,7 +156,7 @@ Successful uploads finish with `100`, even if the adapter did not emit `100` its
 
 Built-in upload helpers throw `ImageUploadError` for package-owned upload failures. The React component still reports errors through `onError(error: Error)`, so existing handlers keep working.
 
-Use `isImageUploadError()` when your product needs localized copy, retry labels, or telemetry tags without parsing English messages.
+Use `isImageUploadError()` when your product needs localized copy, retry labels, or telemetry tags without parsing English messages. Use the component or hook retry action for the actual retry; use the typed error shape to decide how that retry should be presented.
 
 ```ts
 import {
@@ -179,9 +179,42 @@ function toUserMessage(error: Error) {
 
   return 'Could not prepare this image.';
 }
+
+function shouldEmphasizeRetry(error: Error) {
+  if (!isImageUploadError(error)) {
+    return false;
+  }
+
+  if (error.code === 'network_error' || error.code === 'request_unavailable') {
+    return true;
+  }
+
+  return (
+    error.code === 'http_error' &&
+    typeof error.details.status === 'number' &&
+    (error.details.status === 408 ||
+      error.details.status === 409 ||
+      error.details.status === 425 ||
+      error.details.status === 429 ||
+      (error.details.status >= 500 && error.details.status < 600))
+  );
+}
+
+function toUploadFailureEvent(error: Error) {
+  if (!isImageUploadError(error)) {
+    return null;
+  }
+
+  return {
+    code: error.code,
+    stage: error.details.stage,
+    method: error.details.method,
+    status: error.details.status
+  };
+}
 ```
 
-Upload error details include safe fields such as stage, method, status, response body, and raw response body. They do not include signed upload URLs, request headers, authorization values, or provider credentials.
+Upload error details include fields such as stage, method, status, response body, and raw response body. They do not include signed upload URLs, request headers, authorization values, or provider credentials. Treat `body` and `rawBody` as diagnostics, not end-user copy, because they come from your upload endpoint.
 
 ## Abort signal
 

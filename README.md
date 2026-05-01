@@ -225,6 +225,47 @@ type PresignedPutTarget = {
 
 See [docs/uploads.md](./docs/uploads.md) for presigned PUT, multipart POST, raw PUT, custom adapters, progress, and abort behavior.
 
+## Upload error handling
+
+Built-in upload helpers throw `ImageUploadError` with stable `code` and `details` fields. Use `isImageUploadError()` for product copy, retry labels, and telemetry instead of parsing English messages.
+
+```tsx
+import { ImageDropInput, isImageUploadError } from 'image-drop-input';
+
+function toUploadMessage(error: Error) {
+  if (!isImageUploadError(error)) {
+    return 'Could not prepare this image.';
+  }
+
+  if (error.code === 'http_error' && error.details.status === 413) {
+    return 'This image is too large for the upload endpoint.';
+  }
+
+  if (error.code === 'network_error') {
+    return 'The network dropped the upload. Please try again.';
+  }
+
+  return 'Image upload failed. Please try again.';
+}
+
+<ImageDropInput
+  value={value}
+  onChange={setValue}
+  upload={upload}
+  onError={(error) => {
+    if (isImageUploadError(error)) {
+      reportUploadFailure({
+        code: error.code,
+        stage: error.details.stage,
+        status: error.details.status
+      });
+    }
+  }}
+/>;
+```
+
+The default UI can retry failed uploads without rerunning `transform`. Headless UIs get the same flow through `canRetryUpload` and `retryUpload()`.
+
 ## Transform recipes
 
 Use `transform` when you want to resize, compress, or convert the image before preview and upload.
@@ -285,14 +326,15 @@ Read the checklist in [docs/accessibility.md](./docs/accessibility.md).
 
 | Import | Exports |
 | --- | --- |
-| `image-drop-input` | `ImageDropInput`, UI props and render types, `ImageUploadValue`, upload types, validation error helpers |
-| `image-drop-input/headless` | `useImageDropInput`, `compressImage`, `validateImage`, metadata helpers, upload factories |
+| `image-drop-input` | `ImageDropInput`, UI props and render types, `ImageUploadValue`, upload types, validation and upload error helpers |
+| `image-drop-input/headless` | `useImageDropInput`, `compressImage`, `validateImage`, metadata helpers, upload factories, upload error helpers |
 | `image-drop-input/style.css` | default component styles |
 
 ```ts
 import {
   ImageDropInput,
   ImageValidationError,
+  isImageUploadError,
   isImageValidationError,
   type ImageDropInputProps,
   type ImageUploadValue,

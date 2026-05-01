@@ -6,7 +6,7 @@ Start with:
 
 - [Value model](./value-model.md): how `src`, `previewSrc`, `key`, and metadata fit together
 - [Validation](./validation.md): source limits, output limits, dimensions, pixels, and error codes
-- [Uploads](./uploads.md): adapter contracts, signed upload boundaries, progress, and aborts
+- [Uploads](./uploads.md): adapter contracts, signed upload boundaries, progress, typed upload errors, and aborts
 - [Transforms](./transforms.md): compression, WebP conversion, return shapes, and MIME consistency
 - [Accessibility](./accessibility.md): keyboard, paste, status, dialog, and headless responsibilities
 
