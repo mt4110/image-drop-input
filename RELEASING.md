@@ -83,7 +83,16 @@ Use these sources for context:
    - first with `publish` turned off for a rehearsal; this runs the verification job and stores the checked package tarball as a short-lived workflow artifact
    - then with `publish` turned on for the real publish; this enters the `npm-publish` environment and publishes that verified tarball with OIDC
 
-6. After publishing, check the npm package page:
+6. After publishing, complete the release follow-up checklist.
+
+   Trusted publishing confirmation:
+
+   - the npm Trusted Publisher UI shows `mt4110/image-drop-input`, workflow filename `release.yml`, and environment `npm-publish`
+   - the rehearsal workflow run from `main` passed with `publish` off
+   - the real publish run entered the `npm-publish` environment
+   - the publish job used OIDC and did not depend on `NPM_TOKEN` or `NODE_AUTH_TOKEN`
+
+   npm package face:
 
    - the expected version matches `package.json` on `main`
    - the README shown by npm starts with the English canonical face from `README.md`
@@ -94,6 +103,20 @@ Use these sources for context:
    - the docs link from the README opens successfully
    - provenance is visible for the published version
    - the provenance details point back to the expected GitHub workflow run
+
+   Token and package settings hardening:
+
+   - revoke the old npm automation token after the first successful trusted publish
+   - remove any old publish token secret from GitHub Actions secrets or environment secrets
+   - enable npm publishing access that requires two-factor authentication and disallows tokens
+   - keep any future read-only install token separate from the publish path
+
+   Usage signal collection:
+
+   - add one self-authored usage report from a real integration
+   - test one integration in another repo you own
+   - ask one or two early users to open a usage report when appropriate
+   - quote only reports that explicitly grant public quotation permission
 
 For local verification, `npm audit signatures` can also be used from a project that installs the package version being checked.
 
