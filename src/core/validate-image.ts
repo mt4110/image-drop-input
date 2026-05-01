@@ -6,6 +6,10 @@ import type {
   ImageValidationOptions
 } from './types';
 
+export interface ImageValidationErrorOptions {
+  cause?: unknown;
+}
+
 export class ImageValidationError extends Error {
   readonly code: ImageValidationErrorCode;
   readonly details: ImageValidationErrorDetails;
@@ -14,7 +18,7 @@ export class ImageValidationError extends Error {
     code: ImageValidationErrorCode,
     message: string,
     details: ImageValidationErrorDetails = {},
-    options?: ErrorOptions
+    options?: ImageValidationErrorOptions
   ) {
     super(message, options);
     this.name = 'ImageValidationError';

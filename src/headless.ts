@@ -44,5 +44,7 @@ export type {
 export type {
   ImageUploadErrorCode,
   ImageUploadErrorDetails,
+  ImageUploadErrorOptions,
   ImageUploadErrorStage
 } from './upload/errors';
+export type { ImageValidationErrorOptions } from './core/validate-image';

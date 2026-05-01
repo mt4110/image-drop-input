@@ -21,6 +21,10 @@ export interface ImageUploadErrorDetails {
   rawBody?: string;
 }
 
+export interface ImageUploadErrorOptions {
+  cause?: unknown;
+}
+
 export class ImageUploadError extends Error {
   readonly code: ImageUploadErrorCode;
   readonly details: ImageUploadErrorDetails;
@@ -29,7 +33,7 @@ export class ImageUploadError extends Error {
     code: ImageUploadErrorCode,
     message: string,
     details: ImageUploadErrorDetails,
-    options?: ErrorOptions
+    options?: ImageUploadErrorOptions
   ) {
     super(message, options);
     this.name = 'ImageUploadError';
