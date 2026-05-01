@@ -1,4 +1,5 @@
 import { sendUploadRequest } from './request';
+import { ImageUploadError, isAbortError, isImageUploadError } from './errors';
 import type {
   CreatePresignedPutUploaderOptions,
   PresignedPutTarget,
@@ -35,7 +36,22 @@ export function createPresignedPutUploader(
   options: CreatePresignedPutUploaderOptions
 ): UploadAdapter {
   return async (file, context) => {
-    const target = await options.getTarget(file, context);
+    let target: PresignedPutTarget;
+
+    try {
+      target = await options.getTarget(file, context);
+    } catch (error) {
+      if (isImageUploadError(error) || isAbortError(error)) {
+        throw error;
+      }
+
+      throw new ImageUploadError(
+        'target_failed',
+        'Upload target resolution failed.',
+        { stage: 'target' },
+        error instanceof Error ? { cause: error } : undefined
+      );
+    }
 
     return uploadWithSignedTarget(
       file,

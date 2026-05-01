@@ -27,6 +27,7 @@ export { ImageValidationError, isImageValidationError, validateImage } from './c
 export { createMultipartUploader } from './upload/create-multipart-uploader';
 export { createPresignedPutUploader, uploadWithSignedTarget } from './upload/create-presigned-put-uploader';
 export { createRawPutUploader } from './upload/create-raw-put-uploader';
+export { ImageUploadError, isImageUploadError } from './upload/errors';
 export { sendUploadRequest } from './upload/request';
 export type {
   CreateMultipartUploaderOptions,
@@ -40,3 +41,8 @@ export type {
   UploadResponse,
   UploadResult
 } from './upload/types';
+export type {
+  ImageUploadErrorCode,
+  ImageUploadErrorDetails,
+  ImageUploadErrorStage
+} from './upload/errors';

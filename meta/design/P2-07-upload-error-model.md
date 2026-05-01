@@ -2,14 +2,14 @@
 
 - Priority: **P2**
 - Depends on: **v0.2.0 P0/P1 hardening pack**
-- Status: **design**
+- Status: **implemented**
 - PR target size: **small to medium**
 - Public API break allowed: **no**
 - Runtime dependency additions allowed: **no**
 
 ## Summary
 
-Design a structured upload error model around `ImageUploadError` and `isImageUploadError()` without implementing it yet.
+Record the structured upload error model around `ImageUploadError` and `isImageUploadError()`.
 
 The goal is to make `onError` easier to use for localization, telemetry, and retry UI while keeping the existing public callback shape.
 
@@ -244,23 +244,30 @@ Recommended stance:
 - HTTP status / body details are covered.
 - signed URL leakage risk is explicitly handled.
 - semver risks and compatibility constraints are documented.
-- No runtime implementation is included in this design PR.
+- Runtime implementation preserves `onError?: (error: Error) => void`.
 
-## Future Implementation Checks
+## Implementation Checks
 
-When implementation starts, require:
+Covered by the implementation:
 
 - unit tests for `ImageUploadError` and `isImageUploadError()`
 - request helper tests for HTTP body/status details
-- fetch and XHR network failure tests
 - built-in uploader tests for target and response mapping wrappers
-- React hook test proving `onError` receives structured upload errors from built-in helpers
 - entrypoint tests for root and headless exports
 - docs update showing localization and telemetry narrowing
+- React hook coverage proving `onError` receives structured upload errors from built-in helpers
+
+Still useful future checks:
+
+- XHR-specific network failure coverage if a stable XMLHttpRequest mock is added.
+
+## Resolved Questions
+
+- `getTarget` failures are wrapped as `target_failed` unless they are already `ImageUploadError` or aborts.
+- `rawBody` is included by default because it is useful for debugging and does not include request URLs or headers.
+- `unknown_upload_error` stays in the public code union for custom adapter authors, but the hook does not wrap unknown custom adapter errors globally.
+- Custom adapter errors keep their identity unless the adapter opts into `ImageUploadError`.
 
 ## Open Questions
 
-- Should `target_failed` wrapping be automatic for `getTarget`, or should examples teach consumers to throw `ImageUploadError` themselves?
-- Should `rawBody` be included by default, or is parsed `body` enough for safer telemetry?
 - Should `ImageUploadErrorDetails` include a redacted request label in the future?
-- Should `unknown_upload_error` exist, or is preserving unknown custom adapter errors better?

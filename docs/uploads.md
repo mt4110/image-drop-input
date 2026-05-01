@@ -152,6 +152,37 @@ Adapters may call `context.onProgress(percent)`.
 
 Successful uploads finish with `100`, even if the adapter did not emit `100` itself.
 
+## Upload errors
+
+Built-in upload helpers throw `ImageUploadError` for package-owned upload failures. The React component still reports errors through `onError(error: Error)`, so existing handlers keep working.
+
+Use `isImageUploadError()` when your product needs localized copy, retry labels, or telemetry tags without parsing English messages.
+
+```ts
+import {
+  isImageUploadError,
+  isImageValidationError
+} from 'image-drop-input';
+
+function toUserMessage(error: Error) {
+  if (isImageValidationError(error)) {
+    return `Image validation failed: ${error.code}`;
+  }
+
+  if (isImageUploadError(error)) {
+    if (error.code === 'http_error' && error.details.status === 413) {
+      return 'This image is too large to upload.';
+    }
+
+    return `Image upload failed: ${error.code}`;
+  }
+
+  return 'Could not prepare this image.';
+}
+```
+
+Upload error details include safe fields such as stage, method, status, response body, and raw response body. They do not include signed upload URLs, request headers, authorization values, or provider credentials.
+
 ## Abort signal
 
 `context.signal` is passed to built-in request helpers. Custom adapters should pass it to `fetch()` or equivalent request code so cancellation works.

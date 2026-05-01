@@ -3,10 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMultipartUploader } from '../../src/upload/create-multipart-uploader';
 import { createPresignedPutUploader } from '../../src/upload/create-presigned-put-uploader';
 import { createRawPutUploader } from '../../src/upload/create-raw-put-uploader';
+import { ImageUploadError, isImageUploadError } from '../../src/upload/errors';
+import { sendUploadRequest } from '../../src/upload/request';
 
 describe('upload adapters', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('uploads to a signed target without inferring the provider', async () => {
@@ -140,5 +143,274 @@ describe('upload adapters', () => {
       etag: 'etag-789',
       response: { ok: true }
     });
+  });
+
+  it('reports built-in HTTP request failures as structured upload errors', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(
+        JSON.stringify({ error: 'too_large' }),
+        {
+          status: 413,
+          statusText: 'Payload Too Large',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      ))
+    );
+
+    await expect(
+      sendUploadRequest({
+        method: 'PUT',
+        url: 'https://upload.example.com/private.png?signature=secret',
+        body: new Blob(['hello'], { type: 'image/png' })
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'http_error',
+      message: 'Upload failed: 413 Payload Too Large',
+      details: {
+        stage: 'request',
+        method: 'PUT',
+        status: 413,
+        statusText: 'Payload Too Large',
+        body: { error: 'too_large' },
+        rawBody: '{"error":"too_large"}'
+      }
+    });
+  });
+
+  it('reports unavailable requests and network failures as structured upload errors', async () => {
+    vi.stubGlobal('fetch', undefined);
+
+    await expect(
+      sendUploadRequest({
+        method: 'POST',
+        url: '/api/upload',
+        body: new FormData()
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'request_unavailable',
+      details: {
+        stage: 'request',
+        method: 'POST'
+      }
+    });
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('fetch failed');
+      })
+    );
+
+    await expect(
+      sendUploadRequest({
+        method: 'PUT',
+        url: '/api/upload',
+        body: new Blob(['hello'])
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'network_error',
+      details: {
+        stage: 'request',
+        method: 'PUT'
+      }
+    });
+  });
+
+  it('reports fetch response body read failures as structured upload errors', async () => {
+    const bodyFailure = new TypeError('body stream failed');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: vi.fn(async () => {
+          throw bodyFailure;
+        })
+      }))
+    );
+
+    await expect(
+      sendUploadRequest({
+        method: 'PUT',
+        url: '/api/upload',
+        body: new Blob(['hello'])
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'network_error',
+      message: 'Upload failed due to a network error.',
+      details: {
+        stage: 'request',
+        method: 'PUT',
+        status: 200,
+        statusText: 'OK'
+      },
+      cause: bodyFailure
+    });
+
+    const errorBodyFailure = new TypeError('error body stream failed');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 413,
+        statusText: 'Payload Too Large',
+        headers: new Headers(),
+        text: vi.fn(async () => {
+          throw errorBodyFailure;
+        })
+      }))
+    );
+
+    await expect(
+      sendUploadRequest({
+        method: 'POST',
+        url: '/api/upload',
+        body: new FormData()
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'http_error',
+      message: 'Upload failed: 413 Payload Too Large',
+      details: {
+        stage: 'request',
+        method: 'POST',
+        status: 413,
+        statusText: 'Payload Too Large'
+      },
+      cause: errorBodyFailure
+    });
+  });
+
+  it('reports XHR setup failures as structured upload errors', async () => {
+    const setupFailure = new Error('invalid upload request');
+
+    class ThrowingXMLHttpRequest {
+      upload = {};
+
+      open() {
+        throw setupFailure;
+      }
+    }
+
+    vi.stubGlobal('XMLHttpRequest', ThrowingXMLHttpRequest);
+
+    await expect(
+      sendUploadRequest({
+        method: 'PUT',
+        url: 'https://upload.example.com/avatar.png',
+        body: new Blob(['hello']),
+        onProgress: vi.fn()
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'network_error',
+      message: 'Upload failed due to a network error.',
+      details: {
+        stage: 'request',
+        method: 'PUT'
+      },
+      cause: setupFailure
+    });
+  });
+
+  it('wraps presign and response mapping failures without hiding structured errors', async () => {
+    const targetFailure = new Error('presign denied');
+    const presignedUpload = createPresignedPutUploader({
+      getTarget: vi.fn(async () => {
+        throw targetFailure;
+      })
+    });
+
+    await expect(
+      presignedUpload(new Blob(['hello'], { type: 'image/png' }), {})
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'target_failed',
+      message: 'Upload target resolution failed.',
+      details: {
+        stage: 'target'
+      },
+      cause: targetFailure
+    });
+
+    const structuredFailure = new ImageUploadError(
+      'target_failed',
+      'Custom target failure.',
+      { stage: 'target' }
+    );
+    const passthroughUpload = createPresignedPutUploader({
+      getTarget: vi.fn(async () => {
+        throw structuredFailure;
+      })
+    });
+
+    await expect(
+      passthroughUpload(new Blob(['hello'], { type: 'image/png' }), {})
+    ).rejects.toBe(structuredFailure);
+
+    const multipartUpload = createMultipartUploader({
+      endpoint: '/api/upload',
+      request: vi.fn(async () => ({
+        status: 201,
+        statusText: 'Created',
+        headers: new Headers(),
+        body: { ok: true },
+        rawBody: '{"ok":true}'
+      })),
+      mapResponse() {
+        throw new Error('bad response shape');
+      }
+    });
+
+    await expect(
+      multipartUpload(new Blob(['hello'], { type: 'image/png' }), {})
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'response_mapping_failed',
+      message: 'Upload response mapping failed.',
+      details: {
+        stage: 'response_mapping',
+        method: 'POST',
+        status: 201,
+        statusText: 'Created',
+        body: { ok: true },
+        rawBody: '{"ok":true}'
+      }
+    });
+  });
+
+  it('narrows structurally valid upload errors', () => {
+    const error = new ImageUploadError(
+      'http_error',
+      'Upload failed: 500 Server Error',
+      {
+        stage: 'request',
+        method: 'PUT',
+        status: 500,
+        statusText: 'Server Error',
+        rawBody: 'nope'
+      }
+    );
+
+    expect(isImageUploadError(error)).toBe(true);
+    expect(
+      isImageUploadError({
+        name: 'ImageUploadError',
+        message: 'Upload failed.',
+        code: 'http_error',
+        details: {
+          stage: 'request',
+          method: 'DELETE',
+          status: 500
+        }
+      })
+    ).toBe(false);
   });
 });

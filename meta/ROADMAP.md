@@ -2,6 +2,18 @@
 
 This project is strongest when it stays focused on one job: a product-safe React image input for the pre-upload image flow.
 
+## v0.3 Focus
+
+The next phase is adoption hardening, not feature expansion.
+
+- Verify tokenless npm Trusted Publishing and provenance during the next publish.
+- Keep the published package consumer floor at Node `>=18.18.0` unless packed-tarball checks prove a different requirement.
+- Keep upload session control separated from `use-image-drop-input.ts` before adding new hook behavior.
+- Maintain the structured upload error model as integration UX needs sharper failure classification.
+- Collect at least one real usage report or equivalent external integration proof.
+
+See `meta/design/P1-08-adoption-hardening.md` for the working design.
+
 ## v0.2 Focus
 
 - Keep validation and transform semantics explicit, especially source vs output byte limits.

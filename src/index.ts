@@ -21,3 +21,12 @@ export type {
   UploadContext,
   UploadResult
 } from './upload/types';
+export {
+  ImageUploadError,
+  isImageUploadError
+} from './upload/errors';
+export type {
+  ImageUploadErrorCode,
+  ImageUploadErrorDetails,
+  ImageUploadErrorStage
+} from './upload/errors';
