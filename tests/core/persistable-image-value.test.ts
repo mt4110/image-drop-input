@@ -40,6 +40,38 @@ describe('persistable image value guards', () => {
     expect(() => assertPersistableImageValue(null)).not.toThrow();
   });
 
+  it('rejects non-object runtime values even when empty references are allowed', () => {
+    expect(() =>
+      toPersistableImageValue(0 as never, { allowEmptyReference: true })
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'invalid_metadata'
+      })
+    );
+    expect(() =>
+      toPersistableImageValue(false as never, { allowEmptyReference: true })
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'invalid_metadata'
+      })
+    );
+    expect(() =>
+      toPersistableImageValue('avatar' as never, { allowEmptyReference: true })
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'invalid_metadata'
+      })
+    );
+    expect(() =>
+      toPersistableImageValue([] as never, { allowEmptyReference: true })
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'invalid_metadata'
+      })
+    );
+    expect(isPersistableImageValue(0 as never, { allowEmptyReference: true })).toBe(false);
+  });
+
   it('accepts durable src values', () => {
     expect(toPersistableImageValue({ src: '/images/avatar.webp' })).toEqual({
       src: '/images/avatar.webp'

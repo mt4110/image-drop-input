@@ -52,6 +52,10 @@ export class ImagePersistableValueError extends Error {
 
 const temporarySrcSchemes = new Set(['blob', 'filesystem', 'data']);
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 function getLowercaseScheme(src: string): string | null {
   const match = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(src.trim());
 
@@ -191,14 +195,22 @@ export function toPersistableImageValue(
     return null;
   }
 
+  if (!isObjectRecord(value)) {
+    throw new ImagePersistableValueError(
+      'invalid_metadata',
+      'Persistable image value must be an object or null.'
+    );
+  }
+
+  const imageValue = value as ImageUploadValue | PersistableImageValue;
   const persistable: PersistableImageValue = {
-    src: value.src,
-    key: value.key,
-    fileName: value.fileName,
-    mimeType: value.mimeType,
-    size: value.size,
-    width: value.width,
-    height: value.height
+    src: imageValue.src,
+    key: imageValue.key,
+    fileName: imageValue.fileName,
+    mimeType: imageValue.mimeType,
+    size: imageValue.size,
+    width: imageValue.width,
+    height: imageValue.height
   };
 
   validateMetadata(persistable);
