@@ -1,4 +1,5 @@
 import { sendUploadRequest } from './request';
+import { ImageUploadError, isAbortError, isImageUploadError } from './errors';
 import type {
   CreateMultipartUploaderOptions,
   UploadAdapter,
@@ -68,6 +69,26 @@ export function createMultipartUploader(options: CreateMultipartUploaderOptions)
       withCredentials: options.withCredentials
     });
 
-    return (options.mapResponse ?? defaultMapResponse)(response.body, response);
+    try {
+      return (options.mapResponse ?? defaultMapResponse)(response.body, response);
+    } catch (error) {
+      if (isImageUploadError(error) || isAbortError(error)) {
+        throw error;
+      }
+
+      throw new ImageUploadError(
+        'response_mapping_failed',
+        'Upload response mapping failed.',
+        {
+          stage: 'response_mapping',
+          method: 'POST',
+          status: response.status,
+          statusText: response.statusText,
+          body: response.body,
+          rawBody: response.rawBody
+        },
+        error instanceof Error ? { cause: error } : undefined
+      );
+    }
   };
 }

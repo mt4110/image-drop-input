@@ -8,11 +8,13 @@ Notable changes for `image-drop-input` are tracked here.
 
 - Added packed-package consumer smoke checks for the supported Node install floor.
 - Added tokenless npm trusted publishing release documentation, provenance verification steps, and a security policy.
+- Added `ImageUploadError` and `isImageUploadError()` for structured upload failure handling.
 
 ### Changed
 
 - Changed the release workflow to publish through npm Trusted Publishing instead of a long-lived npm token.
 - Changed the release PR checklist to include changelog, trusted publisher, provenance, and token revocation checks.
+- Split upload session orchestration out of the main React hook internals.
 
 ### Fixed
 

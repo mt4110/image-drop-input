@@ -5,6 +5,8 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useImageDropInput } from '../../src/react/use-image-drop-input';
 import type { ImageUploadValue } from '../../src/core/types';
+import { ImageUploadError } from '../../src/upload/errors';
+import { createRawPutUploader } from '../../src/upload/create-raw-put-uploader';
 import type { UploadAdapter } from '../../src/upload/types';
 
 const { getImageMetadataMock } = vi.hoisted(() => ({
@@ -388,6 +390,38 @@ describe('useImageDropInput', () => {
     expect(transform).toHaveBeenCalledTimes(1);
     expect(upload.mock.calls[0]?.[0]).toBe(preparedFile);
     expect(upload.mock.calls[1]?.[0]).toBe(preparedFile);
+  });
+
+  it('passes structured errors from built-in upload helpers to onError', async () => {
+    const onError = vi.fn();
+    const uploadError = new ImageUploadError(
+      'http_error',
+      'Upload failed: 413 Payload Too Large',
+      {
+        stage: 'request',
+        method: 'PUT',
+        status: 413,
+        statusText: 'Payload Too Large'
+      }
+    );
+    const request = vi.fn(async () => {
+      throw uploadError;
+    });
+    const upload = createRawPutUploader({
+      endpoint: '/api/avatar',
+      request
+    });
+    const { result } = renderHook(() => useImageDropInput({ upload, onError }));
+
+    await act(async () => {
+      await result.current.handleInputChange(
+        createInputChange(new File(['hello'], 'avatar.png', { type: 'image/png' }))
+      );
+    });
+
+    expect(onError).toHaveBeenCalledWith(uploadError);
+    expect(result.current.error).toBe(uploadError);
+    expect(result.current.canRetryUpload).toBe(true);
   });
 
   it('normalizes object transform metadata for upload context and the final value', async () => {

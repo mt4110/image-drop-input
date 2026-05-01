@@ -4,9 +4,11 @@ import * as headless from '../src/headless';
 import * as root from '../src/index';
 
 describe('package entrypoints', () => {
-  it('keeps advanced utilities off the root entry', () => {
+  it('keeps advanced helper utilities off the root entry', () => {
     expect(root).toHaveProperty('ImageDropInput');
     expect(root.isImageValidationError).toBeTypeOf('function');
+    expect(root.ImageUploadError).toBeTypeOf('function');
+    expect(root.isImageUploadError).toBeTypeOf('function');
     expect(root).not.toHaveProperty('compressImage');
     expect(root).not.toHaveProperty('createPresignedPutUploader');
     expect(root).not.toHaveProperty('useImageDropInput');
@@ -18,6 +20,8 @@ describe('package entrypoints', () => {
     expect(headless.createPresignedPutUploader).toBeTypeOf('function');
     expect(headless.ImageValidationError).toBeTypeOf('function');
     expect(headless.isImageValidationError).toBeTypeOf('function');
+    expect(headless.ImageUploadError).toBeTypeOf('function');
+    expect(headless.isImageUploadError).toBeTypeOf('function');
     expect(headless.useImageDropInput).toBeTypeOf('function');
     expect(headless.validateImage).toBeTypeOf('function');
   });
