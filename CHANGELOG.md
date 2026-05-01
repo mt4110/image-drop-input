@@ -2,7 +2,7 @@
 
 Notable changes for `image-drop-input` are tracked here.
 
-## Unreleased
+## 0.3.0 - 2026-05-01
 
 ### Added
 
