@@ -320,6 +320,97 @@ describe('upload adapters', () => {
     });
   });
 
+  it('reports XHR network events as structured upload errors', async () => {
+    class NetworkErrorXMLHttpRequest {
+      upload = {};
+      onabort: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onload: (() => void) | null = null;
+
+      open() {}
+
+      setRequestHeader() {}
+
+      getAllResponseHeaders() {
+        return '';
+      }
+
+      abort() {}
+
+      send() {
+        this.onerror?.();
+      }
+    }
+
+    vi.stubGlobal('XMLHttpRequest', NetworkErrorXMLHttpRequest);
+
+    await expect(
+      sendUploadRequest({
+        method: 'PUT',
+        url: 'https://upload.example.com/avatar.png',
+        body: new Blob(['hello']),
+        onProgress: vi.fn()
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'network_error',
+      message: 'Upload failed due to a network error.',
+      details: {
+        stage: 'request',
+        method: 'PUT'
+      }
+    });
+  });
+
+  it('reports XHR non-2xx load events as structured upload errors', async () => {
+    class HttpErrorXMLHttpRequest {
+      upload = {};
+      onabort: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onload: (() => void) | null = null;
+      responseText = '{"error":"forbidden"}';
+      status = 403;
+      statusText = 'Forbidden';
+
+      open() {}
+
+      setRequestHeader() {}
+
+      getAllResponseHeaders() {
+        return 'content-type: application/json\r\n';
+      }
+
+      abort() {}
+
+      send() {
+        this.onload?.();
+      }
+    }
+
+    vi.stubGlobal('XMLHttpRequest', HttpErrorXMLHttpRequest);
+
+    await expect(
+      sendUploadRequest({
+        method: 'POST',
+        url: '/api/upload',
+        body: new FormData(),
+        onProgress: vi.fn()
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageUploadError',
+      code: 'http_error',
+      message: 'Upload failed: 403 Forbidden',
+      details: {
+        stage: 'request',
+        method: 'POST',
+        status: 403,
+        statusText: 'Forbidden',
+        body: { error: 'forbidden' },
+        rawBody: '{"error":"forbidden"}'
+      }
+    });
+  });
+
   it('wraps presign and response mapping failures without hiding structured errors', async () => {
     const targetFailure = new Error('presign denied');
     const presignedUpload = createPresignedPutUploader({

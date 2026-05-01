@@ -252,14 +252,11 @@ Covered by the implementation:
 
 - unit tests for `ImageUploadError` and `isImageUploadError()`
 - request helper tests for HTTP body/status details
+- fetch and XHR network failure tests
 - built-in uploader tests for target and response mapping wrappers
 - entrypoint tests for root and headless exports
 - docs update showing localization and telemetry narrowing
 - React hook coverage proving `onError` receives structured upload errors from built-in helpers
-
-Still useful future checks:
-
-- XHR-specific network failure coverage if a stable XMLHttpRequest mock is added.
 
 ## Resolved Questions
 
