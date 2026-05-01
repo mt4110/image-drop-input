@@ -18,6 +18,8 @@ async function submitProfile(value: ImageUploadValue | null) {
 }
 ```
 
+`null` and `undefined` inputs return `null` from this submit helper so optional image fields can be normalized before serialization.
+
 ## What it keeps
 
 `toPersistableImageValue()` copies only durable image fields:
@@ -77,6 +79,8 @@ assertPersistableImageValue(payload.image);
 ```
 
 Because this assertion does not mutate the original object, it rejects values that still contain `previewSrc`. Use `toPersistableImageValue()` for raw component values.
+
+`null` is accepted by the guard helpers as an already-normalized empty image value. `undefined` is rejected by the assertion/type guard path so TypeScript narrowing cannot hide an unnormalized variable.
 
 ## Temporary URL escape hatches
 

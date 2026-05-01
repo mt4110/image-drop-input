@@ -35,6 +35,11 @@ describe('persistable image value guards', () => {
     expect(toPersistableImageValue(undefined)).toBeNull();
   });
 
+  it('treats null as an already-normalized empty persistable value', () => {
+    expect(isPersistableImageValue(null)).toBe(true);
+    expect(() => assertPersistableImageValue(null)).not.toThrow();
+  });
+
   it('accepts durable src values', () => {
     expect(toPersistableImageValue({ src: '/images/avatar.webp' })).toEqual({
       src: '/images/avatar.webp'
