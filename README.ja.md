@@ -157,6 +157,26 @@ type ImageUploadValue = {
 
 upload が失敗した場合、component は最後に commit 済みの値へ戻り、Retry では同じ prepared file を再送します。
 
+## 保存してよい値だけにする
+
+form submit の直前で `toPersistableImageValue()` を使うと、`previewSrc` を落とし、`blob:` などの一時 URL を保存 payload に混ぜる事故を防げます。
+
+```tsx
+import { toPersistableImageValue } from 'image-drop-input';
+
+async function submitProfile() {
+  const image = toPersistableImageValue(value);
+
+  await fetch('/api/profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image })
+  });
+}
+```
+
+`src` または `key` のような永続参照だけを API / DB に渡してください。詳しくは [Persistable value guard](./docs/persistable-value.md) を参照してください。
+
 ## Recipes
 
 - [Next.js App Router](./docs/recipes/nextjs-app-router.md)

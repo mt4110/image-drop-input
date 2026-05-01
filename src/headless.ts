@@ -11,6 +11,20 @@ export type { UseImageDropInputOptions, UseImageDropInputReturn } from './react/
 export { compressImage } from './core/compress-image';
 export { createObjectUrl } from './core/create-object-url';
 export { getImageMetadata } from './core/get-image-metadata';
+export {
+  assertPersistableImageValue,
+  ImagePersistableValueError,
+  isPersistableImageValue,
+  isTemporaryImageSrc,
+  toPersistableImageValue
+} from './core/persistable-image-value';
+export type {
+  ImagePersistableValueErrorCode,
+  ImagePersistableValueErrorDetails,
+  ImagePersistableValueErrorOptions,
+  PersistableImageValue,
+  PersistableImageValueOptions
+} from './core/persistable-image-value';
 export type {
   AspectRatioValue,
   CompressImageOptions,

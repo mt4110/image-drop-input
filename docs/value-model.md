@@ -86,6 +86,8 @@ That behavior prevents a product form from accidentally treating an unuploaded l
 
 Do not save `previewSrc` to your database.
 
+Use [`toPersistableImageValue()`](./persistable-value.md) at your submit boundary to remove temporary browser-only fields before sending image state to your API.
+
 Do not infer a public URL from a signed upload URL.
 
 Do not treat `key` as a browser-renderable image URL unless your application explicitly resolves it.

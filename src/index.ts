@@ -16,6 +16,20 @@ export type {
   ImageValidationErrorDetails
 } from './core/types';
 export { ImageValidationError, isImageValidationError } from './core/validate-image';
+export {
+  assertPersistableImageValue,
+  ImagePersistableValueError,
+  isPersistableImageValue,
+  isTemporaryImageSrc,
+  toPersistableImageValue
+} from './core/persistable-image-value';
+export type {
+  ImagePersistableValueErrorCode,
+  ImagePersistableValueErrorDetails,
+  ImagePersistableValueErrorOptions,
+  PersistableImageValue,
+  PersistableImageValueOptions
+} from './core/persistable-image-value';
 export type {
   UploadAdapter,
   UploadContext,
