@@ -46,10 +46,27 @@ jobs:
           mkdir -p artifacts
           npm pack --pack-destination artifacts
 
+      - name: Resolve packed artifact
+        id: packed-artifact
+        shell: bash
+        run: |
+          mapfile -t tarballs < <(find artifacts -maxdepth 1 -type f -name '*.tgz' -print | sort)
+
+          if [ "${#tarballs[@]}" -ne 1 ]; then
+            echo "Expected exactly one npm package tarball in artifacts, found ${#tarballs[@]}." >&2
+            if [ "${#tarballs[@]}" -gt 0 ]; then
+              printf 'Found tarballs:\n' >&2
+              printf '  %s\n' "${tarballs[@]}" >&2
+            fi
+            exit 1
+          fi
+
+          echo "tarball=${tarballs[0]}" >> "$GITHUB_OUTPUT"
+
       - uses: actions/upload-artifact@v4
         with:
           name: npm-package
-          path: artifacts/*.tgz
+          path: ${{ steps.packed-artifact.outputs.tarball }}
           if-no-files-found: error
           retention-days: 7
 
@@ -86,5 +103,22 @@ jobs:
           name: npm-package
           path: artifacts
 
+      - name: Resolve publish artifact
+        id: publish-artifact
+        shell: bash
+        run: |
+          mapfile -t tarballs < <(find artifacts -maxdepth 1 -type f -name '*.tgz' -print | sort)
+
+          if [ "${#tarballs[@]}" -ne 1 ]; then
+            echo "Expected exactly one npm package tarball in artifacts, found ${#tarballs[@]}." >&2
+            if [ "${#tarballs[@]}" -gt 0 ]; then
+              printf 'Found tarballs:\n' >&2
+              printf '  %s\n' "${tarballs[@]}" >&2
+            fi
+            exit 1
+          fi
+
+          echo "tarball=${tarballs[0]}" >> "$GITHUB_OUTPUT"
+
       - name: Publish to npm
-        run: npm publish ./artifacts/*.tgz --access public
+        run: npm publish "${{ steps.publish-artifact.outputs.tarball }}" --access public

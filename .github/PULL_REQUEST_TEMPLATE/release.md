@@ -30,7 +30,9 @@
 
 - [ ] merge to `main`
 - [ ] run the `Release` workflow from `main` with `publish` off and confirm the rehearsal passed
+- [ ] confirm the rehearsal resolved exactly one package tarball artifact
 - [ ] rerun the `Release` workflow from `main` with `publish` on
+- [ ] confirm the publish run resolved exactly one package tarball before `npm publish`
 - [ ] confirm the publish job used the `npm-publish` environment
 
 ## Post-publish Checks

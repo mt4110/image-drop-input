@@ -80,8 +80,8 @@ Use these sources for context:
 
 5. After the release PR is merged to `main`, run the GitHub `Release` workflow:
 
-   - first with `publish` turned off for a rehearsal; this runs the verification job and stores the checked package tarball as a short-lived workflow artifact
-   - then with `publish` turned on for the real publish; this enters the `npm-publish` environment and publishes that verified tarball with OIDC
+   - first with `publish` turned off for a rehearsal; this runs the verification job, confirms there is exactly one package tarball, and stores that checked tarball as a short-lived workflow artifact
+   - then with `publish` turned on for the real publish; this enters the `npm-publish` environment, confirms the downloaded artifact still contains exactly one package tarball, and publishes that resolved tarball path with OIDC
 
 6. After publishing, complete the release follow-up checklist.
 
