@@ -5,7 +5,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useImageDropInput } from '../../src/react/use-image-drop-input';
 import type { ImageUploadValue } from '../../src/core/types';
-import { ImageUploadError } from '../../src/upload/errors';
+import { ImageUploadError, isImageUploadError } from '../../src/upload/errors';
 import { createRawPutUploader } from '../../src/upload/create-raw-put-uploader';
 import type { UploadAdapter } from '../../src/upload/types';
 
@@ -393,7 +393,16 @@ describe('useImageDropInput', () => {
   });
 
   it('passes structured errors from built-in upload helpers to onError', async () => {
-    const onError = vi.fn();
+    const telemetry = vi.fn();
+    const onError = vi.fn((error: Error) => {
+      if (isImageUploadError(error)) {
+        telemetry({
+          code: error.code,
+          stage: error.details.stage,
+          status: error.details.status
+        });
+      }
+    });
     const uploadError = new ImageUploadError(
       'http_error',
       'Upload failed: 413 Payload Too Large',
@@ -420,6 +429,11 @@ describe('useImageDropInput', () => {
     });
 
     expect(onError).toHaveBeenCalledWith(uploadError);
+    expect(telemetry).toHaveBeenCalledWith({
+      code: 'http_error',
+      stage: 'request',
+      status: 413
+    });
     expect(result.current.error).toBe(uploadError);
     expect(result.current.canRetryUpload).toBe(true);
   });

@@ -325,6 +325,32 @@ function toMessage(error: Error) {
 
 code は `invalid_type`, `file_too_large`, `image_too_small`, `image_too_large`, `too_many_pixels`, `decode_failed` です。英語 message を parse せずに翻訳できます。
 
+## Upload error
+
+組み込み upload helper の失敗は `ImageUploadError` として扱えます。`code` と `details` を見ることで、toast、retry copy、telemetry を `error.message` に依存せずに組めます。
+
+```ts
+import { isImageUploadError } from 'image-drop-input';
+
+function toUploadMessage(error: Error) {
+  if (!isImageUploadError(error)) {
+    return '画像を準備できませんでした。';
+  }
+
+  if (error.code === 'http_error' && error.details.status === 413) {
+    return 'アップロード先の上限を超えています。';
+  }
+
+  if (error.code === 'network_error') {
+    return '通信が切れました。もう一度お試しください。';
+  }
+
+  return '画像をアップロードできませんでした。';
+}
+```
+
+`details.stage`, `details.method`, `details.status` は telemetry に使えます。実際の再送は default UI の Retry、または headless の `canRetryUpload` / `retryUpload()` を使ってください。
+
 ## Headless usage
 
 UI を自前で組みたい場合は `useImageDropInput()` を使います。
