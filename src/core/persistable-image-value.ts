@@ -14,6 +14,7 @@ export interface PersistableImageValueOptions {
   allowEmptyReference?: boolean;
   allowDataUrl?: boolean;
   allowBlobUrl?: boolean;
+  allowFilesystemUrl?: boolean;
   stripUndefined?: boolean;
 }
 
@@ -59,6 +60,27 @@ function getLowercaseScheme(src: string): string | null {
 
 function hasReference(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function hasPreviewSrc(value: unknown): value is { previewSrc: unknown } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'previewSrc' in value &&
+    typeof (value as { previewSrc?: unknown }).previewSrc !== 'undefined'
+  );
+}
+
+function assertNoPreviewSrc(value: unknown): void {
+  if (!hasPreviewSrc(value)) {
+    return;
+  }
+
+  throw new ImagePersistableValueError(
+    'preview_src_not_persistable',
+    'Image previewSrc is browser-only state and must not be persisted.',
+    { field: 'previewSrc' }
+  );
 }
 
 function isValidOptionalString(value: unknown): boolean {
@@ -179,17 +201,24 @@ export function toPersistableImageValue(
     height: value.height
   };
 
+  validateMetadata(persistable);
+
   if (hasReference(persistable.src)) {
     const scheme = getLowercaseScheme(persistable.src);
 
-    if (
-      (scheme === 'blob' || scheme === 'filesystem') &&
-      options.allowBlobUrl !== true
-    ) {
+    if (scheme === 'blob' && options.allowBlobUrl !== true) {
       throw new ImagePersistableValueError(
         'src_is_temporary',
         'Image src is a temporary browser URL and must not be persisted.',
-        { field: 'src', srcProtocol: `${scheme}:` }
+        { field: 'src', srcProtocol: 'blob:' }
+      );
+    }
+
+    if (scheme === 'filesystem' && options.allowFilesystemUrl !== true) {
+      throw new ImagePersistableValueError(
+        'src_is_temporary',
+        'Image src is a filesystem URL and must not be persisted unless explicitly allowed.',
+        { field: 'src', srcProtocol: 'filesystem:' }
       );
     }
 
@@ -213,8 +242,6 @@ export function toPersistableImageValue(
     );
   }
 
-  validateMetadata(persistable);
-
   return options.stripUndefined === false
     ? persistable
     : stripUndefinedProperties(persistable);
@@ -224,6 +251,14 @@ export function assertPersistableImageValue(
   value: ImageUploadValue | PersistableImageValue | null | undefined,
   options?: PersistableImageValueOptions
 ): asserts value is PersistableImageValue | null {
+  if (typeof value === 'undefined') {
+    throw new ImagePersistableValueError(
+      'empty_reference',
+      'Persistable image values cannot be undefined.'
+    );
+  }
+
+  assertNoPreviewSrc(value);
   toPersistableImageValue(value, options);
 }
 
@@ -231,6 +266,10 @@ export function isPersistableImageValue(
   value: ImageUploadValue | PersistableImageValue | null | undefined,
   options?: PersistableImageValueOptions
 ): value is PersistableImageValue | null {
+  if (typeof value === 'undefined' || hasPreviewSrc(value)) {
+    return false;
+  }
+
   try {
     toPersistableImageValue(value, options);
 

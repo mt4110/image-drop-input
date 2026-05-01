@@ -119,6 +119,34 @@ describe('persistable image value guards', () => {
     });
   });
 
+  it('does not allow filesystem URLs through the blob URL option', () => {
+    expect(() =>
+      toPersistableImageValue(
+        { src: 'filesystem:https://example.com/temporary/avatar.png' },
+        { allowBlobUrl: true }
+      )
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'src_is_temporary',
+        details: {
+          field: 'src',
+          srcProtocol: 'filesystem:'
+        }
+      })
+    );
+  });
+
+  it('allows filesystem URLs only when explicitly requested', () => {
+    expect(
+      toPersistableImageValue(
+        { src: 'filesystem:https://example.com/temporary/avatar.png' },
+        { allowFilesystemUrl: true }
+      )
+    ).toEqual({
+      src: 'filesystem:https://example.com/temporary/avatar.png'
+    });
+  });
+
   it('rejects negative size metadata', () => {
     expect(() => toPersistableImageValue({ key: 'avatars/user-1.webp', size: -1 })).toThrowError(
       expect.objectContaining({
@@ -170,12 +198,43 @@ describe('persistable image value guards', () => {
 
   it('returns false for invalid persistable values', () => {
     expect(isPersistableImageValue({ src: 'blob:local-preview' })).toBe(false);
+    expect(isPersistableImageValue(undefined)).toBe(false);
+    expect(
+      isPersistableImageValue({
+        src: 'https://cdn.example.com/avatar.webp',
+        previewSrc: 'blob:local-preview'
+      })
+    ).toBe(false);
     expect(isPersistableImageValue({ key: 'avatars/user-1.webp' })).toBe(true);
   });
 
   it('throws a typed error from assertPersistableImageValue', () => {
     expect(() => assertPersistableImageValue({ src: 'data:image/png;base64,abc' })).toThrow(
       ImagePersistableValueError
+    );
+  });
+
+  it('rejects undefined from assertPersistableImageValue before narrowing', () => {
+    expect(() => assertPersistableImageValue(undefined)).toThrowError(
+      expect.objectContaining({
+        code: 'empty_reference'
+      })
+    );
+  });
+
+  it('rejects previewSrc from assertPersistableImageValue because it does not sanitize', () => {
+    expect(() =>
+      assertPersistableImageValue({
+        src: 'https://cdn.example.com/avatar.webp',
+        previewSrc: 'blob:local-preview'
+      })
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'preview_src_not_persistable',
+        details: {
+          field: 'previewSrc'
+        }
+      })
     );
   });
 

@@ -76,6 +76,22 @@ Use `assertPersistableImageValue()` when a caller already owns sanitization and 
 assertPersistableImageValue(payload.image);
 ```
 
+Because this assertion does not mutate the original object, it rejects values that still contain `previewSrc`. Use `toPersistableImageValue()` for raw component values.
+
+## Temporary URL escape hatches
+
+Temporary URL schemes are rejected by default. If your product intentionally persists one of these schemes, opt in explicitly:
+
+```ts
+toPersistableImageValue(value, {
+  allowDataUrl: true,
+  allowBlobUrl: true,
+  allowFilesystemUrl: true
+});
+```
+
+`allowBlobUrl` only affects `blob:` URLs. `filesystem:` requires `allowFilesystemUrl`.
+
 ## React Hook Form example
 
 ```tsx
