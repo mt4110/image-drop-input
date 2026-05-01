@@ -61,7 +61,7 @@ jobs:
             exit 1
           fi
 
-          echo "tarball=${tarballs[0]}" >> "$GITHUB_OUTPUT"
+          echo "tarball=./${tarballs[0]#./}" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -118,7 +118,7 @@ jobs:
             exit 1
           fi
 
-          echo "tarball=${tarballs[0]}" >> "$GITHUB_OUTPUT"
+          echo "tarball=./${tarballs[0]#./}" >> "$GITHUB_OUTPUT"
 
       - name: Publish to npm
         run: npm publish "${{ steps.publish-artifact.outputs.tarball }}" --access public
