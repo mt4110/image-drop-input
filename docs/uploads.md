@@ -214,7 +214,7 @@ function toUploadFailureEvent(error: Error) {
 }
 ```
 
-Upload error details include fields such as stage, method, status, response body, and raw response body. They do not include signed upload URLs, request headers, authorization values, or provider credentials. Treat `body` and `rawBody` as diagnostics, not end-user copy, because they come from your upload endpoint.
+Upload error details include helper-generated fields such as stage, method, and status, and may also include response body data such as `body` and `rawBody`. The helper-generated fields do not include signed upload URLs, request headers, authorization values, or provider credentials. Treat `body`, `rawBody`, and any attached `cause` as potentially sensitive diagnostics, not end-user copy, because they may include whatever your upload endpoint or underlying error returns and should not be logged indiscriminately.
 
 ## Abort signal
 
