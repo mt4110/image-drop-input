@@ -8,6 +8,7 @@ Start with:
 - [Persistable value guard](./persistable-value.md): remove temporary preview state before submit
 - [Validation](./validation.md): source limits, output limits, dimensions, pixels, and error codes
 - [Byte budget solver](./byte-budget.md): prepare images to fit an output byte budget
+- [Draft lifecycle](./draft-lifecycle.md): upload drafts, commit on form save, discard on cancel, and cleanup previous images
 - [Uploads](./uploads.md): adapter contracts, signed upload boundaries, progress, typed upload errors, and aborts
 - [Transforms](./transforms.md): compression, WebP conversion, return shapes, and MIME consistency
 - [Accessibility](./accessibility.md): keyboard, paste, status, dialog, and headless responsibilities
@@ -21,6 +22,7 @@ Recipes:
 - [Presigned PUT](./recipes/presigned-put.md)
 - [Next.js App Router](./recipes/nextjs-app-router.md)
 - [Next.js presign route](./recipes/nextjs-presign-route.md)
+- [Next.js draft lifecycle](./recipes/nextjs-draft-lifecycle.md)
 - [React Hook Form and Zod](./recipes/react-hook-form-zod.md)
 - [Multipart POST](./recipes/multipart-post.md)
 - [Raw PUT](./recipes/raw-put.md)

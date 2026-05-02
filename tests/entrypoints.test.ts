@@ -18,6 +18,9 @@ describe('package entrypoints', () => {
     expect(root).not.toHaveProperty('ImageBudgetError');
     expect(root).not.toHaveProperty('isImageBudgetError');
     expect(root).not.toHaveProperty('prepareImageToBudget');
+    expect(root).not.toHaveProperty('ImageDraftLifecycleError');
+    expect(root).not.toHaveProperty('isImageDraftLifecycleError');
+    expect(root).not.toHaveProperty('useImageDraftLifecycle');
     expect(root).not.toHaveProperty('createPresignedPutUploader');
     expect(root).not.toHaveProperty('useImageDropInput');
     expect(root).not.toHaveProperty('validateImage');
@@ -38,7 +41,10 @@ describe('package entrypoints', () => {
     expect(headless.assertPersistableImageValue).toBeTypeOf('function');
     expect(headless.isPersistableImageValue).toBeTypeOf('function');
     expect(headless.isTemporaryImageSrc).toBeTypeOf('function');
+    expect(headless.ImageDraftLifecycleError).toBeTypeOf('function');
+    expect(headless.isImageDraftLifecycleError).toBeTypeOf('function');
     expect(headless.useImageDropInput).toBeTypeOf('function');
+    expect(headless.useImageDraftLifecycle).toBeTypeOf('function');
     expect(headless.validateImage).toBeTypeOf('function');
   });
 });

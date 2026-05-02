@@ -15,6 +15,9 @@ const requiredFunctions = [
   'assertPersistableImageValue',
   'isPersistableImageValue',
   'isTemporaryImageSrc',
+  'ImageDraftLifecycleError',
+  'isImageDraftLifecycleError',
+  'useImageDraftLifecycle',
   'validateImage'
 ];
 
@@ -34,6 +37,11 @@ const budgetError = new headless.ImageBudgetError(
   'Unable to prepare an image within the byte budget.',
   { outputMaxBytes: 1, attempts: [] }
 );
+const lifecycleError = new headless.ImageDraftLifecycleError(
+  'missing_draft_key',
+  'Draft uploads must return draftKey or key.',
+  { phase: 'uploading-draft' }
+);
 
 if (!headless.isImageUploadError(uploadError)) {
   throw new Error('Expected headless isImageUploadError to narrow ImageUploadError.');
@@ -45,6 +53,10 @@ if (budgetError.name !== 'ImageBudgetError' || budgetError.code !== 'budget_unre
 
 if (!headless.isImageBudgetError(budgetError)) {
   throw new Error('Expected headless isImageBudgetError to narrow ImageBudgetError.');
+}
+
+if (!headless.isImageDraftLifecycleError(lifecycleError)) {
+  throw new Error('Expected headless isImageDraftLifecycleError to narrow ImageDraftLifecycleError.');
 }
 
 const persistableValue = headless.toPersistableImageValue({
