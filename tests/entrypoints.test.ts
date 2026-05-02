@@ -9,6 +9,11 @@ describe('package entrypoints', () => {
     expect(root.isImageValidationError).toBeTypeOf('function');
     expect(root.ImageUploadError).toBeTypeOf('function');
     expect(root.isImageUploadError).toBeTypeOf('function');
+    expect(root.ImagePersistableValueError).toBeTypeOf('function');
+    expect(root.toPersistableImageValue).toBeTypeOf('function');
+    expect(root.assertPersistableImageValue).toBeTypeOf('function');
+    expect(root.isPersistableImageValue).toBeTypeOf('function');
+    expect(root.isTemporaryImageSrc).toBeTypeOf('function');
     expect(root).not.toHaveProperty('compressImage');
     expect(root).not.toHaveProperty('createPresignedPutUploader');
     expect(root).not.toHaveProperty('useImageDropInput');
@@ -22,6 +27,11 @@ describe('package entrypoints', () => {
     expect(headless.isImageValidationError).toBeTypeOf('function');
     expect(headless.ImageUploadError).toBeTypeOf('function');
     expect(headless.isImageUploadError).toBeTypeOf('function');
+    expect(headless.ImagePersistableValueError).toBeTypeOf('function');
+    expect(headless.toPersistableImageValue).toBeTypeOf('function');
+    expect(headless.assertPersistableImageValue).toBeTypeOf('function');
+    expect(headless.isPersistableImageValue).toBeTypeOf('function');
+    expect(headless.isTemporaryImageSrc).toBeTypeOf('function');
     expect(headless.useImageDropInput).toBeTypeOf('function');
     expect(headless.validateImage).toBeTypeOf('function');
   });

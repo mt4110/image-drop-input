@@ -1,13 +1,21 @@
 import {
   ImageDropInput,
+  ImagePersistableValueError,
   ImageUploadError,
   ImageValidationError,
+  assertPersistableImageValue,
+  isPersistableImageValue,
   isImageUploadError,
+  isTemporaryImageSrc,
+  toPersistableImageValue,
   type ImageDropInputProps,
+  type ImagePersistableValueErrorDetails,
+  type ImagePersistableValueErrorOptions,
   type ImageUploadErrorDetails,
   type ImageUploadErrorOptions,
   type ImageValidationErrorOptions,
-  type ImageUploadValue
+  type ImageUploadValue,
+  type PersistableImageValue
 } from 'image-drop-input';
 import 'image-drop-input/style.css';
 
@@ -47,7 +55,28 @@ const validationError = new ImageValidationError(
   },
   validationErrorOptions
 );
+const persistableValue: PersistableImageValue | null = toPersistableImageValue({
+  src: 'https://cdn.example.com/avatar.webp',
+  previewSrc: 'blob:preview'
+});
+const persistableDetails: ImagePersistableValueErrorDetails = {
+  field: 'src',
+  srcProtocol: 'blob:'
+};
+const persistableErrorOptions: ImagePersistableValueErrorOptions = {
+  cause: validationError
+};
+const persistableError = new ImagePersistableValueError(
+  'src_is_temporary',
+  'Temporary image src cannot be persisted.',
+  persistableDetails,
+  persistableErrorOptions
+);
 
 void node;
 void isImageUploadError(uploadError);
+void isTemporaryImageSrc('blob:preview');
+void isPersistableImageValue(persistableValue);
+void assertPersistableImageValue(persistableValue);
 void validationError;
+void persistableError;

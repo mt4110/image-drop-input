@@ -7,6 +7,11 @@ const requiredFunctions = [
   'createRawPutUploader',
   'ImageUploadError',
   'isImageUploadError',
+  'ImagePersistableValueError',
+  'toPersistableImageValue',
+  'assertPersistableImageValue',
+  'isPersistableImageValue',
+  'isTemporaryImageSrc',
   'validateImage'
 ];
 
@@ -24,4 +29,17 @@ const uploadError = new headless.ImageUploadError(
 
 if (!headless.isImageUploadError(uploadError)) {
   throw new Error('Expected headless isImageUploadError to narrow ImageUploadError.');
+}
+
+const persistableValue = headless.toPersistableImageValue({
+  src: 'https://cdn.example.com/avatar.webp',
+  previewSrc: 'blob:preview'
+});
+
+if (persistableValue.previewSrc) {
+  throw new Error('Expected previewSrc to be removed from persistable image values.');
+}
+
+if (!headless.isPersistableImageValue(persistableValue)) {
+  throw new Error('Expected headless isPersistableImageValue to accept durable image values.');
 }

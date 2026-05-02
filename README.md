@@ -149,6 +149,28 @@ failed upload           -> previous committed value remains safe
 
 Read the full state model in [docs/value-model.md](./docs/value-model.md).
 
+## Persist only durable image state
+
+Before a form payload reaches your API, strip browser-only preview fields and reject temporary image URLs:
+
+```tsx
+import { toPersistableImageValue } from 'image-drop-input';
+
+async function submitProfile() {
+  const image = toPersistableImageValue(value);
+
+  await fetch('/api/profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image })
+  });
+}
+```
+
+`toPersistableImageValue()` never returns `previewSrc`, rejects `blob:` / `filesystem:` / `data:` `src` values by default, and accepts durable `src` or `key` references.
+
+Read the submit-boundary guide in [docs/persistable-value.md](./docs/persistable-value.md).
+
 ## Validation and byte limits
 
 Validation runs before and after `transform`.
