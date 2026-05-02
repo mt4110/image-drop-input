@@ -260,6 +260,48 @@ describe('useImageDraftLifecycle', () => {
     );
   });
 
+  it('runs previous cleanup after commit succeeds even when unmounted', async () => {
+    let resolveCommit: ((value: PersistableImageValue) => void) | undefined;
+    const cleanupPrevious = vi.fn(async () => undefined);
+    const onCommittedValueChange = vi.fn();
+    const commitDraft = vi.fn(
+      () =>
+        new Promise<PersistableImageValue>((resolve) => {
+          resolveCommit = resolve;
+        })
+    );
+    const options = createOptions({
+      commitDraft,
+      cleanupPrevious,
+      onCommittedValueChange
+    });
+    const { result, unmount } = renderHook(() => useImageDraftLifecycle(options));
+    let commitPromise: Promise<PersistableImageValue | null>;
+
+    await uploadDraft(result);
+
+    act(() => {
+      commitPromise = result.current.commit();
+    });
+
+    await waitFor(() => {
+      expect(result.current.phase).toBe('committing');
+    });
+
+    unmount();
+
+    await act(async () => {
+      resolveCommit?.(nextCommittedImage);
+      await expect(commitPromise).resolves.toEqual(nextCommittedImage);
+    });
+
+    expect(cleanupPrevious).toHaveBeenCalledWith({
+      previous: committedImage,
+      next: nextCommittedImage
+    });
+    expect(onCommittedValueChange).not.toHaveBeenCalled();
+  });
+
   it('does not clean up the previous image when the durable src is unchanged', async () => {
     const cleanupPrevious = vi.fn();
     const options = createOptions({

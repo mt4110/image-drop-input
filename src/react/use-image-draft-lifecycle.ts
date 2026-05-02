@@ -700,22 +700,15 @@ export function useImageDraftLifecycle(
         throw lifecycleError;
       }
 
-      if (!isMountedRef.current) {
-        return nextValue;
-      }
+      const cleanupPreviousValue = async () => {
+        if (
+          !previousValue ||
+          sameImageReference(previousValue, nextValue) ||
+          !optionsRef.current.cleanupPrevious
+        ) {
+          return;
+        }
 
-      clearError();
-      committedValueRef.current = nextValue;
-      setCommittedValueState(nextValue);
-      optionsRef.current.onCommittedValueChange?.(nextValue);
-      setDraftDescriptor(null);
-      setPhase('committed');
-
-      if (
-        previousValue &&
-        !sameImageReference(previousValue, nextValue) &&
-        optionsRef.current.cleanupPrevious
-      ) {
         try {
           await optionsRef.current.cleanupPrevious({
             previous: previousValue,
@@ -731,7 +724,21 @@ export function useImageDraftLifecycle(
 
           reportError(cleanupError);
         }
+      };
+
+      if (!isMountedRef.current) {
+        await cleanupPreviousValue();
+        return nextValue;
       }
+
+      clearError();
+      committedValueRef.current = nextValue;
+      setCommittedValueState(nextValue);
+      optionsRef.current.onCommittedValueChange?.(nextValue);
+      setDraftDescriptor(null);
+      setPhase('committed');
+
+      await cleanupPreviousValue();
 
       return nextValue;
     })();
