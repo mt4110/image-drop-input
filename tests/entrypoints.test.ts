@@ -4,6 +4,55 @@ import * as headless from '../src/headless';
 import * as root from '../src/index';
 
 describe('package entrypoints', () => {
+  it('keeps the runtime export surface explicit', () => {
+    expect(Object.keys(root).sort()).toMatchInlineSnapshot(`
+      [
+        "ImageDropInput",
+        "ImagePersistableValueError",
+        "ImageUploadError",
+        "ImageValidationError",
+        "assertPersistableImageValue",
+        "isImageUploadError",
+        "isImageValidationError",
+        "isPersistableImageValue",
+        "isTemporaryImageSrc",
+        "toPersistableImageValue",
+      ]
+    `);
+    expect(Object.keys(headless).sort()).toMatchInlineSnapshot(`
+      [
+        "ImageBudgetError",
+        "ImageDraftLifecycleError",
+        "ImagePersistableValueError",
+        "ImageUploadError",
+        "ImageValidationError",
+        "assertPersistableImageValue",
+        "compressImage",
+        "createMultipartUploader",
+        "createObjectUrl",
+        "createPresignedPutUploader",
+        "createRawPutUploader",
+        "getImageMetadata",
+        "isImageBudgetError",
+        "isImageDraftLifecycleError",
+        "isImageUploadError",
+        "isImageValidationError",
+        "isPersistableImageValue",
+        "isTemporaryImageSrc",
+        "normalizeAspectRatio",
+        "prepareImageToBudget",
+        "resolveDisplaySrc",
+        "resolveImageDropInputMessages",
+        "sendUploadRequest",
+        "toPersistableImageValue",
+        "uploadWithSignedTarget",
+        "useImageDraftLifecycle",
+        "useImageDropInput",
+        "validateImage",
+      ]
+    `);
+  });
+
   it('keeps advanced helper utilities off the root entry', () => {
     expect(root).toHaveProperty('ImageDropInput');
     expect(root.isImageValidationError).toBeTypeOf('function');

@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && vite build"
+  },
+  "dependencies": {
+    "image-drop-input": "file:../../.artifacts/image-drop-input.tgz",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.79",
+    "@types/react-dom": "18.2.25",
+    "typescript": "5.6.3",
+    "vite": "6.4.2"
+  }
+}
