@@ -1,5 +1,48 @@
+const root = require('image-drop-input');
 const headless = require('image-drop-input/headless');
 
+const expectedRootExports = [
+  'ImageDropInput',
+  'ImagePersistableValueError',
+  'ImageUploadError',
+  'ImageValidationError',
+  'assertPersistableImageValue',
+  'isImageUploadError',
+  'isImageValidationError',
+  'isPersistableImageValue',
+  'isTemporaryImageSrc',
+  'toPersistableImageValue'
+];
+const expectedHeadlessExports = [
+  'ImageBudgetError',
+  'ImageDraftLifecycleError',
+  'ImagePersistableValueError',
+  'ImageUploadError',
+  'ImageValidationError',
+  'assertPersistableImageValue',
+  'compressImage',
+  'createMultipartUploader',
+  'createObjectUrl',
+  'createPresignedPutUploader',
+  'createRawPutUploader',
+  'getImageMetadata',
+  'isImageBudgetError',
+  'isImageDraftLifecycleError',
+  'isImageUploadError',
+  'isImageValidationError',
+  'isPersistableImageValue',
+  'isTemporaryImageSrc',
+  'normalizeAspectRatio',
+  'prepareImageToBudget',
+  'resolveDisplaySrc',
+  'resolveImageDropInputMessages',
+  'sendUploadRequest',
+  'toPersistableImageValue',
+  'uploadWithSignedTarget',
+  'useImageDraftLifecycle',
+  'useImageDropInput',
+  'validateImage'
+];
 const requiredFunctions = [
   'compressImage',
   'prepareImageToBudget',
@@ -20,6 +63,22 @@ const requiredFunctions = [
   'useImageDraftLifecycle',
   'validateImage'
 ];
+
+function assertExportSurface(entrypoint, actualExports, expectedExports) {
+  const actualKeys = Object.keys(actualExports).sort();
+  const expectedKeys = [...expectedExports].sort();
+
+  if (JSON.stringify(actualKeys) !== JSON.stringify(expectedKeys)) {
+    throw new Error(
+      `Expected ${entrypoint} exports to match the packed package contract.\n` +
+        `Expected: ${expectedKeys.join(', ')}\n` +
+        `Received: ${actualKeys.join(', ')}`
+    );
+  }
+}
+
+assertExportSurface('root', root, expectedRootExports);
+assertExportSurface('headless', headless, expectedHeadlessExports);
 
 for (const name of requiredFunctions) {
   if (typeof headless[name] !== 'function') {

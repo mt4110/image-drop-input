@@ -128,6 +128,8 @@ jobs:
           path: .artifacts
 
       - run: npm --version
+      # The tarball is produced with the pinned maintainer npm in pack-consumer-artifact.
+      # This fixture then uses each Node lane's bundled npm to cover real consumer installs.
       - run: npm run smoke:consumer:vite-react-ui:install
 
       - name: Select React peer lane
