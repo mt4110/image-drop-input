@@ -571,9 +571,16 @@ export function useImageDraftLifecycle(
         throw lifecycleError;
       }
 
+      if (phaseRef.current === 'uploading-draft') {
+        staleUploadDiscardReasonsRef.current.set(uploadRunIdRef.current, reason);
+        uploadRunIdRef.current += 1;
+      }
+
       const currentDraft = draftRef.current;
 
       if (!currentDraft) {
+        clearError();
+        setPhase('idle');
         return;
       }
 
@@ -750,15 +757,22 @@ export function useImageDraftLifecycle(
       return;
     }
 
-    const activeUploadRunId = uploadRunIdRef.current;
+    const currentDraft = draftRef.current;
+    const shouldDiscardCurrentDraft = Boolean(
+      currentDraft && optionsRef.current.autoDiscard?.onReset
+    );
 
-    if (phaseRef.current === 'uploading-draft' && optionsRef.current.autoDiscard?.onReset) {
-      staleUploadDiscardReasonsRef.current.set(activeUploadRunId, 'reset');
+    if (phaseRef.current === 'uploading-draft' && !shouldDiscardCurrentDraft) {
+      const activeUploadRunId = uploadRunIdRef.current;
+
+      if (optionsRef.current.autoDiscard?.onReset) {
+        staleUploadDiscardReasonsRef.current.set(activeUploadRunId, 'reset');
+      }
+
+      uploadRunIdRef.current += 1;
     }
 
-    uploadRunIdRef.current += 1;
-
-    if (!draftRef.current) {
+    if (!currentDraft) {
       clearError();
       setPhase('idle');
       return;

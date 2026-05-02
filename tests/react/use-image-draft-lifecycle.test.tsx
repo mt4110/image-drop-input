@@ -580,6 +580,106 @@ describe('useImageDraftLifecycle', () => {
     expect(result.current.phase).toBe('discarded');
   });
 
+  it('keeps manual discard from accepting an in-flight replacement upload', async () => {
+    let resolveReplacement: ((value: { draftKey: string }) => void) | undefined;
+    const discardDraft = vi.fn(async () => undefined);
+    const uploadDraftMock = vi
+      .fn<UseImageDraftLifecycleOptions['uploadDraft']>()
+      .mockResolvedValueOnce({ draftKey: 'drafts/first.webp' })
+      .mockImplementationOnce(
+        () =>
+          new Promise<{ draftKey: string }>((resolve) => {
+            resolveReplacement = resolve;
+          })
+      );
+    const options = createOptions({
+      uploadDraft: uploadDraftMock,
+      discardDraft
+    });
+    const { result } = renderHook(() => useImageDraftLifecycle(options));
+    let replacementUpload: Promise<unknown>;
+
+    await act(async () => {
+      await result.current.uploadForInput(createFile('first.webp'), {});
+    });
+
+    act(() => {
+      replacementUpload = result.current.uploadForInput(createFile('second.webp'), {});
+    });
+
+    await waitFor(() => {
+      expect(result.current.phase).toBe('uploading-draft');
+    });
+
+    await act(async () => {
+      await result.current.discard('manual');
+    });
+
+    await act(async () => {
+      resolveReplacement?.({ draftKey: 'drafts/second.webp' });
+      await replacementUpload;
+    });
+
+    expect(result.current.draft).toBeNull();
+    expect(result.current.valueForInput).toEqual(committedImage);
+    expect(result.current.phase).toBe('discarded');
+    expect(discardDraft).toHaveBeenNthCalledWith(1, {
+      draft: expect.objectContaining({
+        draftKey: 'drafts/first.webp'
+      }),
+      reason: 'manual'
+    });
+    expect(discardDraft).toHaveBeenNthCalledWith(2, {
+      draft: expect.objectContaining({
+        draftKey: 'drafts/second.webp'
+      }),
+      reason: 'manual'
+    });
+  });
+
+  it('keeps manual discard from accepting an in-flight first upload', async () => {
+    let resolveUpload: ((value: { draftKey: string }) => void) | undefined;
+    const discardDraft = vi.fn(async () => undefined);
+    const options = createOptions({
+      uploadDraft: vi.fn(
+        () =>
+          new Promise<{ draftKey: string }>((resolve) => {
+            resolveUpload = resolve;
+          })
+      ),
+      discardDraft
+    });
+    const { result } = renderHook(() => useImageDraftLifecycle(options));
+    let uploadPromise: Promise<unknown>;
+
+    act(() => {
+      uploadPromise = result.current.uploadForInput(createFile(), {});
+    });
+
+    await waitFor(() => {
+      expect(result.current.phase).toBe('uploading-draft');
+    });
+
+    await act(async () => {
+      await result.current.discard('manual');
+    });
+
+    await act(async () => {
+      resolveUpload?.({ draftKey: 'drafts/stale-manual.webp' });
+      await uploadPromise;
+    });
+
+    expect(result.current.phase).toBe('idle');
+    expect(result.current.draft).toBeNull();
+    expect(result.current.valueForInput).toEqual(committedImage);
+    expect(discardDraft).toHaveBeenCalledWith({
+      draft: expect.objectContaining({
+        draftKey: 'drafts/stale-manual.webp'
+      }),
+      reason: 'manual'
+    });
+  });
+
   it('keeps a draft when user-triggered discard fails', async () => {
     const discardDraft = vi.fn(async () => {
       throw new Error('discard endpoint failed');
