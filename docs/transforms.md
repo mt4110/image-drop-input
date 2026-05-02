@@ -33,6 +33,8 @@ import { compressImage } from 'image-drop-input/headless';
 />
 ```
 
+When you need the prepared image to fit a byte budget instead of guessing a quality value, use [`prepareImageToBudget()`](./byte-budget.md).
+
 ## WebP conversion
 
 When changing the output format, keep the file name and MIME metadata consistent.

@@ -7,6 +7,7 @@ Start with:
 - [Value model](./value-model.md): how `src`, `previewSrc`, `key`, and metadata fit together
 - [Persistable value guard](./persistable-value.md): remove temporary preview state before submit
 - [Validation](./validation.md): source limits, output limits, dimensions, pixels, and error codes
+- [Byte budget solver](./byte-budget.md): prepare images to fit an output byte budget
 - [Uploads](./uploads.md): adapter contracts, signed upload boundaries, progress, typed upload errors, and aborts
 - [Transforms](./transforms.md): compression, WebP conversion, return shapes, and MIME consistency
 - [Accessibility](./accessibility.md): keyboard, paste, status, dialog, and headless responsibilities

@@ -22,6 +22,8 @@ Use `outputMaxBytes` when product storage, upload, or API limits apply to the pr
 
 `maxBytes` applies to both stages when the stage-specific prop is not set.
 
+When you want the transform step to actively create an image under the same limit, use [`prepareImageToBudget()`](./byte-budget.md) and keep `outputMaxBytes` as the final guard.
+
 ## MIME and extension rules
 
 `accept` uses normal file input accept syntax:
