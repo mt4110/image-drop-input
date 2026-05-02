@@ -86,6 +86,14 @@ export class ImageBudgetError extends Error {
   }
 }
 
+const imageBudgetErrorCodeList = [
+  'invalid_policy',
+  'decode_failed',
+  'encode_failed',
+  'unsupported_output_type',
+  'budget_unreachable'
+] as const satisfies readonly ImageBudgetErrorCode[];
+
 type ImageBudgetOutputType = NonNullable<ImageBudgetPolicy['outputType']>;
 
 interface ResolvedImageBudgetPolicy {
@@ -113,7 +121,15 @@ interface EncodedImageCandidate {
 }
 
 const supportedOutputTypes = ['image/jpeg', 'image/png', 'image/webp'] as const;
+const imageBudgetStrategyList = [
+  'source-within-budget',
+  'resize',
+  'quality-search',
+  'resize-and-quality-search'
+] as const satisfies readonly ImageBudgetStrategy[];
 const supportedOutputTypeSet = new Set<string>(supportedOutputTypes);
+const imageBudgetErrorCodes = new Set<ImageBudgetErrorCode>(imageBudgetErrorCodeList);
+const imageBudgetStrategies = new Set<ImageBudgetStrategy>(imageBudgetStrategyList);
 
 const defaultInitialQuality = 0.86;
 const defaultMinQuality = 0.6;
@@ -127,6 +143,10 @@ function isSupportedOutputType(value: string): value is ImageBudgetOutputType {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isIntegerAtLeast(value: unknown, minimum: number): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= minimum;
 }
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -191,18 +211,80 @@ function fileNameMatchesImageMimeType(fileName: string, mimeType: string): boole
   }
 }
 
-function resolveOriginalFileName(file: Blob, outputType: string, policyFileName?: string): string {
+function hasOptionalFiniteNumber(
+  details: Record<string, unknown>,
+  key: keyof ImageBudgetErrorDetails
+): boolean {
+  const value = details[key];
+
+  return typeof value === 'undefined' || (typeof value === 'number' && Number.isFinite(value));
+}
+
+function isImageBudgetAttempt(value: unknown): value is ImageBudgetAttempt {
+  if (!isObjectRecord(value)) {
+    return false;
+  }
+
+  return (
+    isIntegerAtLeast(value.attempt, 1) &&
+    isIntegerAtLeast(value.width, 1) &&
+    isIntegerAtLeast(value.height, 1) &&
+    typeof value.mimeType === 'string' &&
+    isSupportedOutputType(value.mimeType) &&
+    isIntegerAtLeast(value.size, 0) &&
+    typeof value.withinBudget === 'boolean' &&
+    typeof value.strategy === 'string' &&
+    imageBudgetStrategies.has(value.strategy as ImageBudgetStrategy) &&
+    (typeof value.quality === 'undefined' ||
+      (typeof value.quality === 'number' &&
+        Number.isFinite(value.quality) &&
+        value.quality > 0 &&
+        value.quality <= 1))
+  );
+}
+
+function hasOptionalAttempts(details: Record<string, unknown>): boolean {
+  const attempts = details.attempts;
+
+  return (
+    typeof attempts === 'undefined' ||
+    (Array.isArray(attempts) && attempts.every(isImageBudgetAttempt))
+  );
+}
+
+export function isImageBudgetError(error: unknown): error is ImageBudgetError {
+  if (!isObjectRecord(error)) {
+    return false;
+  }
+
+  if (
+    error.name !== 'ImageBudgetError' ||
+    typeof error.message !== 'string' ||
+    typeof error.code !== 'string' ||
+    !imageBudgetErrorCodes.has(error.code as ImageBudgetErrorCode) ||
+    !isObjectRecord(error.details)
+  ) {
+    return false;
+  }
+
+  return (
+    hasOptionalFiniteNumber(error.details, 'outputMaxBytes') &&
+    hasOptionalFiniteNumber(error.details, 'minWidth') &&
+    hasOptionalFiniteNumber(error.details, 'minHeight') &&
+    hasOptionalAttempts(error.details)
+  );
+}
+
+function resolveOriginalFileName(file: Blob, sourceType: string): string {
   const fileName = getImageFileName(file);
 
   if (fileName) {
     return fileName;
   }
 
-  if (typeof policyFileName === 'string') {
-    return policyFileName;
-  }
+  const extension = getImageExtension(sourceType);
 
-  return `image${getImageExtension(outputType)}`;
+  return extension ? `image${extension}` : 'image';
 }
 
 function resolveOutputFileName(
@@ -236,7 +318,7 @@ function createInvalidPolicyError(
   });
 }
 
-function validatePositiveOptionalDimension(
+function validateMaxDimension(
   value: number | undefined,
   fieldName: string,
   policy: ImageBudgetPolicy
@@ -245,8 +327,11 @@ function validatePositiveOptionalDimension(
     return;
   }
 
-  if (!isFiniteNumber(value) || value <= 0) {
-    throw createInvalidPolicyError(`${fieldName} must be a finite positive number.`, policy);
+  if (!isFiniteNumber(value) || value < 1) {
+    throw createInvalidPolicyError(
+      `${fieldName} must be a finite number greater than or equal to 1.`,
+      policy
+    );
   }
 }
 
@@ -277,9 +362,11 @@ function resolvePolicy(file: Blob, policy: ImageBudgetPolicy): ResolvedImageBudg
   const requestedOutputType = toMimeType(policy.outputType);
 
   if (hasRequestedOutputType && !isSupportedOutputType(requestedOutputType)) {
+    const unsupportedOutputType = requestedOutputType || '(empty)';
+
     throw new ImageBudgetError(
       'unsupported_output_type',
-      `Unsupported image output type: ${requestedOutputType}.`,
+      `Unsupported image output type: ${unsupportedOutputType}.`,
       { outputMaxBytes: policy.outputMaxBytes }
     );
   }
@@ -321,8 +408,8 @@ function resolvePolicy(file: Blob, policy: ImageBudgetPolicy): ResolvedImageBudg
     throw createInvalidPolicyError('resizeStepRatio must be greater than 0 and less than 1.', policy);
   }
 
-  validatePositiveOptionalDimension(policy.maxWidth, 'maxWidth', policy);
-  validatePositiveOptionalDimension(policy.maxHeight, 'maxHeight', policy);
+  validateMaxDimension(policy.maxWidth, 'maxWidth', policy);
+  validateMaxDimension(policy.maxHeight, 'maxHeight', policy);
   validateNonNegativeOptionalDimension(policy.minWidth, 'minWidth', policy);
   validateNonNegativeOptionalDimension(policy.minHeight, 'minHeight', policy);
 
@@ -365,10 +452,16 @@ function fitWithinMaxDimensions(
   const maxWidth = policy.maxWidth ?? originalWidth;
   const maxHeight = policy.maxHeight ?? originalHeight;
   const scale = Math.min(1, maxWidth / originalWidth, maxHeight / originalHeight);
+  const width = Math.max(1, Math.round(originalWidth * scale));
+  const height = Math.max(1, Math.round(originalHeight * scale));
 
   return {
-    width: Math.max(1, Math.round(originalWidth * scale)),
-    height: Math.max(1, Math.round(originalHeight * scale))
+    width: typeof policy.maxWidth === 'number'
+      ? Math.min(width, Math.floor(policy.maxWidth))
+      : width,
+    height: typeof policy.maxHeight === 'number'
+      ? Math.min(height, Math.floor(policy.maxHeight))
+      : height
   };
 }
 
@@ -673,7 +766,7 @@ export async function prepareImageToBudget(
 
   const resolvedPolicy = resolvePolicy(file, policy);
   const sourceType = toMimeType(file.type);
-  const originalFileName = resolveOriginalFileName(file, resolvedPolicy.outputType, policy.fileName);
+  const originalFileName = resolveOriginalFileName(file, sourceType);
   let decodedImage: DecodedImage;
 
   try {

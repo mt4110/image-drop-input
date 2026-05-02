@@ -11,7 +11,11 @@ export type { UseImageDropInputOptions, UseImageDropInputReturn } from './react/
 export { compressImage } from './core/compress-image';
 export { createObjectUrl } from './core/create-object-url';
 export { getImageMetadata } from './core/get-image-metadata';
-export { ImageBudgetError, prepareImageToBudget } from './core/prepare-image-to-budget';
+export {
+  ImageBudgetError,
+  isImageBudgetError,
+  prepareImageToBudget
+} from './core/prepare-image-to-budget';
 export type {
   ImageBudgetAttempt,
   ImageBudgetErrorCode,

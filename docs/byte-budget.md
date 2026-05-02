@@ -78,7 +78,7 @@ If `fileName` is provided, the helper uses it as-is. Otherwise it derives an ext
 
 ## Errors
 
-`prepareImageToBudget()` throws `ImageBudgetError` with a stable `code`:
+`prepareImageToBudget()` throws `ImageBudgetError` with a stable `code`. Use `isImageBudgetError()` when product copy, retry labels, or telemetry need stable narrowing without relying on `instanceof`.
 
 | Code | Meaning |
 | --- | --- |

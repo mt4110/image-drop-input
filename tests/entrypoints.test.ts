@@ -16,6 +16,7 @@ describe('package entrypoints', () => {
     expect(root.isTemporaryImageSrc).toBeTypeOf('function');
     expect(root).not.toHaveProperty('compressImage');
     expect(root).not.toHaveProperty('ImageBudgetError');
+    expect(root).not.toHaveProperty('isImageBudgetError');
     expect(root).not.toHaveProperty('prepareImageToBudget');
     expect(root).not.toHaveProperty('createPresignedPutUploader');
     expect(root).not.toHaveProperty('useImageDropInput');
@@ -26,6 +27,7 @@ describe('package entrypoints', () => {
     expect(headless.compressImage).toBeTypeOf('function');
     expect(headless.prepareImageToBudget).toBeTypeOf('function');
     expect(headless.ImageBudgetError).toBeTypeOf('function');
+    expect(headless.isImageBudgetError).toBeTypeOf('function');
     expect(headless.createPresignedPutUploader).toBeTypeOf('function');
     expect(headless.ImageValidationError).toBeTypeOf('function');
     expect(headless.isImageValidationError).toBeTypeOf('function');

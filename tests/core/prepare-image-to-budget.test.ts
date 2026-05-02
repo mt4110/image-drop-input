@@ -2,6 +2,7 @@ import '../setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ImageBudgetError,
+  isImageBudgetError,
   prepareImageToBudget,
   type ImageBudgetAttempt
 } from '../../src/core/prepare-image-to-budget';
@@ -164,6 +165,20 @@ describe('prepareImageToBudget', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps nameless Blob originalFileName independent from policy fileName', async () => {
+    const source = new Blob([new Uint8Array(600_000)], { type: 'image/jpeg' });
+    const result = await prepareImageToBudget(source, {
+      outputMaxBytes: 300_000,
+      outputType: 'image/webp',
+      fileName: 'prepared-avatar.webp'
+    });
+
+    expect(result.fileName).toBe('prepared-avatar.webp');
+    expect(result.mimeType).toBe('image/webp');
+    expect(result.originalFileName).toBe('image.jpg');
+    expect(result.originalMimeType).toBe('image/jpeg');
+  });
+
   it('searches quality deterministically when the first lossy encode is too large', async () => {
     const source = new File([new Uint8Array(800_000)], 'cover.jpg', { type: 'image/jpeg' });
     const policy = {
@@ -234,6 +249,22 @@ describe('prepareImageToBudget', () => {
     expect(result.strategy).toBe('resize');
     expect(result.attempts.every((attempt) => typeof attempt.quality === 'undefined')).toBe(true);
     expect(result.attempts.every((attempt) => attempt.strategy === 'resize')).toBe(true);
+  });
+
+  it('clamps rounded max dimensions so the prepared image does not exceed policy max', async () => {
+    decodedWidth = 201;
+    decodedHeight = 100;
+
+    const source = new File([new Uint8Array(500_000)], 'wide.jpg', { type: 'image/jpeg' });
+    const result = await prepareImageToBudget(source, {
+      outputMaxBytes: 250_000,
+      outputType: 'image/jpeg',
+      maxWidth: 100.6
+    });
+
+    expect(result.width).toBe(100);
+    expect(result.width).toBeLessThanOrEqual(100.6);
+    expect(drawImage).toHaveBeenCalledWith(expect.anything(), 0, 0, 100, 50);
   });
 
   it('does not return or encode an image when the minimum dimensions are unreachable', async () => {
@@ -318,6 +349,7 @@ describe('prepareImageToBudget', () => {
       });
     } catch (error) {
       expect(error).toBeInstanceOf(ImageBudgetError);
+      expect(isImageBudgetError(error)).toBe(true);
       expect((error as ImageBudgetError).details.attempts).toHaveLength(3);
       expect(
         (error as ImageBudgetError).details.attempts?.every((attempt: ImageBudgetAttempt) => {
@@ -333,6 +365,15 @@ describe('prepareImageToBudget', () => {
     await expect(
       prepareImageToBudget(source, {
         outputMaxBytes: 100.5
+      })
+    ).rejects.toMatchObject({
+      name: 'ImageBudgetError',
+      code: 'invalid_policy'
+    });
+    await expect(
+      prepareImageToBudget(source, {
+        outputMaxBytes: 100,
+        maxWidth: 0.5
       })
     ).rejects.toMatchObject({
       name: 'ImageBudgetError',
@@ -379,7 +420,8 @@ describe('prepareImageToBudget', () => {
       })
     ).rejects.toMatchObject({
       name: 'ImageBudgetError',
-      code: 'unsupported_output_type'
+      code: 'unsupported_output_type',
+      message: 'Unsupported image output type: (empty).'
     });
     expect(globalThis.createImageBitmap).not.toHaveBeenCalled();
   });
@@ -460,5 +502,38 @@ describe('prepareImageToBudget', () => {
       code: 'decode_failed'
     });
     expect(drawImage).not.toHaveBeenCalled();
+  });
+
+  it('narrows ImageBudgetError-like values without relying on instanceof', () => {
+    expect(
+      isImageBudgetError({
+        name: 'ImageBudgetError',
+        message: 'Unable to prepare image.',
+        code: 'budget_unreachable',
+        details: {
+          outputMaxBytes: 100,
+          attempts: [
+            {
+              attempt: 1,
+              width: 640,
+              height: 480,
+              quality: 0.6,
+              mimeType: 'image/webp',
+              size: 120,
+              withinBudget: false,
+              strategy: 'quality-search'
+            }
+          ]
+        }
+      })
+    ).toBe(true);
+    expect(
+      isImageBudgetError({
+        name: 'ImageBudgetError',
+        message: 'Unknown code.',
+        code: 'unknown',
+        details: {}
+      })
+    ).toBe(false);
   });
 });

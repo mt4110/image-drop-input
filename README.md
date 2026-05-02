@@ -356,7 +356,7 @@ Read the checklist in [docs/accessibility.md](./docs/accessibility.md).
 | Import | Exports |
 | --- | --- |
 | `image-drop-input` | `ImageDropInput`, UI props and render types, `ImageUploadValue`, upload types, validation and upload error helpers |
-| `image-drop-input/headless` | `useImageDropInput`, `compressImage`, `prepareImageToBudget`, `validateImage`, metadata helpers, upload factories, upload error helpers |
+| `image-drop-input/headless` | `useImageDropInput`, `compressImage`, `prepareImageToBudget`, `validateImage`, metadata helpers, upload factories, budget/validation/upload error helpers |
 | `image-drop-input/style.css` | default component styles |
 
 ```ts
@@ -373,10 +373,12 @@ import {
 
 ```ts
 import {
+  ImageBudgetError,
   compressImage,
   createMultipartUploader,
   createPresignedPutUploader,
   createRawPutUploader,
+  isImageBudgetError,
   prepareImageToBudget,
   useImageDropInput,
   validateImage,

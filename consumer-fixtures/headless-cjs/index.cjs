@@ -4,6 +4,7 @@ const requiredFunctions = [
   'compressImage',
   'prepareImageToBudget',
   'ImageBudgetError',
+  'isImageBudgetError',
   'createMultipartUploader',
   'createPresignedPutUploader',
   'createRawPutUploader',
@@ -40,6 +41,10 @@ if (!headless.isImageUploadError(uploadError)) {
 
 if (budgetError.name !== 'ImageBudgetError' || budgetError.code !== 'budget_unreachable') {
   throw new Error('Expected headless ImageBudgetError to expose stable error fields.');
+}
+
+if (!headless.isImageBudgetError(budgetError)) {
+  throw new Error('Expected headless isImageBudgetError to narrow ImageBudgetError.');
 }
 
 const persistableValue = headless.toPersistableImageValue({
