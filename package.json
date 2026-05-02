@@ -91,6 +91,7 @@
     "build": "npm run clean && npm run build:lib && npm run build:examples",
     "prepack": "npm run build:lib",
     "prepublishOnly": "npm run check:package",
+    "pretest": "npm run build:lib",
     "release:prepare": "node scripts/prepare-release.mjs",
     "verify": "npm run typecheck && npm test && npm run build:examples && npm run check:package",
     "pack:consumer-smoke": "npm run build:lib && node scripts/prepare-consumer-smoke-artifact.mjs",

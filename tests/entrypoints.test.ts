@@ -1,7 +1,18 @@
 import './setup';
-import { describe, expect, it } from 'vitest';
-import * as headless from '../src/headless';
-import * as root from '../src/index';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+let root: Record<string, unknown>;
+let headless: Record<string, unknown>;
+
+beforeAll(async () => {
+  const rootEntrypoint = 'image-drop-input';
+  const headlessEntrypoint = 'image-drop-input/headless';
+
+  [root, headless] = await Promise.all([
+    import(rootEntrypoint),
+    import(headlessEntrypoint)
+  ]);
+});
 
 describe('package entrypoints', () => {
   it('keeps the runtime export surface explicit', () => {
