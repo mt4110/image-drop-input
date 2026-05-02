@@ -254,6 +254,8 @@ type PresignedPutTarget = {
 
 See [docs/uploads.md](./docs/uploads.md) for presigned PUT, multipart POST, raw PUT, custom adapters, progress, and abort behavior.
 
+For product forms that upload a temporary draft and only make it durable when the form is saved, keep the backend lifecycle in your app: [backend contracts](./docs/backend-contracts.md), [draft lifecycle](./docs/draft-lifecycle.md), and the [Next.js draft lifecycle recipe](./docs/recipes/nextjs-draft-lifecycle.md).
+
 ## Upload error handling
 
 Built-in upload helpers throw `ImageUploadError` with stable `code` and `details` fields. Use `isImageUploadError()` for product copy, retry labels, and telemetry instead of parsing English messages.
@@ -325,6 +327,8 @@ Read more in [docs/transforms.md](./docs/transforms.md).
 
 ## Recipes
 
+- [Backend contracts](./docs/backend-contracts.md)
+- [Draft lifecycle](./docs/draft-lifecycle.md)
 - [Local preview](./docs/recipes/local-preview.md)
 - [Avatar field](./docs/recipes/avatar.md)
 - [Compression](./docs/recipes/compression.md)
@@ -332,6 +336,7 @@ Read more in [docs/transforms.md](./docs/transforms.md).
 - [Presigned PUT](./docs/recipes/presigned-put.md)
 - [Next.js App Router](./docs/recipes/nextjs-app-router.md)
 - [Next.js presign route](./docs/recipes/nextjs-presign-route.md)
+- [Next.js draft lifecycle](./docs/recipes/nextjs-draft-lifecycle.md)
 - [React Hook Form and Zod](./docs/recipes/react-hook-form-zod.md)
 - [Multipart POST](./docs/recipes/multipart-post.md)
 - [Raw PUT](./docs/recipes/raw-put.md)
@@ -380,8 +385,10 @@ import {
   createRawPutUploader,
   isImageBudgetError,
   prepareImageToBudget,
+  useImageDraftLifecycle,
   useImageDropInput,
   validateImage,
+  type ImageDraftDescriptor,
   type UseImageDropInputReturn
 } from 'image-drop-input/headless';
 ```

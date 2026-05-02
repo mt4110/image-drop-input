@@ -104,6 +104,8 @@ pick / drop / paste
 
 user に見えている preview と、DB に保存してよい画像参照は同じではありません。
 
+draft upload を form save 時に commit し、cancel 時に discard し、previous image を commit 後だけ cleanup したい場合は、server 側の契約を app で持ってください。詳しくは [Backend contracts](./docs/backend-contracts.md)、[Draft lifecycle](./docs/draft-lifecycle.md)、[Next.js draft lifecycle recipe](./docs/recipes/nextjs-draft-lifecycle.md) を参照してください。
+
 ## Validation と byte limit
 
 validation は transform の前後で走ります。
@@ -179,8 +181,11 @@ async function submitProfile() {
 
 ## Recipes
 
+- [Backend contracts](./docs/backend-contracts.md)
+- [Draft lifecycle](./docs/draft-lifecycle.md)
 - [Next.js App Router](./docs/recipes/nextjs-app-router.md)
 - [Next.js presign route](./docs/recipes/nextjs-presign-route.md)
+- [Next.js draft lifecycle](./docs/recipes/nextjs-draft-lifecycle.md)
 - [React Hook Form and Zod](./docs/recipes/react-hook-form-zod.md)
 
 ## Upload examples
