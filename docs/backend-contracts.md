@@ -208,11 +208,11 @@ Browser
     -> submit form fields plus draft identity
 
 Server
-  POST /api/profile
+  POST /api/products/:id
     -> validate form fields
     -> validate draft ownership and expiry
     -> commit draft to final image
-    -> update profile row with final image value
+    -> update product row with final image value
     -> enqueue previous cleanup after the transaction succeeds
     -> return durable image value
 ```

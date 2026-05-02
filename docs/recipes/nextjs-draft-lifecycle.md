@@ -2,7 +2,7 @@
 
 Use this pattern when a profile, product, or CMS form needs image replacement to stay consistent with the saved record.
 
-The client uploads a draft object first. The form submit route then commits that draft and updates the product record in one server-owned operation. The snippets below are app-side examples. They intentionally use placeholder storage, auth, database, and queue helpers instead of provider SDK code.
+The client uploads a draft object first. The form submit route then commits that draft and updates the profile record in one server-owned operation. The snippets below are app-side examples. They intentionally use placeholder storage, auth, database, and queue helpers instead of provider SDK code.
 
 Read the contract details in [Backend contracts](../backend-contracts.md).
 
@@ -217,7 +217,7 @@ async function discardDraft(request: DiscardImageDraftRequest) {
 }
 ```
 
-Do not write `target.uploadUrl` or `target.draftToken` to browser logs, analytics, or user-facing error messages. If `publicUrl` is not returned, the hook keeps a local preview for display. Do not derive a render URL from `uploadUrl`, and do not save `image.valueForInput` as product data before the commit response returns a durable image value.
+Do not write `target.uploadUrl` or `target.draftToken` to browser logs, analytics, or user-facing error messages. If `publicUrl` is not returned, the hook keeps a local preview for display. Do not derive a render URL from `uploadUrl`, and do not save `image.valueForInput` as record data before the commit response returns a durable image value.
 
 `image.resetToCommitted()` clears the local draft state. With `autoDiscard.onReset` enabled, it also calls the discard route for the draft when one exists.
 
@@ -413,7 +413,7 @@ async function commitProfileImageDraft(_input: {
   purpose: ImagePurpose;
   previous: PersistableImageValue | null;
 }): Promise<PersistableImageValue> {
-  // Validate owner, expiry, token, purpose, MIME type, object existence, and product permissions.
+  // Validate owner, expiry, token, purpose, MIME type, object existence, and profile permissions.
   // Move/copy the draft object to a final key or mark it final.
   // Return a durable value with explicit src and/or key.
   throw new Error('Connect this route to your image commit service.');
@@ -448,7 +448,7 @@ function sameImageReference(previous: PersistableImageValue, next: PersistableIm
 }
 ```
 
-This submit route is the safer shape because it commits the draft and updates the product record together. The current profile row, not the browser payload, decides which previous image is eligible for cleanup.
+This submit route is the safer shape because it commits the draft and updates the profile record together. The current profile row, not the browser payload, decides which previous image is eligible for cleanup.
 
 ## Best-effort discard route
 
@@ -539,4 +539,4 @@ Run previous cleanup only after the new image is committed. A cleanup failure sh
 
 Client discard is a convenience, not a guarantee. Add a server-side lifecycle rule or scheduled cleanup that removes expired draft objects and draft metadata. A good default is a short expiry, such as 15 to 60 minutes, depending on how long your form can reasonably stay open.
 
-Never delete the previous committed image before the new image has been committed with the product record.
+Never delete the previous committed image before the new image has been committed with the saved record.
