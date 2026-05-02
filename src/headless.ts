@@ -8,6 +8,26 @@ export type {
 export { resolveImageDropInputMessages } from './react/customization';
 export { normalizeAspectRatio, resolveDisplaySrc, useImageDropInput } from './react/use-image-drop-input';
 export type { UseImageDropInputOptions, UseImageDropInputReturn } from './react/use-image-drop-input';
+export {
+  ImageDraftLifecycleError,
+  isImageDraftLifecycleError,
+  useImageDraftLifecycle
+} from './react/use-image-draft-lifecycle';
+export type {
+  CleanupPreviousImageRequest,
+  CommitImageDraftRequest,
+  DiscardImageDraftRequest,
+  DraftUploadAdapterResult,
+  ImageDraftDescriptor,
+  ImageDraftLifecycleErrorCode,
+  ImageDraftLifecycleErrorDetails,
+  ImageDraftLifecycleErrorOptions,
+  ImageDraftLifecyclePhase,
+  ImageDraftUploadAdapter,
+  ImageDraftUploadResult,
+  UseImageDraftLifecycleOptions,
+  UseImageDraftLifecycleReturn
+} from './react/use-image-draft-lifecycle';
 export { compressImage } from './core/compress-image';
 export { createObjectUrl } from './core/create-object-url';
 export { getImageMetadata } from './core/get-image-metadata';
