@@ -888,6 +888,50 @@ describe('useImageDraftLifecycle', () => {
     expect(result.current.draft).toBeNull();
   });
 
+  it('clears stale discard reasons when an invalidated upload rejects', async () => {
+    let rejectUpload: ((reason: Error) => void) | undefined;
+    const deleteSpy = vi.spyOn(Map.prototype, 'delete');
+    const uploadError = new Error('upload failed after reset');
+    const options = createOptions({
+      uploadDraft: vi.fn(
+        () =>
+          new Promise<never>((_, reject) => {
+            rejectUpload = reject;
+          })
+      ),
+      autoDiscard: {
+        onReset: true
+      }
+    });
+    const { result } = renderHook(() => useImageDraftLifecycle(options));
+    let uploadPromise: Promise<unknown>;
+
+    try {
+      act(() => {
+        uploadPromise = result.current.uploadForInput(createFile(), {});
+      });
+
+      await waitFor(() => {
+        expect(result.current.phase).toBe('uploading-draft');
+      });
+
+      act(() => {
+        result.current.resetToCommitted();
+      });
+
+      await act(async () => {
+        rejectUpload?.(uploadError);
+        await expect(uploadPromise).rejects.toBe(uploadError);
+      });
+
+      expect(deleteSpy).toHaveBeenCalledWith(1);
+      expect(result.current.phase).toBe('idle');
+      expect(result.current.error).toBeNull();
+    } finally {
+      deleteSpy.mockRestore();
+    }
+  });
+
   it('best-effort discards a stale in-flight upload on unmount when configured', async () => {
     let resolveUpload: ((value: { draftKey: string }) => void) | undefined;
     const discardDraft = vi.fn(async () => undefined);

@@ -538,6 +538,7 @@ export function useImageDraftLifecycle(
       return result;
     } catch (nextError) {
       if (runId !== uploadRunIdRef.current || !isMountedRef.current) {
+        staleUploadDiscardReasonsRef.current.delete(runId);
         throw nextError;
       }
 
