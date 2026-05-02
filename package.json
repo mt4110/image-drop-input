@@ -1,7 +1,7 @@
 {
   "name": "image-drop-input",
   "version": "0.3.1",
-  "description": "Product-safe React image input for preview, validation, compression, paste, and signed uploads.",
+  "description": "Product-safe React image field for durable image state, byte-budget preparation, explicit uploads, and draft lifecycle.",
   "license": "MIT",
   "type": "module",
   "homepage": "https://mt4110.github.io/image-drop-input/",
@@ -51,23 +51,25 @@
   "keywords": [
     "react",
     "react-component",
-    "image-upload",
+    "product-image-field",
+    "image-field",
     "image-input",
+    "image-upload",
     "image-preview",
     "image-compression",
+    "persistable-image",
+    "image-draft",
+    "draft-upload",
+    "byte-budget",
+    "form-state",
     "file-input",
     "drag-and-drop",
     "clipboard-paste",
     "presigned-url",
     "object-storage",
-    "s3",
-    "r2",
     "webp",
     "avatar-upload",
-    "avatar",
-    "cms",
-    "form-input",
-    "uploader"
+    "cms"
   ],
   "sideEffects": [
     "./dist/style.css"
