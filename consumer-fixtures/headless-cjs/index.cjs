@@ -2,6 +2,8 @@ const headless = require('image-drop-input/headless');
 
 const requiredFunctions = [
   'compressImage',
+  'prepareImageToBudget',
+  'ImageBudgetError',
   'createMultipartUploader',
   'createPresignedPutUploader',
   'createRawPutUploader',
@@ -26,9 +28,18 @@ const uploadError = new headless.ImageUploadError(
   'Upload failed due to a network error.',
   { stage: 'request', method: 'PUT' }
 );
+const budgetError = new headless.ImageBudgetError(
+  'budget_unreachable',
+  'Unable to prepare an image within the byte budget.',
+  { outputMaxBytes: 1, attempts: [] }
+);
 
 if (!headless.isImageUploadError(uploadError)) {
   throw new Error('Expected headless isImageUploadError to narrow ImageUploadError.');
+}
+
+if (budgetError.name !== 'ImageBudgetError' || budgetError.code !== 'budget_unreachable') {
+  throw new Error('Expected headless ImageBudgetError to expose stable error fields.');
 }
 
 const persistableValue = headless.toPersistableImageValue({

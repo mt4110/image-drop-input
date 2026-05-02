@@ -1,3 +1,4 @@
+import { createImageCanvas } from './canvas-image';
 import { decodeImage } from './decode-image';
 import type { CompressImageOptions } from './types';
 
@@ -15,62 +16,6 @@ function pickOutputType(sourceType: string, requestedType: CompressImageOptions[
   }
 
   return 'image/jpeg';
-}
-
-
-function createCanvas(width: number, height: number): {
-  context: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D;
-  toBlob: (type: string, quality?: number) => Promise<Blob>;
-} {
-  if (typeof OffscreenCanvas !== 'undefined') {
-    const canvas = new OffscreenCanvas(width, height);
-    const context = canvas.getContext('2d');
-
-    if (!context) {
-      throw new Error('2D canvas is unavailable in this environment.');
-    }
-
-    return {
-      context,
-      toBlob(type, quality) {
-        return canvas.convertToBlob({ type, quality });
-      }
-    };
-  }
-
-  if (typeof document === 'undefined') {
-    throw new Error('Canvas-based image transforms are unavailable in this environment.');
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    throw new Error('2D canvas is unavailable in this environment.');
-  }
-
-  return {
-    context,
-    toBlob(type, quality) {
-      return new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(blob);
-              return;
-            }
-
-            reject(new Error('Unable to encode the transformed image.'));
-          },
-          type,
-          quality
-        );
-      });
-    }
-  };
 }
 
 export async function compressImage(source: Blob, options: CompressImageOptions = {}): Promise<Blob> {
@@ -94,7 +39,7 @@ export async function compressImage(source: Blob, options: CompressImageOptions 
       return source;
     }
 
-    const { context, toBlob } = createCanvas(width, height);
+    const { context, toBlob } = createImageCanvas(width, height);
 
     context.drawImage(decodedImage.drawSource, 0, 0, width, height);
     const blob = await toBlob(outputType, quality);

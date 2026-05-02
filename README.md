@@ -183,24 +183,31 @@ Validation runs before and after `transform`.
 
 ```tsx
 import { ImageDropInput } from 'image-drop-input';
-import { compressImage } from 'image-drop-input/headless';
+import { prepareImageToBudget } from 'image-drop-input/headless';
 
 <ImageDropInput
   inputMaxBytes={20 * 1024 * 1024}
-  outputMaxBytes={5 * 1024 * 1024}
-  transform={(file) =>
-    compressImage(file, {
+  outputMaxBytes={500_000}
+  transform={async (file) => {
+    const prepared = await prepareImageToBudget(file, {
+      outputMaxBytes: 500_000,
+      outputType: 'image/webp',
       maxWidth: 1600,
-      maxHeight: 1600,
-      quality: 0.86
-    })
-  }
+      maxHeight: 1600
+    });
+
+    return {
+      file: prepared.file,
+      fileName: prepared.fileName,
+      mimeType: prepared.mimeType
+    };
+  }}
 />
 ```
 
 Dimension and pixel-budget validation also runs after `transform`, so `onChange` receives metadata for the prepared file.
 
-Read the details in [docs/validation.md](./docs/validation.md).
+Read the details in [docs/validation.md](./docs/validation.md) and the deterministic byte-budget guide in [docs/byte-budget.md](./docs/byte-budget.md).
 
 ## Upload recipes
 
@@ -349,7 +356,7 @@ Read the checklist in [docs/accessibility.md](./docs/accessibility.md).
 | Import | Exports |
 | --- | --- |
 | `image-drop-input` | `ImageDropInput`, UI props and render types, `ImageUploadValue`, upload types, validation and upload error helpers |
-| `image-drop-input/headless` | `useImageDropInput`, `compressImage`, `validateImage`, metadata helpers, upload factories, upload error helpers |
+| `image-drop-input/headless` | `useImageDropInput`, `compressImage`, `prepareImageToBudget`, `validateImage`, metadata helpers, upload factories, upload error helpers |
 | `image-drop-input/style.css` | default component styles |
 
 ```ts
@@ -370,6 +377,7 @@ import {
   createMultipartUploader,
   createPresignedPutUploader,
   createRawPutUploader,
+  prepareImageToBudget,
   useImageDropInput,
   validateImage,
   type UseImageDropInputReturn
