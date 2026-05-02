@@ -12,6 +12,7 @@ Start with:
 - [Byte budget solver](./byte-budget.md): prepare images to fit an output byte budget
 - [Draft lifecycle](./draft-lifecycle.md): upload drafts, commit on form save, discard on cancel, and cleanup previous images
 - [Backend contracts](./backend-contracts.md): app-owned auth, signed URLs, commit, discard, previous cleanup, and TTL cleanup
+- [Integration report](./integration-report.md): repo-maintained report for the single-image product form boundary
 - [Uploads](./uploads.md): adapter contracts, signed upload boundaries, progress, typed upload errors, and aborts
 - [Transforms](./transforms.md): compression, WebP conversion, return shapes, and MIME consistency
 - [Accessibility](./accessibility.md): keyboard, paste, status, dialog, and headless responsibilities
