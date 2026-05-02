@@ -172,6 +172,10 @@ function isOptionalString(value: unknown): value is string | undefined {
   return typeof value === 'undefined' || typeof value === 'string';
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
+}
+
 export function isImageDraftLifecycleError(
   error: unknown
 ): error is ImageDraftLifecycleError {
@@ -330,6 +334,9 @@ export function useImageDraftLifecycle(
   const uploadRunIdRef = useRef(0);
   const draftPreviewObjectUrlRef = useRef<ManagedObjectUrl | null>(null);
   const commitPromiseRef = useRef<Promise<PersistableImageValue | null> | null>(null);
+  const staleUploadDiscardReasonsRef = useRef(
+    new Map<number, DiscardImageDraftRequest['reason']>()
+  );
 
   const [phase, setPhaseState] = useState<ImageDraftLifecyclePhase>('idle');
   const phaseRef = useRef<ImageDraftLifecyclePhase>('idle');
@@ -433,7 +440,11 @@ export function useImageDraftLifecycle(
       const currentDraft = draftRef.current;
       releaseDraftPreviewObjectUrl();
 
-      if (currentDraft && optionsRef.current.autoDiscard?.onUnmount) {
+      if (
+        currentDraft &&
+        phaseRef.current !== 'committing' &&
+        optionsRef.current.autoDiscard?.onUnmount
+      ) {
         void discardDescriptorBestEffort(currentDraft, 'unmount', false);
       }
     };
@@ -471,10 +482,22 @@ export function useImageDraftLifecycle(
       const result = await optionsRef.current.uploadDraft(file, context);
 
       if (runId !== uploadRunIdRef.current) {
-        if (optionsRef.current.autoDiscard?.onReplace) {
+        const staleDiscardReason =
+          staleUploadDiscardReasonsRef.current.get(runId) ??
+          (optionsRef.current.autoDiscard?.onReplace ? 'replace' : null);
+        const unmountDiscardReason = optionsRef.current.autoDiscard?.onUnmount
+          ? 'unmount'
+          : null;
+        const discardReason = !isMountedRef.current
+          ? unmountDiscardReason
+          : staleDiscardReason;
+
+        staleUploadDiscardReasonsRef.current.delete(runId);
+
+        if (discardReason) {
           try {
             const staleDraft = createDraftDescriptor(result, file, context);
-            void discardDescriptorBestEffort(staleDraft, 'replace', false);
+            void discardDescriptorBestEffort(staleDraft, discardReason, false);
           } catch {
             // If a stale upload cannot be identified, there is nothing useful to discard.
           }
@@ -515,6 +538,12 @@ export function useImageDraftLifecycle(
       return result;
     } catch (nextError) {
       if (runId !== uploadRunIdRef.current || !isMountedRef.current) {
+        throw nextError;
+      }
+
+      if (isAbortError(nextError)) {
+        clearError();
+        setPhase(draftRef.current ? 'draft-ready' : 'idle');
         throw nextError;
       }
 
@@ -719,6 +748,12 @@ export function useImageDraftLifecycle(
     if (phaseRef.current === 'discarding') {
       reportError(createDiscardInProgressError());
       return;
+    }
+
+    const activeUploadRunId = uploadRunIdRef.current;
+
+    if (phaseRef.current === 'uploading-draft' && optionsRef.current.autoDiscard?.onReset) {
+      staleUploadDiscardReasonsRef.current.set(activeUploadRunId, 'reset');
     }
 
     uploadRunIdRef.current += 1;

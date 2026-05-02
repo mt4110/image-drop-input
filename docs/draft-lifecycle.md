@@ -114,6 +114,8 @@ type DiscardImageDraftRequest = {
 };
 ```
 
+`discardDraft` is optional because some products rely on short draft TTLs only. If it is omitted, `discard()` and `autoDiscard` still clear the local draft state, but no backend delete request is sent. Provide `discardDraft` when your backend can safely delete draft objects before their TTL expires.
+
 Previous cleanup runs only after commit success:
 
 ```ts

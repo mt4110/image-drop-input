@@ -34,6 +34,14 @@ function createFile(name = 'next.webp') {
   return new File(['image bytes'], name, { type: 'image/webp' });
 }
 
+function createAbortError() {
+  const error = new Error('Upload aborted.');
+
+  error.name = 'AbortError';
+
+  return error;
+}
+
 function createOptions(
   overrides: Partial<UseImageDraftLifecycleOptions> = {}
 ): UseImageDraftLifecycleOptions {
@@ -379,6 +387,46 @@ describe('useImageDraftLifecycle', () => {
     expect(result.current.error).toBeNull();
   });
 
+  it('does not discard the draft on unmount while commit is in flight', async () => {
+    let resolveCommit: ((value: PersistableImageValue) => void) | undefined;
+    const discardDraft = vi.fn(async () => undefined);
+    const commitDraft = vi.fn(
+      () =>
+        new Promise<PersistableImageValue>((resolve) => {
+          resolveCommit = resolve;
+        })
+    );
+    const options = createOptions({
+      commitDraft,
+      discardDraft,
+      autoDiscard: {
+        onUnmount: true
+      }
+    });
+    const { result, unmount } = renderHook(() => useImageDraftLifecycle(options));
+
+    await uploadDraft(result);
+
+    let commitPromise: Promise<PersistableImageValue | null>;
+
+    act(() => {
+      commitPromise = result.current.commit();
+    });
+
+    await waitFor(() => {
+      expect(result.current.phase).toBe('committing');
+    });
+
+    unmount();
+
+    await act(async () => {
+      resolveCommit?.(nextCommittedImage);
+      await commitPromise;
+    });
+
+    expect(discardDraft).not.toHaveBeenCalled();
+  });
+
   it('rejects commit and draft replacement while discard is in flight', async () => {
     let resolveDiscard: (() => void) | undefined;
     const discardDraft = vi.fn(
@@ -443,6 +491,32 @@ describe('useImageDraftLifecycle', () => {
         code: 'draft_upload_in_progress'
       });
     });
+  });
+
+  it('rethrows upload AbortError without marking the lifecycle as failed', async () => {
+    const abortError = createAbortError();
+    const onError = vi.fn();
+    const options = createOptions({
+      uploadDraft: vi.fn(async () => {
+        throw abortError;
+      }),
+      onError
+    });
+    const { result } = renderHook(() => useImageDraftLifecycle(options));
+    let caught: unknown;
+
+    await act(async () => {
+      try {
+        await result.current.uploadForInput(createFile(), {});
+      } catch (error) {
+        caught = error;
+      }
+    });
+
+    expect(caught).toBe(abortError);
+    expect(result.current.phase).toBe('idle');
+    expect(result.current.error).toBeNull();
+    expect(onError).not.toHaveBeenCalled();
   });
 
   it('clears a transient commit error when an in-flight draft upload later succeeds', async () => {
@@ -668,6 +742,91 @@ describe('useImageDraftLifecycle', () => {
     expect(result.current.phase).toBe('idle');
     expect(result.current.draft).toBeNull();
     expect(result.current.valueForInput).toEqual(committedImage);
+  });
+
+  it('best-effort discards a stale in-flight upload after reset when configured', async () => {
+    let resolveUpload: ((value: { draftKey: string }) => void) | undefined;
+    const discardDraft = vi.fn(async () => undefined);
+    const options = createOptions({
+      uploadDraft: vi.fn(
+        () =>
+          new Promise<{ draftKey: string }>((resolve) => {
+            resolveUpload = resolve;
+          })
+      ),
+      discardDraft,
+      autoDiscard: {
+        onReset: true
+      }
+    });
+    const { result } = renderHook(() => useImageDraftLifecycle(options));
+    let uploadPromise: Promise<unknown>;
+
+    act(() => {
+      uploadPromise = result.current.uploadForInput(createFile(), {});
+    });
+
+    await waitFor(() => {
+      expect(result.current.phase).toBe('uploading-draft');
+    });
+
+    act(() => {
+      result.current.resetToCommitted();
+    });
+
+    await act(async () => {
+      resolveUpload?.({ draftKey: 'drafts/stale-reset.webp' });
+      await uploadPromise;
+    });
+
+    expect(discardDraft).toHaveBeenCalledWith({
+      draft: expect.objectContaining({
+        draftKey: 'drafts/stale-reset.webp'
+      }),
+      reason: 'reset'
+    });
+    expect(result.current.draft).toBeNull();
+  });
+
+  it('best-effort discards a stale in-flight upload on unmount when configured', async () => {
+    let resolveUpload: ((value: { draftKey: string }) => void) | undefined;
+    const discardDraft = vi.fn(async () => undefined);
+    const options = createOptions({
+      uploadDraft: vi.fn(
+        () =>
+          new Promise<{ draftKey: string }>((resolve) => {
+            resolveUpload = resolve;
+          })
+      ),
+      discardDraft,
+      autoDiscard: {
+        onUnmount: true
+      }
+    });
+    const { result, unmount } = renderHook(() => useImageDraftLifecycle(options));
+    let uploadPromise: Promise<unknown>;
+
+    act(() => {
+      uploadPromise = result.current.uploadForInput(createFile(), {});
+    });
+
+    await waitFor(() => {
+      expect(result.current.phase).toBe('uploading-draft');
+    });
+
+    unmount();
+
+    await act(async () => {
+      resolveUpload?.({ draftKey: 'drafts/stale-unmount.webp' });
+      await uploadPromise;
+    });
+
+    expect(discardDraft).toHaveBeenCalledWith({
+      draft: expect.objectContaining({
+        draftKey: 'drafts/stale-unmount.webp'
+      }),
+      reason: 'unmount'
+    });
   });
 
   it('best-effort discards a ready draft on unmount when autoDiscard.onUnmount is enabled', async () => {
