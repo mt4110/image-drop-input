@@ -6,9 +6,17 @@
 [![license](https://img.shields.io/npm/l/image-drop-input.svg)](./LICENSE)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/image-drop-input)](https://bundlephobia.com/package/image-drop-input)
 
-Preview, validate, compress, and upload a single image safely before your form ever submits.
+A product-safe React image field.
 
-**Built for:** avatars, CMS thumbnails, article covers, product images, and admin forms.
+Preview locally, prepare to policy, upload explicitly,
+and persist only durable image state.
+
+Built for avatars, workspace logos, CMS thumbnails, article covers,
+product images, and admin forms. Not generic file queues.
+
+- Persistable value guard: `toPersistableImageValue()` removes temporary `previewSrc` before submit.
+- Byte-budget solver: `prepareImageToBudget()` prepares images to fit upload policy.
+- Draft lifecycle: `useImageDraftLifecycle()` coordinates draft upload, commit, discard, and previous cleanup.
 
 [Demo](https://mt4110.github.io/image-drop-input/) · [Docs](./docs/README.md) · [Recipes](#recipes) · [Usage reports](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) · [Japanese README](./README.ja.md) · [Issues](https://github.com/mt4110/image-drop-input/issues)
 
@@ -16,27 +24,31 @@ Preview, validate, compress, and upload a single image safely before your form e
 
 ## Why this exists
 
-A normal file input gives you a `File`.
+A normal file input gives you a `File`. That is useful intake, but it is not product image state.
 
 A product image field usually needs more:
 
 - show a local preview immediately
 - reject unsupported types and unsafe sizes
-- compress before upload
-- keep temporary `blob:` previews out of saved state
+- prepare the image to match an upload byte budget
+- keep temporary `blob:` previews and draft objects out of saved state
 - upload through signed URLs without bundling a cloud SDK
+- separate upload success from the surrounding form save
 - recover cleanly when upload fails
 - stay keyboard-accessible
 
-`image-drop-input` is a small React image input for that pre-upload flow.
+`image-drop-input` is a small React image field for that durable image-state boundary.
 
 ## Native input vs image-drop-input
 
 | Need | Native `<input type="file">` | `image-drop-input` |
 | --- | --- | --- |
 | Local preview | Manual object URL handling | Built-in `previewSrc` pattern |
-| Validation before and after compression | Manual | Built-in |
+| Validation before and after transform | Manual | Built-in |
 | `src` vs `previewSrc` separation | Manual convention | Explicit value model |
+| Persistable payload | Manual | `toPersistableImageValue()` |
+| Byte-budget preparation | Manual | `prepareImageToBudget()` |
+| Draft/commit lifecycle | Manual | `useImageDraftLifecycle()` |
 | Signed upload wiring | Manual | Upload adapter contract |
 | Paste support | Manual | Included |
 | Keyboard and dialog behavior | Browser default only | Included in the default surface |
@@ -72,7 +84,7 @@ The library is built to ES2020 and keeps cloud SDKs out of the bundle. CI verifi
 
 ## 30-second quick start
 
-Use it as a local-preview-only image input:
+Use it as a local-preview-only image field:
 
 ```tsx
 import { useState } from 'react';
@@ -98,7 +110,7 @@ Users can drop an image, browse for one, paste from the clipboard, preview it, a
 
 ## Choose image-drop-input when...
 
-Use it when you need one image field that can be safely stored in product state:
+Use it when you need one image field whose saved value must stay separate from browser-only preview and draft upload state:
 
 - profile avatar
 - workspace logo
@@ -107,7 +119,7 @@ Use it when you need one image field that can be safely stored in product state:
 - product image
 - admin form image
 
-Use a larger uploader when you need queues, resumable uploads, remote file sources, or multi-file orchestration.
+Use a larger upload tool when you need queues, resumable uploads, remote file sources, image editing, or multi-file orchestration.
 
 ## What it handles
 
@@ -121,9 +133,17 @@ Use a larger uploader when you need queues, resumable uploads, remote file sourc
 | Accessibility | keyboard operation, paste support, dialog focus behavior |
 | Packaging | React peer dependency only, no cloud SDK, no UI framework |
 
+## The durable image boundary
+
+Browser image inputs create temporary values: `File`, `Blob`, object URLs, upload progress, and draft objects.
+
+Your database should store durable values: `src`, `key`, and prepared metadata.
+
+`image-drop-input` gives you helpers to keep that boundary explicit: sanitize submit payloads with `toPersistableImageValue()`, prepare files with `prepareImageToBudget()`, and opt into `useImageDraftLifecycle()` when upload success must remain separate from form save success.
+
 ## The image state model
 
-`image-drop-input` keeps temporary UI state separate from persisted product state.
+The component value models both display state and durable references, but those are not the same thing.
 
 ```ts
 type ImageUploadValue = {
@@ -327,6 +347,8 @@ Read more in [docs/transforms.md](./docs/transforms.md).
 
 ## Recipes
 
+- [Persistable value](./docs/persistable-value.md)
+- [Byte-budget solver](./docs/byte-budget.md)
 - [Backend contracts](./docs/backend-contracts.md)
 - [Draft lifecycle](./docs/draft-lifecycle.md)
 - [Local preview](./docs/recipes/local-preview.md)
@@ -344,11 +366,15 @@ Read more in [docs/transforms.md](./docs/transforms.md).
 
 ## How it fits with other upload tools
 
+Use Uppy, FilePond, Uploady, or provider widgets when you need queues, remote sources, resumable uploads, image editing, or storage-as-a-service.
+
+Use `image-drop-input` when you need one image field that keeps browser-only preview state, draft upload state, and persisted product state separate.
+
 | Need | Good fit |
 | --- | --- |
-| Build a custom file drop area | `react-dropzone` |
-| Full multi-file uploader with queues | Uppy / FilePond / Dropzone |
-| One product image field with preview, validation, transform, and explicit signed uploads | `image-drop-input` |
+| Custom file intake/drop area | `react-dropzone` or a headless file-upload primitive |
+| Multi-file queues, retries, remote sources, or editors | Uppy, FilePond, Uploady, or a provider widget |
+| Single-image form field with a durable image-state boundary | `image-drop-input` |
 
 ## Accessibility
 
@@ -360,8 +386,8 @@ Read the checklist in [docs/accessibility.md](./docs/accessibility.md).
 
 | Import | Exports |
 | --- | --- |
-| `image-drop-input` | `ImageDropInput`, UI props and render types, `ImageUploadValue`, upload types, validation and upload error helpers |
-| `image-drop-input/headless` | `useImageDropInput`, `compressImage`, `prepareImageToBudget`, `validateImage`, metadata helpers, upload factories, budget/validation/upload error helpers |
+| `image-drop-input` | `ImageDropInput`, UI props and render types, `ImageUploadValue`, persistable value helpers, upload types, validation and upload error helpers |
+| `image-drop-input/headless` | `useImageDropInput`, `useImageDraftLifecycle`, `compressImage`, `prepareImageToBudget`, `validateImage`, metadata helpers, upload factories, budget/validation/upload error helpers |
 | `image-drop-input/style.css` | default component styles |
 
 ```ts
@@ -405,8 +431,9 @@ Useful reports include the use case, framework or bundler, upload pattern, and a
 
 Use another tool if you need:
 
-- a generic multi-file uploader
+- multi-file queues
 - resumable or chunked uploads
+- remote file sources
 - drag sorting between lists
 - full crop, rotate, or annotation editing
 - provider-specific SDK wrappers

@@ -56,8 +56,7 @@ const deniedPatterns = [
   /(^|\/)Screen Shot \d{4}/i
 ];
 const canonicalReadmeTitle = '# image-drop-input';
-const canonicalReadmeSummary =
-  'Preview, validate, compress, and upload a single image safely before your form ever submits.';
+const canonicalReadmeSummary = 'A product-safe React image field.';
 const failures = [];
 
 function fail(message) {
