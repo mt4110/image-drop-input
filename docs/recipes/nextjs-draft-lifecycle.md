@@ -2,13 +2,16 @@
 
 Use this pattern when a profile, product, or CMS form needs image replacement to stay consistent with the saved record.
 
-The client uploads a draft object first. The profile submit route then commits that draft and updates the profile in one server-owned operation.
+The client uploads a draft object first. The form submit route then commits that draft and updates the product record in one server-owned operation. The snippets below are app-side examples. They intentionally use placeholder storage, auth, database, and queue helpers instead of provider SDK code.
+
+Read the contract details in [Backend contracts](../backend-contracts.md).
 
 ## Client component
 
 ```tsx
 'use client';
 
+import type { FormEvent } from 'react';
 import { useRef, useState } from 'react';
 import { ImageDropInput } from 'image-drop-input';
 import {
@@ -26,7 +29,8 @@ type ProfileForm = {
 
 type ImageDraftPayload = {
   draftKey: string;
-  previous: PersistableImageValue | null;
+  draftToken?: string;
+  purpose: 'avatar';
 };
 
 export function ProfileEditor({ initialProfile }: { initialProfile: ProfileForm }) {
@@ -42,6 +46,10 @@ export function ProfileEditor({ initialProfile }: { initialProfile: ProfileForm 
     uploadDraft,
     async commitDraft(request) {
       const body = await submitProfile(toImageDraftPayload(request));
+      if (!body.image) {
+        throw new Error('Profile API did not return a committed image.');
+      }
+
       return body.image;
     },
     discardDraft,
@@ -66,10 +74,10 @@ export function ProfileEditor({ initialProfile }: { initialProfile: ProfileForm 
       throw new Error('Profile save failed.');
     }
 
-    return (await response.json()) as { image: PersistableImageValue };
+    return (await response.json()) as { image: PersistableImageValue | null };
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (image.hasDraft) {
@@ -79,6 +87,10 @@ export function ProfileEditor({ initialProfile }: { initialProfile: ProfileForm 
 
     const body = await submitProfile();
     setFields((current) => ({ ...current, image: body.image }));
+  }
+
+  function handleResetImage() {
+    image.resetToCommitted();
   }
 
   return (
@@ -110,18 +122,35 @@ export function ProfileEditor({ initialProfile }: { initialProfile: ProfileForm 
       >
         Save
       </button>
+
+      <button
+        type="button"
+        onClick={handleResetImage}
+        disabled={image.phase === 'committing' || image.phase === 'discarding'}
+      >
+        Reset image
+      </button>
     </form>
   );
 }
 
 async function uploadDraft(file: Blob, context: UploadContext) {
+  const fileName = context.fileName ?? context.originalFileName ?? 'image';
+  const mimeType = context.mimeType || file.type;
+
+  if (!mimeType) {
+    throw new Error('Image MIME type is required before creating a draft.');
+  }
+
   const presign = await fetch('/api/images/drafts/presign', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      fileName: context.fileName,
-      mimeType: context.mimeType ?? file.type,
-      size: file.size
+      fileName,
+      originalFileName: context.originalFileName,
+      mimeType,
+      size: file.size,
+      purpose: 'avatar'
     }),
     signal: context.signal
   });
@@ -134,7 +163,10 @@ async function uploadDraft(file: Blob, context: UploadContext) {
     uploadUrl: string;
     headers?: Record<string, string>;
     draftKey: string;
+    draftToken?: string;
     expiresAt: string;
+    publicUrl?: string;
+    objectKey?: string;
   };
 
   const upload = await fetch(target.uploadUrl, {
@@ -150,9 +182,11 @@ async function uploadDraft(file: Blob, context: UploadContext) {
 
   return {
     draftKey: target.draftKey,
+    draftToken: target.draftToken,
+    src: target.publicUrl,
     expiresAt: target.expiresAt,
-    fileName: context.fileName,
-    mimeType: context.mimeType ?? file.type,
+    fileName,
+    mimeType,
     size: file.size
   };
 }
@@ -160,7 +194,8 @@ async function uploadDraft(file: Blob, context: UploadContext) {
 function toImageDraftPayload(request: CommitImageDraftRequest): ImageDraftPayload {
   return {
     draftKey: request.draft.draftKey,
-    previous: request.previous
+    draftToken: request.draft.draftToken,
+    purpose: 'avatar'
   };
 }
 
@@ -170,6 +205,7 @@ async function discardDraft(request: DiscardImageDraftRequest) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       draftKey: request.draft.draftKey,
+      draftToken: request.draft.draftToken,
       reason: request.reason
     }),
     keepalive: request.reason === 'unmount'
@@ -181,26 +217,38 @@ async function discardDraft(request: DiscardImageDraftRequest) {
 }
 ```
 
+Do not write `target.uploadUrl` or `target.draftToken` to browser logs, analytics, or user-facing error messages. If `publicUrl` is not returned, the hook keeps a local preview for display. Do not derive a render URL from `uploadUrl`, and do not save `image.valueForInput` as product data before the commit response returns a durable image value.
+
+`image.resetToCommitted()` clears the local draft state. With `autoDiscard.onReset` enabled, it also calls the discard route for the draft when one exists.
+
 ## `/api/images/drafts/presign`
 
 ```ts
 // app/api/images/drafts/presign/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 
+type ImagePurpose = 'avatar' | 'cover' | 'product' | 'custom';
+
 type PresignDraftRequest = {
-  fileName?: string;
+  fileName: string;
+  originalFileName?: string;
   mimeType: string;
   size: number;
+  purpose: ImagePurpose;
 };
 
 type PresignDraftResponse = {
   uploadUrl: string;
   headers?: Record<string, string>;
   draftKey: string;
+  draftToken?: string;
   expiresAt: string;
+  publicUrl?: string;
+  objectKey?: string;
 };
 
 const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const allowedPurposes = new Set<ImagePurpose>(['avatar', 'cover', 'product', 'custom']);
 const maxUploadBytes = 5 * 1024 * 1024;
 
 export const runtime = 'nodejs';
@@ -210,26 +258,36 @@ export async function POST(request: NextRequest) {
   const body = (await request.json()) as Partial<PresignDraftRequest>;
 
   if (
+    typeof body.fileName !== 'string' ||
+    body.fileName.length === 0 ||
     !body.mimeType ||
     !allowedMimeTypes.has(body.mimeType) ||
     typeof body.size !== 'number' ||
     body.size <= 0 ||
-    body.size > maxUploadBytes
+    body.size > maxUploadBytes ||
+    !body.purpose ||
+    !allowedPurposes.has(body.purpose)
   ) {
     return NextResponse.json({ error: 'Invalid draft upload request.' }, { status: 400 });
   }
 
   const draft = await createDraftUploadTarget({
     userId: user.id,
+    fileName: body.fileName,
+    originalFileName: body.originalFileName,
     mimeType: body.mimeType,
-    size: body.size
+    size: body.size,
+    purpose: body.purpose
   });
 
   return NextResponse.json({
     uploadUrl: draft.uploadUrl,
     headers: draft.headers,
     draftKey: draft.draftKey,
-    expiresAt: draft.expiresAt
+    draftToken: draft.draftToken,
+    expiresAt: draft.expiresAt,
+    publicUrl: draft.publicUrl,
+    objectKey: draft.objectKey
   } satisfies PresignDraftResponse);
 }
 
@@ -239,20 +297,27 @@ async function requireUser(_request: NextRequest) {
 
 async function createDraftUploadTarget(_input: {
   userId: string;
+  fileName: string;
+  originalFileName?: string;
   mimeType: string;
   size: number;
-}) {
-  // Replace with your storage service or internal upload service.
-  // Store draft ownership, MIME type, size, and expiry server-side.
+  purpose: ImagePurpose;
+}): Promise<PresignDraftResponse> {
+  // App-side code: connect this to your storage service or internal upload service.
+  // Store draft ownership, purpose, MIME type, size, object key, and expiry server-side.
   throw new Error('Connect this route to your storage layer.');
 }
 ```
+
+`objectKey` in this response is still a draft storage reference. Keep the durable product `key` for the submit response after commit.
 
 ## `/api/profile` submit with image draft
 
 ```ts
 // app/api/profile/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
+
+type ImagePurpose = 'avatar' | 'cover' | 'product' | 'custom';
 
 type PersistableImageValue = {
   src?: string;
@@ -268,8 +333,14 @@ type ProfileSubmitRequest = {
   displayName: string;
   imageDraft?: {
     draftKey: string;
-    previous: PersistableImageValue | null;
+    draftToken?: string;
+    purpose: ImagePurpose;
   };
+};
+
+type PreviousCleanupJob = {
+  previous: PersistableImageValue;
+  next: PersistableImageValue;
 };
 
 export const runtime = 'nodejs';
@@ -277,6 +348,7 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   const user = await requireUser(request);
   const body = (await request.json()) as ProfileSubmitRequest;
+  let cleanupAfterCommit: PreviousCleanupJob | null = null;
 
   const result = await runTransaction(async () => {
     const currentProfile = await getProfileForUpdate(user.id);
@@ -284,6 +356,8 @@ export async function POST(request: NextRequest) {
       ? await commitProfileImageDraft({
           userId: user.id,
           draftKey: body.imageDraft.draftKey,
+          draftToken: body.imageDraft.draftToken,
+          purpose: body.imageDraft.purpose,
           previous: currentProfile.image
         })
       : currentProfile.image;
@@ -295,14 +369,22 @@ export async function POST(request: NextRequest) {
     });
 
     if (currentProfile.image && nextImage && !sameImageReference(currentProfile.image, nextImage)) {
-      await enqueuePreviousImageCleanup({
+      cleanupAfterCommit = {
         previous: currentProfile.image,
         next: nextImage
-      });
+      };
     }
 
     return profile;
   });
+
+  const cleanupJob = cleanupAfterCommit;
+
+  if (cleanupJob) {
+    await enqueuePreviousImageCleanup(cleanupJob).catch((error) => {
+      reportCleanupFailure(error, cleanupJob);
+    });
+  }
 
   return NextResponse.json({
     image: result.image
@@ -327,10 +409,13 @@ async function getProfileForUpdate(_userId: string) {
 async function commitProfileImageDraft(_input: {
   userId: string;
   draftKey: string;
+  draftToken?: string;
+  purpose: ImagePurpose;
   previous: PersistableImageValue | null;
-}) {
-  // Validate owner, expiry, MIME type, object existence, and product permissions.
-  // Move/copy the draft object to a final key and return the durable image value.
+}): Promise<PersistableImageValue> {
+  // Validate owner, expiry, token, purpose, MIME type, object existence, and product permissions.
+  // Move/copy the draft object to a final key or mark it final.
+  // Return a durable value with explicit src and/or key.
   throw new Error('Connect this route to your image commit service.');
 }
 
@@ -338,15 +423,16 @@ async function updateProfile(_input: {
   userId: string;
   displayName: string;
   image: PersistableImageValue | null;
-}) {
+}): Promise<{ image: PersistableImageValue | null }> {
   throw new Error('Connect this route to your database.');
 }
 
-async function enqueuePreviousImageCleanup(_input: {
-  previous: PersistableImageValue;
-  next: PersistableImageValue;
-}) {
+async function enqueuePreviousImageCleanup(_input: PreviousCleanupJob) {
   // Prefer a queue or idempotent background job.
+}
+
+function reportCleanupFailure(_error: unknown, _job: PreviousCleanupJob) {
+  // Record enough context to retry by key, but do not log signed URLs or draft tokens.
 }
 
 function sameImageReference(previous: PersistableImageValue, next: PersistableImageValue) {
@@ -362,6 +448,8 @@ function sameImageReference(previous: PersistableImageValue, next: PersistableIm
 }
 ```
 
+This submit route is the safer shape because it commits the draft and updates the product record together. The current profile row, not the browser payload, decides which previous image is eligible for cleanup.
+
 ## Best-effort discard route
 
 ```ts
@@ -372,6 +460,7 @@ export async function POST(request: NextRequest) {
   const user = await requireUser(request);
   const body = (await request.json()) as {
     draftKey?: string;
+    draftToken?: string;
     reason?: 'replace' | 'reset' | 'unmount' | 'manual';
   };
 
@@ -382,10 +471,11 @@ export async function POST(request: NextRequest) {
   await discardImageDraft({
     userId: user.id,
     draftKey: body.draftKey,
+    draftToken: body.draftToken,
     reason: body.reason ?? 'manual'
   });
 
-  return NextResponse.json({ ok: true });
+  return new Response(null, { status: 204 });
 }
 
 async function requireUser(_request: NextRequest) {
@@ -395,11 +485,55 @@ async function requireUser(_request: NextRequest) {
 async function discardImageDraft(_input: {
   userId: string;
   draftKey: string;
+  draftToken?: string;
   reason: 'replace' | 'reset' | 'unmount' | 'manual';
 }) {
-  // Delete only drafts owned by this user and still in draft storage.
+  // App-side code: delete only drafts owned by this user and still in draft storage.
+  // Make this idempotent. Returning success for an already-deleted draft is fine.
 }
 ```
+
+Discard must not delete committed objects. It is also not a guarantee: requests sent during unmount can be interrupted.
+
+## Optional previous cleanup route or worker
+
+Prefer an internal queue worker for previous cleanup. If you expose a route, keep it server-to-server or otherwise protected, and make it idempotent.
+
+```ts
+// app/api/images/cleanup-previous/route.ts
+import { NextResponse, type NextRequest } from 'next/server';
+
+export async function POST(request: NextRequest) {
+  await requireInternalCaller(request);
+  const body = (await request.json()) as {
+    previousKey?: string;
+    nextKey?: string;
+    reason?: 'replace-committed';
+  };
+
+  if (!body.previousKey || !body.nextKey || body.reason !== 'replace-committed') {
+    return NextResponse.json({ error: 'Invalid cleanup request.' }, { status: 400 });
+  }
+
+  await cleanupPreviousImage({
+    previousKey: body.previousKey,
+    nextKey: body.nextKey
+  });
+
+  return new Response(null, { status: 204 });
+}
+
+async function requireInternalCaller(_request: NextRequest) {
+  // Verify a queue signature, service token, or job runner identity.
+}
+
+async function cleanupPreviousImage(_input: { previousKey: string; nextKey: string }) {
+  // Confirm nextKey is committed and previousKey is no longer referenced before deleting.
+  // Return success if previousKey is already gone.
+}
+```
+
+Run previous cleanup only after the new image is committed. A cleanup failure should be retried or reported separately; it should not rollback the profile update.
 
 ## TTL reminder
 
