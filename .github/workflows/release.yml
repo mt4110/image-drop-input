@@ -15,6 +15,10 @@ on:
 env:
   NODE_VERSION: 22.14.0
 
+concurrency:
+  group: release-image-drop-input
+  cancel-in-progress: false
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -122,3 +126,41 @@ jobs:
 
       - name: Publish to npm
         run: npm publish "${{ steps.publish-artifact.outputs.tarball }}" --access public
+
+      - name: Verify published npm metadata
+        shell: bash
+        run: |
+          PACKAGE_NAME="$(node -p 'require("./package.json").name')"
+          PACKAGE_VERSION="$(node -p 'require("./package.json").version')"
+          PACKAGE_SPEC="$PACKAGE_NAME@$PACKAGE_VERSION"
+          EXPECTED_REPOSITORY_URL="$(node -p 'require("./package.json").repository.url')"
+          EXPECTED_ENGINES_NODE="$(node -p 'require("./package.json").engines.node')"
+
+          npm_view_or_empty() {
+            npm view "$@" 2>/dev/null || true
+          }
+
+          for attempt in 1 2 3 4 5 6; do
+            PUBLISHED_VERSION="$(npm_view_or_empty "$PACKAGE_SPEC" version)"
+            LATEST_VERSION="$(npm_view_or_empty "$PACKAGE_NAME" dist-tags.latest)"
+            REPOSITORY_URL="$(npm_view_or_empty "$PACKAGE_SPEC" repository.url)"
+            ENGINES_NODE="$(npm_view_or_empty "$PACKAGE_SPEC" engines.node)"
+
+            if [ "$PUBLISHED_VERSION" = "$PACKAGE_VERSION" ] &&
+               [ "$LATEST_VERSION" = "$PACKAGE_VERSION" ] &&
+               [ "$REPOSITORY_URL" = "$EXPECTED_REPOSITORY_URL" ] &&
+               [ "$ENGINES_NODE" = "$EXPECTED_ENGINES_NODE" ]; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 6 ]; then
+              sleep 10
+            fi
+          done
+
+          echo "Published npm metadata verification failed for $PACKAGE_SPEC." >&2
+          echo "version: expected $PACKAGE_VERSION, received ${PUBLISHED_VERSION:-'(missing)'}" >&2
+          echo "latest: expected $PACKAGE_VERSION, received ${LATEST_VERSION:-'(missing)'}" >&2
+          echo "repository.url: expected $EXPECTED_REPOSITORY_URL, received ${REPOSITORY_URL:-'(missing)'}" >&2
+          echo "engines.node: expected $EXPECTED_ENGINES_NODE, received ${ENGINES_NODE:-'(missing)'}" >&2
+          exit 1

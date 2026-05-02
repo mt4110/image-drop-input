@@ -7,7 +7,8 @@ const artifactsDir = fileURLToPath(new URL('../.artifacts/', import.meta.url));
 const fixedTarballName = 'image-drop-input.tgz';
 const consumerFixtureDirs = [
   fileURLToPath(new URL('../consumer-fixtures/root-types/', import.meta.url)),
-  fileURLToPath(new URL('../consumer-fixtures/headless-cjs/', import.meta.url))
+  fileURLToPath(new URL('../consumer-fixtures/headless-cjs/', import.meta.url)),
+  fileURLToPath(new URL('../consumer-fixtures/vite-react-ui/', import.meta.url))
 ];
 
 rmSync(artifactsDir, {

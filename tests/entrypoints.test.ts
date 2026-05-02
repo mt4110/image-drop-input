@@ -1,9 +1,69 @@
 import './setup';
-import { describe, expect, it } from 'vitest';
-import * as headless from '../src/headless';
-import * as root from '../src/index';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+let root: Record<string, unknown>;
+let headless: Record<string, unknown>;
+
+beforeAll(async () => {
+  const rootEntrypoint = 'image-drop-input';
+  const headlessEntrypoint = 'image-drop-input/headless';
+
+  [root, headless] = await Promise.all([
+    import(rootEntrypoint),
+    import(headlessEntrypoint)
+  ]);
+});
 
 describe('package entrypoints', () => {
+  it('keeps the runtime export surface explicit', () => {
+    expect(Object.keys(root).sort()).toMatchInlineSnapshot(`
+      [
+        "ImageDropInput",
+        "ImagePersistableValueError",
+        "ImageUploadError",
+        "ImageValidationError",
+        "assertPersistableImageValue",
+        "isImageUploadError",
+        "isImageValidationError",
+        "isPersistableImageValue",
+        "isTemporaryImageSrc",
+        "toPersistableImageValue",
+      ]
+    `);
+    expect(Object.keys(headless).sort()).toMatchInlineSnapshot(`
+      [
+        "ImageBudgetError",
+        "ImageDraftLifecycleError",
+        "ImagePersistableValueError",
+        "ImageUploadError",
+        "ImageValidationError",
+        "assertPersistableImageValue",
+        "compressImage",
+        "createMultipartUploader",
+        "createObjectUrl",
+        "createPresignedPutUploader",
+        "createRawPutUploader",
+        "getImageMetadata",
+        "isImageBudgetError",
+        "isImageDraftLifecycleError",
+        "isImageUploadError",
+        "isImageValidationError",
+        "isPersistableImageValue",
+        "isTemporaryImageSrc",
+        "normalizeAspectRatio",
+        "prepareImageToBudget",
+        "resolveDisplaySrc",
+        "resolveImageDropInputMessages",
+        "sendUploadRequest",
+        "toPersistableImageValue",
+        "uploadWithSignedTarget",
+        "useImageDraftLifecycle",
+        "useImageDropInput",
+        "validateImage",
+      ]
+    `);
+  });
+
   it('keeps advanced helper utilities off the root entry', () => {
     expect(root).toHaveProperty('ImageDropInput');
     expect(root.isImageValidationError).toBeTypeOf('function');

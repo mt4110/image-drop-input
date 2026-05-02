@@ -82,6 +82,7 @@ Use these sources for context:
 
    - first with `publish` turned off for a rehearsal; this runs the verification job, confirms there is exactly one package tarball, and stores that checked tarball as a short-lived workflow artifact
    - then with `publish` turned on for the real publish; this enters the `npm-publish` environment, confirms the downloaded artifact still contains exactly one package tarball, and publishes that resolved tarball path with OIDC
+   - after publish, the workflow reads npm registry metadata for the package version, `latest` dist-tag, repository URL, and Node engine floor
 
 6. After publishing, complete the release follow-up checklist.
 
@@ -129,7 +130,7 @@ The published package consumer floor is Node `>=18.18.0`.
 Before publishing, keep both lanes green:
 
 - maintainer verification: `npm run release:pr:check`
-- packed consumer smoke: `npm run smoke:consumer`
+- packed consumer smoke, including the Vite UI fixture: `npm run smoke:consumer`
 
 Do not change `engines.node` unless the packed tarball smoke fixtures support the new value.
 

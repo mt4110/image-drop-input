@@ -92,3 +92,55 @@ jobs:
       - run: npm --version
       - run: npm run smoke:consumer:root-types
       - run: npm run smoke:consumer:headless-cjs
+
+  consumer-ui-smoke:
+    name: consumer-ui-smoke (${{ matrix.node-version }}, ${{ matrix.react.label }})
+    runs-on: ubuntu-latest
+    needs: pack-consumer-artifact
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - 18.18.0
+          - 20.x
+          - 22.x
+        react:
+          - label: react-18
+            react_version: 18.2.0
+            react_dom_version: 18.2.0
+            types_react_version: 18.2.79
+            types_react_dom_version: 18.2.25
+          - label: react-19
+            react_version: 19.2.4
+            react_dom_version: 19.2.4
+            types_react_version: 19.2.14
+            types_react_dom_version: 19.2.3
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: consumer-package
+          path: .artifacts
+
+      - run: npm --version
+      # The tarball is produced with the pinned maintainer npm in pack-consumer-artifact.
+      # This fixture then uses each Node lane's bundled npm to cover real consumer installs.
+      - run: npm run smoke:consumer:vite-react-ui:install
+
+      - name: Select React peer lane
+        run: |
+          npm install \
+            --prefix consumer-fixtures/vite-react-ui \
+            --no-package-lock \
+            --no-save \
+            "react@${{ matrix.react.react_version }}" \
+            "react-dom@${{ matrix.react.react_dom_version }}" \
+            "@types/react@${{ matrix.react.types_react_version }}" \
+            "@types/react-dom@${{ matrix.react.types_react_dom_version }}"
+
+      - run: npm run smoke:consumer:vite-react-ui:build
