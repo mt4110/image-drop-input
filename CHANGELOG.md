@@ -2,6 +2,12 @@
 
 Notable changes for `image-drop-input` are tracked here.
 
+## 0.3.2 - 2026-05-03
+
+### Added
+
+- Added the repository-maintained integration report that connects persistable value, byte-budget, draft lifecycle, backend contract, and consumer smoke checks into one single-image product form flow.
+
 ## 0.3.1 - 2026-05-01
 
 ### Changed
