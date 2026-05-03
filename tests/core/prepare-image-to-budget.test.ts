@@ -165,6 +165,20 @@ describe('prepareImageToBudget', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it('does not upscale when max dimensions are larger than the source', async () => {
+    const source = new File([new Uint8Array(600_000)], 'cover.jpg', { type: 'image/jpeg' });
+    const result = await prepareImageToBudget(source, {
+      outputMaxBytes: 300_000,
+      outputType: 'image/webp',
+      maxWidth: 2000,
+      maxHeight: 2000
+    });
+
+    expect(result.width).toBe(1000);
+    expect(result.height).toBe(800);
+    expect(drawImage).toHaveBeenCalledWith(expect.anything(), 0, 0, 1000, 800);
+  });
+
   it('keeps nameless Blob originalFileName independent from policy fileName', async () => {
     const source = new Blob([new Uint8Array(600_000)], { type: 'image/jpeg' });
     const result = await prepareImageToBudget(source, {

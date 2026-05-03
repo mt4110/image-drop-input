@@ -29,3 +29,21 @@ Signed upload URLs must be created by the consuming application backend.
 The package also does not infer a public URL from a signed upload URL; callers must provide a `publicUrl` or storage object key explicitly.
 
 Temporary `blob:` preview URLs are UI state only and should not be persisted as saved product data.
+
+## Threat Model Notes
+
+The package helps with browser-side image intake, prepared bytes, explicit uploads, draft lifecycle state, and persistable payload guards. It does not make storage, product records, or server authorization safe by itself.
+
+Consuming applications should protect:
+
+- signed upload URLs: keep them short-lived, scoped, and unlogged
+- draft tokens: treat them as secrets for commit/discard only
+- object keys: generate and authorize them on the server
+- draft ownership: bind drafts to user, tenant, purpose, and expiry
+- product records: load the current authoritative previous image before cleanup
+- cleanup jobs: make previous cleanup and draft discard idempotent
+- server validation: re-check MIME type, byte size, dimensions, purpose, ownership, and object existence
+
+Client-side discard is best effort. Browser close, network failure, and unmount can interrupt cleanup. Server-side TTL cleanup is required for abandoned drafts.
+
+Use [docs/telemetry-and-privacy.md](./docs/telemetry-and-privacy.md) for privacy-safe logging patterns. Do not log signed upload URLs, draft tokens, raw storage headers, local `blob:` URLs, file contents, or EXIF metadata.

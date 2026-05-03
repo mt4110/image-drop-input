@@ -20,6 +20,20 @@ body:
     validations:
       required: true
   - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      placeholder: "0.3.2"
+    validations:
+      required: true
+  - type: input
+    id: react-version
+    attributes:
+      label: React version
+      placeholder: "18.2, 19.2..."
+    validations:
+      required: false
+  - type: input
     id: framework-bundler
     attributes:
       label: Framework or bundler
@@ -50,6 +64,25 @@ body:
         - Not sure yet
     validations:
       required: true
+  - type: dropdown
+    id: draft-lifecycle
+    attributes:
+      label: Draft lifecycle
+      options:
+        - Not used
+        - Evaluating
+        - Used with client commit
+        - Used with server product submit transaction
+    validations:
+      required: true
+  - type: textarea
+    id: storage-contract
+    attributes:
+      label: Storage contract shape
+      description: Share the high-level shape only. Do not include signed URLs, draft tokens, credentials, or private object keys.
+      placeholder: "Presign route, draft commit endpoint, discard endpoint, TTL cleanup..."
+    validations:
+      required: false
   - type: textarea
     id: what-worked
     attributes:

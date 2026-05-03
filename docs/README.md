@@ -4,7 +4,13 @@
 
 Preview locally, prepare to policy, upload explicitly, and persist only durable image state.
 
-Start with:
+Start with the path that matches your product:
+
+- Local preview only: [Local preview](./recipes/local-preview.md)
+- Prepare and upload one image: [Byte budget solver](./byte-budget.md) and [Uploads](./uploads.md)
+- Product-safe replacement flow: [Draft lifecycle](./draft-lifecycle.md), [Backend contracts](./backend-contracts.md), and [Product submit with image draft](./recipes/product-submit-with-image-draft.md)
+
+Deep docs:
 
 - [Value model](./value-model.md): how `src`, `previewSrc`, `key`, and metadata fit together
 - [Persistable value guard](./persistable-value.md): remove temporary preview state before submit
@@ -12,13 +18,21 @@ Start with:
 - [Byte budget solver](./byte-budget.md): prepare images to fit an output byte budget
 - [Draft lifecycle](./draft-lifecycle.md): upload drafts, commit on form save, discard on cancel, and cleanup previous images
 - [Backend contracts](./backend-contracts.md): app-owned auth, signed URLs, commit, discard, previous cleanup, and TTL cleanup
+- [Error taxonomy](./error-taxonomy.md): stable error codes for product copy, retries, and safe telemetry
+- [Telemetry and privacy](./telemetry-and-privacy.md): safe error tags, redaction patterns, and product copy mapping
+- [Security model](./security.md): storage credentials, signed URLs, drafts, and product save boundaries
 - [Integration report](./integration-report.md): repo-maintained report for the single-image product form boundary
+- [Adoption evidence](./adoption-evidence.md): what external examples and usage reports prove
+- [Release verification](./release-verification.md): packed package, npm metadata, provenance, and local verification checks
+- [Maintenance governance](./maintenance-governance.md): scope decisions, non-goals, and semver policy
 - [Uploads](./uploads.md): adapter contracts, signed upload boundaries, progress, typed upload errors, and aborts
 - [Transforms](./transforms.md): compression, WebP conversion, return shapes, and MIME consistency
 - [Accessibility](./accessibility.md): keyboard, paste, status, dialog, and headless responsibilities
 
 Recipes:
 
+- [Server persistable image schema with Zod](./recipes/server-persistable-image-zod.md)
+- [Server persistable image schema without dependencies](./recipes/server-persistable-image-custom.md)
 - [Local preview](./recipes/local-preview.md)
 - [Avatar field](./recipes/avatar.md)
 - [Compression](./recipes/compression.md)
@@ -27,6 +41,7 @@ Recipes:
 - [Next.js App Router](./recipes/nextjs-app-router.md)
 - [Next.js presign route](./recipes/nextjs-presign-route.md)
 - [Next.js draft lifecycle](./recipes/nextjs-draft-lifecycle.md)
+- [Product submit with image draft](./recipes/product-submit-with-image-draft.md)
 - [React Hook Form and Zod](./recipes/react-hook-form-zod.md)
 - [Multipart POST](./recipes/multipart-post.md)
 - [Raw PUT](./recipes/raw-put.md)

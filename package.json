@@ -86,7 +86,7 @@
   ],
   "scripts": {
     "clean": "rm -rf dist coverage examples/vite/dist examples/rsbuild/dist examples/rsbuild/.rsbuild",
-    "clean:share": "rm -rf node_modules dist coverage examples/vite/dist examples/rsbuild/dist examples/rsbuild/.rsbuild",
+    "clean:deep": "rm -rf node_modules dist coverage examples/vite/dist examples/rsbuild/dist examples/rsbuild/.rsbuild",
     "build:lib": "tsdown && node -e \"import { copyFileSync, mkdirSync } from 'node:fs'; mkdirSync('dist', { recursive: true }); copyFileSync('src/style.css', 'dist/style.css'); copyFileSync('src/core/style-css.d.ts', 'dist/style.css.d.ts');\"",
     "build:examples": "npm run build --workspace examples/vite && npm run build --workspace examples/rsbuild",
     "build:pages": "GITHUB_PAGES=true npm run build --workspace examples/vite && node scripts/prepare-pages-artifact.mjs",

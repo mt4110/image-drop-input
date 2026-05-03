@@ -41,6 +41,21 @@ body:
         - Not sure yet
     validations:
       required: true
+  - type: dropdown
+    id: lifecycle-boundary
+    attributes:
+      label: Product-state boundary
+      description: Which durable image-state boundary does this request improve?
+      options:
+        - Local preview vs saved value
+        - Prepared bytes vs source file
+        - Upload success vs product save success
+        - Draft commit/discard/cleanup
+        - Server schema or storage contract
+        - Release, docs, or consumer verification
+        - Not related to product image state
+    validations:
+      required: true
   - type: textarea
     id: problem
     attributes:
@@ -77,4 +92,6 @@ body:
         - label: This request is for a single-image input workflow.
           required: true
         - label: This request does not require adding a cloud SDK to the runtime bundle.
+          required: true
+        - label: This request is about durable image state, byte policy, draft lifecycle, upload boundaries, docs, or verification.
           required: true
