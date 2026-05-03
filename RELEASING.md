@@ -121,6 +121,8 @@ Use these sources for context:
 
 For local verification, `npm audit signatures` can also be used from a project that installs the package version being checked.
 
+The public release verification checklist lives in [docs/release-verification.md](./docs/release-verification.md). Keep it in sync with the workflow when release metadata checks change.
+
 ## Runtime support checks
 
 The repo maintainer toolchain is Node 22.x with the npm version pinned by `packageManager`.

@@ -8,6 +8,7 @@ This project is intentionally small in scope:
 - calm browser upload UI at the root entrypoint
 - lower-level helpers under `/headless`
 - no cloud SDK coupling
+- durable product image state over generic upload breadth
 
 ## Before you start
 
@@ -71,3 +72,26 @@ This repo values software that feels quiet and durable in everyday use.
 - keep the public API small
 - make upload flows explicit
 - avoid features that blur the line between local preview and persisted upload state
+
+## Scope decisions
+
+Before accepting a feature, answer:
+
+1. Does it protect durable product image state?
+2. Does it improve submit-boundary safety?
+3. Does it improve byte-policy verification?
+4. Does it improve draft, commit, discard, or cleanup correctness?
+5. Does it improve explicit upload boundaries without storage lock-in?
+6. Does it improve adoption trust without expanding scope?
+
+If the answer is no, reject or redirect the request. Multi-file queues, resumable upload orchestration, remote sources, storage SDK wrappers, built-in image editing, and storage-as-a-service behavior are out of scope.
+
+See [docs/maintenance-governance.md](./docs/maintenance-governance.md) for response templates, suggested labels, and semver policy.
+
+## Semver
+
+Patch releases may include bug fixes, docs fixes, CI hardening, and internal refactors that preserve public behavior.
+
+Minor releases may add helpers, recipes, optional public types, or new non-breaking error codes.
+
+Major releases are required for breaking public type changes, persistable guard behavior changes, lifecycle phase changes that affect user code, removed exports, renamed exports, or stricter runtime requirements.

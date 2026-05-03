@@ -18,6 +18,8 @@ product images, and admin forms. Not generic file queues.
 - Byte-budget solver: `prepareImageToBudget()` prepares images to fit upload policy.
 - Draft lifecycle: `useImageDraftLifecycle()` coordinates draft upload, commit, discard, and previous cleanup.
 
+**Upload success is not product save success.** The package is built around that boundary: browser preview, prepared bytes, draft upload, committed image, and persisted form payload stay separate.
+
 [Demo](https://mt4110.github.io/image-drop-input/) · [Docs](./docs/README.md) · [Recipes](#recipes) · [Usage reports](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) · [Japanese README](./README.ja.md) · [Issues](https://github.com/mt4110/image-drop-input/issues)
 
 ![image-drop-input demo showing preview, prepared metadata, and upload state](./docs/assets/demo-light.png)
@@ -108,6 +110,26 @@ export function AvatarField() {
 
 Users can drop an image, browse for one, paste from the clipboard, preview it, and remove or replace it.
 
+## Pick your path
+
+### 1. Local preview only
+
+Use `ImageDropInput` when you just need a single-image field with preview, paste, drag/drop, keyboard access, and safe removal.
+
+Start with the [local preview recipe](./docs/recipes/local-preview.md).
+
+### 2. Prepare and upload one image
+
+Add `prepareImageToBudget()` and an explicit upload adapter when the image must fit upload policy before transfer.
+
+Start with the [byte-budget guide](./docs/byte-budget.md), [presigned PUT recipe](./docs/recipes/presigned-put.md), and [upload docs](./docs/uploads.md).
+
+### 3. Product-safe replacement flow
+
+Use `toPersistableImageValue()` and `useImageDraftLifecycle()` when upload success must remain separate from form save success.
+
+Start with the [draft lifecycle guide](./docs/draft-lifecycle.md), [backend contracts](./docs/backend-contracts.md), and [product submit recipe](./docs/recipes/product-submit-with-image-draft.md).
+
 ## Choose image-drop-input when...
 
 Use it when you need one image field whose saved value must stay separate from browser-only preview and draft upload state:
@@ -140,6 +162,8 @@ Browser image inputs create temporary values: `File`, `Blob`, object URLs, uploa
 Your database should store durable values: `src`, `key`, and prepared metadata.
 
 `image-drop-input` gives you helpers to keep that boundary explicit: sanitize submit payloads with `toPersistableImageValue()`, prepare files with `prepareImageToBudget()`, and opt into `useImageDraftLifecycle()` when upload success must remain separate from form save success.
+
+Client sanitization is UX. Server validation is authority. Mirror the submit-boundary rules on the server with the [Zod schema recipe](./docs/recipes/server-persistable-image-zod.md) or the [custom validator recipe](./docs/recipes/server-persistable-image-custom.md).
 
 ## The image state model
 
@@ -351,6 +375,9 @@ Read more in [docs/transforms.md](./docs/transforms.md).
 - [Byte-budget solver](./docs/byte-budget.md)
 - [Backend contracts](./docs/backend-contracts.md)
 - [Draft lifecycle](./docs/draft-lifecycle.md)
+- [Server persistable image schema with Zod](./docs/recipes/server-persistable-image-zod.md)
+- [Server persistable image schema without dependencies](./docs/recipes/server-persistable-image-custom.md)
+- [Product submit with image draft](./docs/recipes/product-submit-with-image-draft.md)
 - [Local preview](./docs/recipes/local-preview.md)
 - [Avatar field](./docs/recipes/avatar.md)
 - [Compression](./docs/recipes/compression.md)
@@ -426,6 +453,8 @@ The root entry stays UI-first. Low-level utilities live under `/headless`.
 Using this package in a real product? Open a [usage report](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) so docs, compatibility, and release polish can be prioritized from real integrations.
 
 Useful reports include the use case, framework or bundler, upload pattern, and anything that slowed adoption. Public quotation is opt-in.
+
+The project values evidence over download counts. See [docs/adoption-evidence.md](./docs/adoption-evidence.md) for what repo-maintained examples, separate demo repos, and third-party reports prove.
 
 ## When not to use this
 

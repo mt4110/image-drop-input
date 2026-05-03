@@ -5,7 +5,7 @@
 It keeps this boundary explicit:
 
 ```txt
-upload draft succeeded != product record saved
+Upload success is not product save success.
 ```
 
 Use it when replacing an existing image would otherwise create orphan draft objects or delete the previous image too early.
@@ -33,7 +33,7 @@ committed image A
 
 The package does not include an object-storage SDK. Your app owns signed URLs, auth, object keys, draft TTLs, transactions, and cleanup policy.
 
-For the app-side endpoint shapes, security rules, and atomic submit caveat, read [Backend contracts](./backend-contracts.md).
+For the app-side endpoint shapes, security rules, and atomic submit caveat, read [Backend contracts](./backend-contracts.md). For a transaction-focused server recipe, read [Product submit with image draft](./recipes/product-submit-with-image-draft.md).
 
 ## Hook
 
@@ -142,8 +142,11 @@ server transaction:
   validate user can use draft
   move/copy draft to final object
   update profile row with final image value
-  enqueue previous cleanup
+  record previous cleanup request
   return final image value
+
+after transaction success:
+  enqueue previous cleanup
 ```
 
 The simpler client sequence is:
@@ -159,16 +162,22 @@ That is easier to wire, but it can split consistency if `image.commit()` succeed
 
 | Case | Expected behavior |
 |---|---|
+| Draft upload succeeds but form save never happens | draft remains temporary; server TTL cleanup eventually deletes it |
 | Draft upload succeeds | `draft` is stored, `phase` becomes `draft-ready` |
+| Draft upload fails | previous committed value remains authoritative; user can retry upload |
 | Draft upload has no `draftKey` or `key` | `ImageDraftLifecycleError` with `missing_draft_key` |
 | Commit succeeds | committed value changes, draft clears |
 | Commit fails | previous committed value remains, draft stays retryable/discardable |
+| Commit succeeds but product save fails in client-only sequence | app must retry product save or run compensating cleanup; prefer server transaction |
 | Cleanup previous fails | new committed value remains, error is reported |
 | Discard succeeds | draft clears, committed value remains |
 | Discard fails | draft remains so the user can retry or leave it to TTL cleanup |
 | Replace draft | old draft is discarded when `autoDiscard.onReplace` is enabled |
 | Unmount | draft discard is best-effort when `autoDiscard.onUnmount` is enabled |
 | Double commit | the in-flight commit is reused; backend commit is not duplicated |
+| Stale draft token | server rejects commit/discard; current product image stays unchanged |
+| Expired draft | server rejects commit; user uploads again |
+| Browser sends stale `previousKey` | server loads the current product record before cleanup |
 
 ## Security notes
 
