@@ -42,9 +42,15 @@ function formatPathForShell(filePath) {
     relativePath && !relativePath.startsWith('..') && !isAbsolute(relativePath)
       ? relativePath
       : filePath;
+  const pathIsAbsolute = isAbsolute(path);
   const normalizedPath = path.split(sep).join('/');
 
-  if (normalizedPath.startsWith('.') || normalizedPath.startsWith('/')) {
+  if (
+    pathIsAbsolute ||
+    normalizedPath.startsWith('.') ||
+    normalizedPath.startsWith('/') ||
+    /^[a-zA-Z]:\//.test(normalizedPath)
+  ) {
     return normalizedPath;
   }
 

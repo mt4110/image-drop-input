@@ -2,13 +2,34 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const workflowPath = resolve(process.cwd(), '.github/workflows/release.yml');
-const workflow = readFileSync(workflowPath, 'utf8');
-const lines = workflow.split(/\r?\n/);
 const failures = [];
 
 function fail(message) {
   failures.push(message);
 }
+
+function readWorkflow() {
+  try {
+    return readFileSync(workflowPath, 'utf8');
+  } catch (error) {
+    fail(`Could not read release workflow at ${workflowPath}: ${error.message}`);
+    return undefined;
+  }
+}
+
+const workflow = readWorkflow();
+
+if (workflow === undefined) {
+  console.error('Release workflow verification failed:');
+
+  for (const failure of failures) {
+    console.error(`- ${failure}`);
+  }
+
+  process.exit(1);
+}
+
+const lines = workflow.split(/\r?\n/);
 
 function getIndent(line) {
   return line.match(/^\s*/)?.[0].length ?? 0;
