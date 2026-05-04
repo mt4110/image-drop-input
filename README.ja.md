@@ -2,7 +2,7 @@
 
 [English README](./README.md) · [Public docs](./docs/README.md) · [Demo](https://mt4110.github.io/image-drop-input/) · [Issues](https://github.com/mt4110/image-drop-input/issues)
 
-フォーム保存に耐える、React 向けの単一画像フィールド。
+プロダクト保存に耐える React 単一画像フィールド。
 
 ローカルプレビュー、ポリシーに沿った画像準備、明示的なアップロード、
 そして保存可能な画像状態だけの永続化を支援します。
@@ -12,6 +12,8 @@ avatar、workspace logo、CMS thumbnail、article cover、product image、admin 
 - Persistable value guard: `toPersistableImageValue()` で submit 前に一時 `previewSrc` を落とす
 - Byte-budget solver: `prepareImageToBudget()` で upload policy に収まる画像を準備する
 - Draft lifecycle: `useImageDraftLifecycle()` で draft upload、commit、discard、previous cleanup を分ける
+
+**Upload success is not product save success.** upload の成功と product form の保存成功を分け、browser preview、prepared bytes、draft upload、committed image、保存 payload を混ぜないための package です。
 
 詳細な公開 docs は現時点では English README と [docs](./docs/README.md) を canonical としています。この日本語 README は主要な導入と設計思想を押さえるための短い入口です。
 
@@ -90,6 +92,20 @@ export function AvatarField() {
   );
 }
 ```
+
+## Pick your path
+
+### 1. Local preview only
+
+preview、paste、drag/drop、keyboard access、safe removal だけが必要なら `ImageDropInput` から始めてください。upload lifecycle は不要です。
+
+### 2. Prepare and upload one image
+
+転送前に upload policy へ収めたい場合は、`prepareImageToBudget()` と明示的な upload adapter を足してください。upload wiring は app 側で所有します。
+
+### 3. Product-safe replacement flow
+
+draft upload を product save まで persisted state にしたくない場合は、`toPersistableImageValue()` と `useImageDraftLifecycle()` を使ってください。
 
 ## 何が入っているか
 

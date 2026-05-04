@@ -134,6 +134,24 @@ type ProfilePayload = {
 
 Validate the payload again on the server with your own schema. This package keeps browser state out of the client payload, but the server still owns authorization, storage policy, and persistence.
 
+## Server schema handoff
+
+The client guard keeps browser state out of the request. The server schema decides whether the durable reference is allowed.
+
+Use the [Zod schema recipe](./recipes/server-persistable-image-zod.md) or the [custom validator recipe](./recipes/server-persistable-image-custom.md) to mirror the submit-boundary rules without adding a runtime schema dependency to this package.
+
+At minimum, the server-side contract should:
+
+- accept `null` for optional image fields
+- reject `previewSrc`
+- reject `blob:`, `filesystem:`, and `data:` `src` values
+- require at least one durable reference: `src` or `key`
+- validate `size`, `width`, and `height` metadata
+- restrict MIME types to the product field policy
+- optionally require `key` for private buckets
+
+Shape validation is still not product authority. After parsing, the server must verify user authorization, record ownership, storage object existence, draft/final state, and storage policy. Never trust `previousKey` from the browser as authority for cleanup; load the current product record first.
+
 ## Common mistakes
 
 Do not save `previewSrc`. It is usually a local `blob:` URL.
