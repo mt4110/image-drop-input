@@ -7,7 +7,7 @@ Client sanitization is UX. Server validation is authority.
 ## Validator
 
 ```ts
-type ServerPersistableImageValue = {
+type PersistableImageObject = {
   src?: string;
   key?: string;
   fileName?: string;
@@ -17,7 +17,9 @@ type ServerPersistableImageValue = {
   height?: number;
 };
 
-const allowedMimeTypes = new Set<NonNullable<ServerPersistableImageValue['mimeType']>>([
+type PersistableImagePayload = PersistableImageObject | null;
+
+const allowedMimeTypes = new Set<NonNullable<PersistableImageObject['mimeType']>>([
   'image/jpeg',
   'image/png',
   'image/webp'
@@ -81,11 +83,11 @@ function readOptionalPositiveInteger(
 
 function isAllowedMimeType(
   value: string
-): value is NonNullable<ServerPersistableImageValue['mimeType']> {
-  return allowedMimeTypes.has(value as NonNullable<ServerPersistableImageValue['mimeType']>);
+): value is NonNullable<PersistableImageObject['mimeType']> {
+  return allowedMimeTypes.has(value as NonNullable<PersistableImageObject['mimeType']>);
 }
 
-function readOptionalMimeType(value: unknown): ServerPersistableImageValue['mimeType'] {
+function readOptionalMimeType(value: unknown): PersistableImageObject['mimeType'] {
   if (typeof value === 'undefined') {
     return undefined;
   }
@@ -99,9 +101,9 @@ function readOptionalMimeType(value: unknown): ServerPersistableImageValue['mime
   return mimeType;
 }
 
-export function parsePersistableImageValue(
+export function parsePersistableImagePayload(
   value: unknown
-): ServerPersistableImageValue | null {
+): PersistableImagePayload {
   if (value === null) {
     return null;
   }
@@ -163,6 +165,14 @@ export function parsePersistableImageValue(
 ```
 
 `src` may be an absolute CDN URL or a durable app-relative path such as `/images/avatar.webp`. The validator checks the URI scheme directly so it can reject temporary browser values without requiring `new URL(src)` to parse successfully.
+
+Use the parser at the server boundary, before writing to the product record:
+
+```ts
+const body = await request.json();
+const image = parsePersistableImagePayload(body.image);
+await saveProfileImage({ image });
+```
 
 ## Server policy checks
 

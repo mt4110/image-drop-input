@@ -20,6 +20,8 @@ product images, and admin forms. Not generic file queues.
 
 **Upload success is not product save success.** The package is built around that boundary: browser preview, prepared bytes, draft upload, committed image, and persisted form payload stay separate.
 
+New readers can pick the path that matches their need: local preview, prepared upload, or product-safe replacement.
+
 [Demo](https://mt4110.github.io/image-drop-input/) · [Docs](./docs/README.md) · [Recipes](#recipes) · [Usage reports](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) · [Japanese README](./README.ja.md) · [Issues](https://github.com/mt4110/image-drop-input/issues)
 
 ![image-drop-input demo showing preview, prepared metadata, and upload state](./docs/assets/demo-light.png)
@@ -114,19 +116,19 @@ Users can drop an image, browse for one, paste from the clipboard, preview it, a
 
 ### 1. Local preview only
 
-Use `ImageDropInput` when you just need a single-image field with preview, paste, drag/drop, keyboard access, and safe removal.
+Use `ImageDropInput` when you just need a single-image field with preview, paste, drag/drop, keyboard access, and safe removal. No upload lifecycle is required.
 
 Start with the [local preview recipe](./docs/recipes/local-preview.md).
 
 ### 2. Prepare and upload one image
 
-Add `prepareImageToBudget()` and an explicit upload adapter when the image must fit upload policy before transfer.
+Add `prepareImageToBudget()` and an explicit upload adapter when the image must fit upload policy before transfer. Upload wiring stays app-owned and explicit.
 
 Start with the [byte-budget guide](./docs/byte-budget.md), [presigned PUT recipe](./docs/recipes/presigned-put.md), and [upload docs](./docs/uploads.md).
 
 ### 3. Product-safe replacement flow
 
-Use `toPersistableImageValue()` and `useImageDraftLifecycle()` when upload success must remain separate from form save success.
+Use `toPersistableImageValue()` and `useImageDraftLifecycle()` when a draft upload must wait for product save before it becomes persisted state.
 
 Start with the [draft lifecycle guide](./docs/draft-lifecycle.md), [backend contracts](./docs/backend-contracts.md), and [product submit recipe](./docs/recipes/product-submit-with-image-draft.md).
 
