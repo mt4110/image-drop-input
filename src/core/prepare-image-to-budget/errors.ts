@@ -1,3 +1,4 @@
+import { cloneImageBudgetAttempts } from './attempts';
 import { isSupportedOutputType } from './mime';
 import {
   imageBudgetStrategyList,
@@ -132,7 +133,7 @@ export function createBudgetUnreachableError(
       outputMaxBytes: policy.outputMaxBytes,
       minWidth: policy.minWidth,
       minHeight: policy.minHeight,
-      attempts: attempts.slice()
+      attempts: cloneImageBudgetAttempts(attempts)
     }
   );
 }

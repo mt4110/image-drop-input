@@ -1,5 +1,6 @@
 import { createImageCanvas } from '../canvas-image';
 import type { DecodedImage } from '../decode-image';
+import { cloneImageBudgetAttempts, createImageBudgetAttempt } from './attempts';
 import { ImageBudgetError } from './errors';
 import type {
   EncodedImageCandidate,
@@ -49,7 +50,7 @@ export async function encodeImageAttempt(
         outputMaxBytes: policy.outputMaxBytes,
         minWidth: policy.minWidth,
         minHeight: policy.minHeight,
-        attempts: attempts.slice()
+        attempts: cloneImageBudgetAttempts(attempts)
       },
       { cause: error }
     );
@@ -63,21 +64,20 @@ export async function encodeImageAttempt(
         outputMaxBytes: policy.outputMaxBytes,
         minWidth: policy.minWidth,
         minHeight: policy.minHeight,
-        attempts: attempts.slice()
+        attempts: cloneImageBudgetAttempts(attempts)
       }
     );
   }
 
-  const attempt: ImageBudgetAttempt = {
+  const attempt = createImageBudgetAttempt({
     attempt: attempts.length + 1,
-    width: dimensions.width,
-    height: dimensions.height,
-    ...(typeof quality === 'number' ? { quality } : {}),
+    dimensions,
+    quality,
     mimeType: outputType,
     size: blob.size,
     withinBudget: blob.size <= policy.outputMaxBytes,
     strategy
-  };
+  });
 
   attempts.push(attempt);
 

@@ -66,6 +66,8 @@ async function submitProduct(fields: ProductFields) {
 
 Do not send `previewSrc` to the server. If the form is local-preview-only, use `toPersistableImageValue()` before submit. If the form uses drafts, let the server return the final durable image after commit.
 
+`imageDraft.draftKey` is temporary. The saved product response, not the draft upload response, is where the client receives the durable image `key`.
+
 ## Weaker client-only sequence
 
 This is easier to wire:
@@ -87,7 +89,7 @@ The caveat is real. If `image.commit()` succeeds and `saveProduct()` fails, the 
 | Product save succeeds but previous cleanup fails | New image remains committed; cleanup is retried or reported separately. |
 | Discard fails | Draft remains retryable or expires by TTL; committed value remains safe. |
 | Unmount auto-discard does not complete | Server TTL cleanup is the fallback. |
-| Duplicate commit call | Client hook should reuse the in-flight commit; server endpoint should also be idempotent. |
+| Duplicate commit or submit retry | Client hook should reuse the in-flight commit; server commit/submit should not create a second final object. |
 | Stale draft token | Server rejects commit/discard and leaves current product image unchanged. |
 | Expired draft | Server rejects commit; client should ask the user to upload again. |
 | Browser sends `previousKey` that is no longer authoritative | Server loads the current product row and ignores the stale hint. |
@@ -131,6 +133,8 @@ export async function updateProduct(request: Request, productId: string) {
         })
       : product.image;
 
+    // The locked product row owns previous-image cleanup decisions.
+    // Do not trust a browser-sent previousKey for deletion.
     const saved = await tx.products.update(product.id, {
       ...fields,
       image: nextImage

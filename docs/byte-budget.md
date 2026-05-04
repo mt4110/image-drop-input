@@ -36,6 +36,8 @@ For PNG output, browser canvas quality settings are not reliable, so the helper 
 
 The helper does not upscale. If the source image or the fitted `maxWidth` / `maxHeight` dimensions cannot satisfy `minWidth` / `minHeight`, it throws `budget_unreachable` before encoding.
 
+Attempt order is deterministic inside one browser runtime. Browser canvas encoders can still produce different byte sizes across engines, so avoid treating the output as byte-identical between browsers.
+
 The result describes the prepared output, not the source image:
 
 ```ts

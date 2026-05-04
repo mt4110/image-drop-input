@@ -219,6 +219,8 @@ async function discardDraft(request: DiscardImageDraftRequest) {
 
 Do not write `target.uploadUrl` or `target.draftToken` to browser logs, analytics, or user-facing error messages. If `publicUrl` is not returned, the hook keeps a local preview for display. Do not derive a render URL from `uploadUrl`, and do not save `image.valueForInput` as record data before the commit response returns a durable image value.
 
+`toImageDraftPayload()` sends only temporary draft identity. The `/api/profile` response is where the client receives the durable image value for state and persistence.
+
 `image.resetToCommitted()` clears the local draft state. With `autoDiscard.onReset` enabled, it also calls the discard route for the draft when one exists.
 
 ## `/api/images/drafts/presign`
@@ -415,6 +417,7 @@ async function commitProfileImageDraft(_input: {
 }): Promise<PersistableImageValue> {
   // Validate owner, expiry, token, purpose, MIME type, object existence, and profile permissions.
   // Move/copy the draft object to a final key or mark it final.
+  // Use a draft state transition or unique constraint so duplicate submits do not create two final objects.
   // Return a durable value with explicit src and/or key.
   throw new Error('Connect this route to your image commit service.');
 }
