@@ -1,6 +1,6 @@
 # Server persistable image schema without dependencies
 
-Use this recipe when your server does not use Zod, Valibot, or another schema library. It mirrors the submit-boundary rules from `toPersistableImageValue()` without adding a dependency to your app.
+Use this recipe when your server does not use Zod, Valibot, or another schema library. It follows the same submit-boundary safety rule as `toPersistableImageValue()`: reject browser-only state and temporary `src` schemes while allowing durable `src` or `key` references. The MIME and integer checks are app-side policy examples.
 
 Client sanitization is UX. Server validation is authority.
 
@@ -22,10 +22,16 @@ const allowedMimeTypes = new Set<NonNullable<ServerPersistableImageValue['mimeTy
   'image/png',
   'image/webp'
 ]);
-const temporaryProtocols = new Set(['blob:', 'filesystem:', 'data:']);
+const temporarySrcSchemes = new Set(['blob', 'filesystem', 'data']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readUriScheme(value: string): string | undefined {
+  const match = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(value.trim());
+
+  return match?.[1]?.toLowerCase();
 }
 
 function readOptionalNonEmptyString(
@@ -137,15 +143,9 @@ export function parsePersistableImageValue(
   }
 
   if (src) {
-    let url: URL;
+    const scheme = readUriScheme(src);
 
-    try {
-      url = new URL(src);
-    } catch {
-      throw new Error('src must be an absolute URL.');
-    }
-
-    if (temporaryProtocols.has(url.protocol)) {
+    if (scheme && temporarySrcSchemes.has(scheme)) {
       throw new Error('Temporary image URLs are not persistable.');
     }
   }
@@ -161,6 +161,8 @@ export function parsePersistableImageValue(
   };
 }
 ```
+
+`src` may be an absolute CDN URL or a durable app-relative path such as `/images/avatar.webp`. The validator checks the URI scheme directly so it can reject temporary browser values without requiring `new URL(src)` to parse successfully.
 
 ## Server policy checks
 

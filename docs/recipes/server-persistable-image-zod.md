@@ -9,11 +9,16 @@ Use this recipe in your app server when a form submits a value that came from `I
 ```ts
 import { z } from 'zod';
 
-const temporaryImageSrcPattern = /^(blob|filesystem|data):/i;
+const temporaryImageSrcSchemePattern = /^\s*(blob|filesystem|data):/i;
 
 const persistableImageObjectSchema = z
   .object({
-    src: z.string().url().optional(),
+    src: z
+      .string()
+      .refine((src) => src.trim().length > 0, {
+        message: 'src must be a non-empty string.'
+      })
+      .optional(),
     key: z.string().trim().min(1).optional(),
     fileName: z.string().trim().min(1).optional(),
     mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']).optional(),
@@ -25,7 +30,7 @@ const persistableImageObjectSchema = z
   .refine((image) => image.src || image.key, {
     message: 'Image must include src or key.'
   })
-  .refine((image) => !image.src || !temporaryImageSrcPattern.test(image.src), {
+  .refine((image) => !image.src || !temporaryImageSrcSchemePattern.test(image.src), {
     message: 'Temporary image URLs are not persistable.'
   });
 
@@ -35,6 +40,8 @@ export type PersistableImagePayload = z.infer<typeof persistableImageSchema>;
 ```
 
 `strict()` rejects browser-only fields such as `previewSrc`. Keep it strict so accidental UI state cannot silently enter a product record.
+
+`src` is intentionally not `z.string().url()`: `toPersistableImageValue()` accepts durable app-relative paths such as `/images/avatar.webp` as well as absolute CDN URLs. Add an absolute-URL rule only when your product storage policy requires one.
 
 ## Private bucket variant
 
