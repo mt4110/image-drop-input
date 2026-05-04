@@ -41,7 +41,7 @@ Keep provider credentials and provider SDKs on the server side of your app. Do n
 
 Never infer `publicUrl` from `uploadUrl`. Signed upload URLs often use different hosts, temporary query strings, provider-specific paths, or private buckets.
 
-Do not treat a draft `objectKey` as the durable product `key`. The commit response is the boundary where the app receives the final image reference.
+Do not treat a draft `objectKey` as the durable product `key`. The same storage-looking string can mean different things before and after commit; server-side metadata decides the scope. The commit response is the boundary where the app receives the final image reference.
 
 ## Contract 1: create draft upload target
 
@@ -142,6 +142,8 @@ Do not delete the previous image before the new image is committed. A successful
 
 If the browser sends `previousKey`, treat it as a hint only. The server should load the current product record and use that authoritative value when deciding whether previous cleanup is allowed.
 
+Use a draft state transition, idempotency key, or unique constraint so a retry for the same draft/product cannot create multiple final objects. A duplicate commit can return the existing durable image value, or a safe conflict after the product state has changed.
+
 ## Contract 3: discard draft
 
 Use this endpoint when the user cancels, resets, unmounts, or replaces an uncommitted draft.
@@ -219,6 +221,8 @@ Server
 
 This avoids the split-brain case where `commitDraft()` succeeds but the product form save fails afterward.
 
+The browser sends draft identity, not a durable image key. The server returns the durable image value after the transaction commits.
+
 The simpler client sequence is acceptable for low-risk forms:
 
 ```ts
@@ -239,6 +243,8 @@ A common policy is:
 - background cleanup cadence: shorter than or equal to the maximum draft lifetime your product tolerates
 
 The exact numbers are app policy. The fallback is mandatory.
+
+Make the cleanup job idempotent and scoped to uncommitted drafts. It should delete expired draft metadata and draft objects, return success when an expired draft is already gone, and never delete a committed product image.
 
 ## App-side Next.js shape
 

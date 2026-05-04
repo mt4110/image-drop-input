@@ -85,6 +85,8 @@ type ImageDraftUploadResult = {
 
 `src` is optional. If the draft object is not publicly renderable, the hook keeps a local `previewSrc` for display. The package never infers a public URL from a signed upload URL.
 
+`draftKey` is a temporary reference. If your upload adapter returns `key` instead of `draftKey`, the hook treats that `key` as the draft identifier for lifecycle operations. Do not persist it as the product image key. The durable `key` comes from the commit response.
+
 ## Backend contracts
 
 Draft upload creates a temporary object:
@@ -106,6 +108,8 @@ type CommitImageDraftRequest = {
   previous: PersistableImageValue | null;
 };
 ```
+
+`previous` is the hook's last committed value. Treat it as a client hint only. A server transaction should load the current product record before deciding which previous image can be cleaned up.
 
 Discard deletes a temporary draft when the user cancels, replaces it, resets the form, or unmounts:
 
@@ -170,11 +174,12 @@ That is easier to wire, but it can split consistency if `image.commit()` succeed
 | Commit fails | previous committed value remains, draft stays retryable/discardable |
 | Commit succeeds but product save fails in client-only sequence | app must retry product save or run compensating cleanup; prefer server transaction |
 | Cleanup previous fails | new committed value remains, error is reported |
+| Previous cleanup is retried | cleanup stays idempotent and returns success if the previous object is already gone |
 | Discard succeeds | draft clears, committed value remains |
 | Discard fails | draft remains so the user can retry or leave it to TTL cleanup |
 | Replace draft | old draft is discarded when `autoDiscard.onReplace` is enabled |
 | Unmount | draft discard is best-effort when `autoDiscard.onUnmount` is enabled |
-| Double commit | the in-flight commit is reused; backend commit is not duplicated |
+| Double commit | the in-flight commit is reused; backend commit or product submit must not create a second final object |
 | Stale draft token | server rejects commit/discard; current product image stays unchanged |
 | Expired draft | server rejects commit; user uploads again |
 | Browser sends stale `previousKey` | server loads the current product record before cleanup |

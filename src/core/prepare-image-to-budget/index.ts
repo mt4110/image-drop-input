@@ -13,6 +13,10 @@ import {
 import { resolveOriginalFileName, resolveOutputFileName } from './file-name';
 import { toMimeType } from './mime';
 import { resolvePolicy } from './policy';
+import {
+  createPreparedImageToBudgetResult,
+  createSourceWithinBudgetResult
+} from './result';
 import { solveLossyBudget, solvePngBudget } from './search';
 import type {
   ImageBudgetAttempt,
@@ -33,10 +37,6 @@ export type {
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function getCompressionRatio(size: number, originalSize: number): number {
-  return size / originalSize;
 }
 
 function assertDecodedImageDimensions(
@@ -123,23 +123,15 @@ export async function prepareImageToBudget(
       sourceType === resolvedPolicy.outputType &&
       sourceFitsMaxDimensions
     ) {
-      return {
+      return createSourceWithinBudgetResult({
         file,
         fileName: outputFileName,
         mimeType: resolvedPolicy.outputType,
-        size: file.size,
         width: decodedImage.width,
         height: decodedImage.height,
         originalFileName,
-        ...(file.type ? { originalMimeType: file.type } : {}),
-        originalSize: file.size,
-        originalWidth: decodedImage.width,
-        originalHeight: decodedImage.height,
-        outputMaxBytes: resolvedPolicy.outputMaxBytes,
-        compressionRatio: getCompressionRatio(file.size, file.size),
-        attempts: [],
-        strategy: 'source-within-budget'
-      };
+        outputMaxBytes: resolvedPolicy.outputMaxBytes
+      });
     }
 
     const attempts: ImageBudgetAttempt[] = [];
@@ -164,23 +156,17 @@ export async function prepareImageToBudget(
       throw createBudgetUnreachableError(resolvedPolicy, attempts);
     }
 
-    return {
-      file: candidate.blob,
+    return createPreparedImageToBudgetResult({
+      file,
+      candidate,
       fileName: outputFileName,
       mimeType: resolvedPolicy.outputType,
-      size: candidate.blob.size,
-      width: candidate.attempt.width,
-      height: candidate.attempt.height,
       originalFileName,
-      ...(file.type ? { originalMimeType: file.type } : {}),
-      originalSize: file.size,
       originalWidth: decodedImage.width,
       originalHeight: decodedImage.height,
       outputMaxBytes: resolvedPolicy.outputMaxBytes,
-      compressionRatio: getCompressionRatio(candidate.blob.size, file.size),
-      attempts,
-      strategy: candidate.attempt.strategy
-    };
+      attempts
+    });
   } finally {
     decodedImage.cleanup();
   }

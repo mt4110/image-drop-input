@@ -221,6 +221,7 @@ describe('useImageDraftLifecycle', () => {
     expect(result.current.committedValue).toEqual(committedImage);
     expect(result.current.draft).toEqual(expect.objectContaining({ draftKey: 'drafts/next.webp' }));
     expect(result.current.canCommit).toBe(true);
+    expect(result.current.canDiscard).toBe(true);
     expect(cleanupPrevious).not.toHaveBeenCalled();
   });
 
@@ -737,6 +738,7 @@ describe('useImageDraftLifecycle', () => {
 
     expect(result.current.phase).toBe('failed');
     expect(result.current.draft).toEqual(expect.objectContaining({ draftKey: 'drafts/next.webp' }));
+    expect(result.current.canDiscard).toBe(true);
     expect(result.current.error).toMatchObject({
       code: 'discard_failed'
     });

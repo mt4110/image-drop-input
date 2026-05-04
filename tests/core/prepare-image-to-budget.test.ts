@@ -135,6 +135,20 @@ describe('prepareImageToBudget', () => {
     expect(result.strategy).toBe('source-within-budget');
   });
 
+  it('keeps an explicit output fileName as-is while reporting the encoded MIME type', async () => {
+    const source = new File([new Uint8Array(600_000)], 'avatar.jpg', { type: 'image/jpeg' });
+    const result = await prepareImageToBudget(source, {
+      outputMaxBytes: 300_000,
+      outputType: 'image/webp',
+      fileName: 'avatar.custom-name'
+    });
+
+    expect(result.fileName).toBe('avatar.custom-name');
+    expect(result.mimeType).toBe('image/webp');
+    expect(result.file.type).toBe('image/webp');
+    expect(result.size).toBeLessThanOrEqual(300_000);
+  });
+
   it('converts to WebP and reports matching output metadata', async () => {
     const source = new File([new Uint8Array(600_000)], 'avatar.jpg', { type: 'image/jpeg' });
     const result = await prepareImageToBudget(source, {
@@ -228,6 +242,37 @@ describe('prepareImageToBudget', () => {
     expect(first.attempts.length).toBeGreaterThan(2);
     expect(first.attempts[0]).toMatchObject({ quality: 0.9, withinBudget: false });
     expect(first.attempts[1]).toMatchObject({ quality: 0.4, withinBudget: true });
+  });
+
+  it('uses WebP quality search before resizing when lower quality can reach the budget', async () => {
+    const source = new File([new Uint8Array(800_000)], 'cover.webp', { type: 'image/webp' });
+    const result = await prepareImageToBudget(source, {
+      outputMaxBytes: 130_000,
+      outputType: 'image/webp',
+      initialQuality: 0.9,
+      minQuality: 0.6,
+      maxEncodeAttempts: 8
+    });
+
+    expect(result.size).toBeLessThanOrEqual(130_000);
+    expect(result.strategy).toBe('quality-search');
+    expect(result.width).toBe(1000);
+    expect(result.height).toBe(800);
+    expect(result.attempts[0]).toMatchObject({
+      mimeType: 'image/webp',
+      quality: 0.9,
+      withinBudget: false,
+      strategy: 'quality-search'
+    });
+    expect(result.attempts[1]).toMatchObject({
+      mimeType: 'image/webp',
+      quality: 0.6,
+      withinBudget: true,
+      strategy: 'quality-search'
+    });
+    expect(
+      result.attempts.every((attempt) => attempt.width === 1000 && attempt.height === 800)
+    ).toBe(true);
   });
 
   it('resizes when minimum lossy quality cannot reach the budget', async () => {
