@@ -104,7 +104,7 @@
     "smoke:consumer:vite-react-ui:run": "npm run smoke:consumer:vite-react-ui:install && npm run smoke:consumer:vite-react-ui:build",
     "smoke:consumer:vite-react-ui": "npm run pack:consumer-smoke && npm run smoke:consumer:vite-react-ui:run",
     "smoke:consumer": "npm run pack:consumer-smoke && npm run smoke:consumer:root-types && npm run smoke:consumer:headless-cjs && npm run smoke:consumer:vite-react-ui:run",
-    "publish:check": "node scripts/verify-pack-manifest.mjs",
+    "publish:check": "node scripts/verify-release-workflow.mjs && node scripts/verify-pack-manifest.mjs",
     "release:pr:check": "npm run verify && npm run publish:check",
     "typecheck:examples": "npm run typecheck --workspace examples/vite && npm run typecheck --workspace examples/rsbuild",
     "typecheck": "tsc -p tsconfig.json --noEmit && npm run build:lib && npm run typecheck:examples",
