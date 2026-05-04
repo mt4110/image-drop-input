@@ -12,6 +12,14 @@
 
 - 
 
+## Verification Summary
+
+- Local checks:
+- Release rehearsal:
+- Publish path:
+- Registry metadata:
+- Provenance:
+
 ## Checks
 
 - [ ] `package.json` and `package-lock.json` carry the intended version
@@ -33,11 +41,16 @@
 - [ ] confirm the rehearsal resolved exactly one package tarball artifact
 - [ ] rerun the `Release` workflow from `main` with `publish` on
 - [ ] confirm the publish run resolved exactly one package tarball before `npm publish`
+- [ ] confirm `npm publish` used the explicit resolved tarball path
 - [ ] confirm the publish job used the `npm-publish` environment
 
 ## Post-publish Checks
 
 - [ ] npm package page version matches `package.json` on `main`
+- [ ] `npm view image-drop-input@<version> version` matches `package.json`
+- [ ] `npm view image-drop-input dist-tags.latest` matches the released version
+- [ ] `npm view image-drop-input@<version> repository.url` matches `package.json`
+- [ ] `npm view image-drop-input@<version> engines.node` matches `package.json`
 - [ ] npm package page README starts with the English canonical `README.md`
 - [ ] npm install snippet is `npm install image-drop-input react`
 - [ ] npm homepage link opens the GitHub Pages demo

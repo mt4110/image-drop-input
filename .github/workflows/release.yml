@@ -52,20 +52,7 @@ jobs:
 
       - name: Resolve packed artifact
         id: packed-artifact
-        shell: bash
-        run: |
-          mapfile -t tarballs < <(find artifacts -maxdepth 1 -type f -name '*.tgz' -print | sort)
-
-          if [ "${#tarballs[@]}" -ne 1 ]; then
-            echo "Expected exactly one npm package tarball in artifacts, found ${#tarballs[@]}." >&2
-            if [ "${#tarballs[@]}" -gt 0 ]; then
-              printf 'Found tarballs:\n' >&2
-              printf '  %s\n' "${tarballs[@]}" >&2
-            fi
-            exit 1
-          fi
-
-          echo "tarball=./${tarballs[0]#./}" >> "$GITHUB_OUTPUT"
+        run: node scripts/resolve-npm-tarball.mjs artifacts --expect-package-json package.json --github-output "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -73,6 +60,16 @@ jobs:
           path: ${{ steps.packed-artifact.outputs.tarball }}
           if-no-files-found: error
           retention-days: 7
+
+      - name: Summarize release artifact gate
+        run: |
+          {
+            echo "### Release artifact gate"
+            echo "- Workflow concurrency uses \`cancel-in-progress: false\`."
+            echo "- Verification command: \`npm run release:pr:check\`."
+            echo "- Packed artifact: \`${{ steps.packed-artifact.outputs.tarball }}\`."
+            echo "- Tarball count before upload: exactly one."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   publish:
     needs: verify
@@ -109,20 +106,7 @@ jobs:
 
       - name: Resolve publish artifact
         id: publish-artifact
-        shell: bash
-        run: |
-          mapfile -t tarballs < <(find artifacts -maxdepth 1 -type f -name '*.tgz' -print | sort)
-
-          if [ "${#tarballs[@]}" -ne 1 ]; then
-            echo "Expected exactly one npm package tarball in artifacts, found ${#tarballs[@]}." >&2
-            if [ "${#tarballs[@]}" -gt 0 ]; then
-              printf 'Found tarballs:\n' >&2
-              printf '  %s\n' "${tarballs[@]}" >&2
-            fi
-            exit 1
-          fi
-
-          echo "tarball=./${tarballs[0]#./}" >> "$GITHUB_OUTPUT"
+        run: node scripts/resolve-npm-tarball.mjs artifacts --expect-package-json package.json --github-output "$GITHUB_OUTPUT"
 
       - name: Publish to npm
         run: npm publish "${{ steps.publish-artifact.outputs.tarball }}" --access public
@@ -164,3 +148,16 @@ jobs:
           echo "repository.url: expected $EXPECTED_REPOSITORY_URL, received ${REPOSITORY_URL:-'(missing)'}" >&2
           echo "engines.node: expected $EXPECTED_ENGINES_NODE, received ${ENGINES_NODE:-'(missing)'}" >&2
           exit 1
+
+      - name: Summarize npm publish gate
+        run: |
+          PACKAGE_SPEC="$(node -p 'require("./package.json").name + "@" + require("./package.json").version')"
+
+          {
+            echo "### npm publish gate"
+            echo "- Published artifact: \`${{ steps.publish-artifact.outputs.tarball }}\`."
+            echo "- Tarball count before npm publish: exactly one."
+            echo "- Authentication path: npm Trusted Publishing / OIDC."
+            echo "- Registry metadata checked: exact version, \`dist-tags.latest\`, \`repository.url\`, and \`engines.node\`."
+            echo "- Provenance follow-up: confirm npm shows provenance for \`${PACKAGE_SPEC}\` and links it to this workflow run."
+          } >> "$GITHUB_STEP_SUMMARY"

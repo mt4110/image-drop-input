@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, join, resolve } from 'node:path';
 
 const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const npmPackArgs = ['pack', '--json', '--dry-run', '--workspaces=false'];
 const npmWorkspaceConfigKeys = new Set([
   'npm_config_include_workspace_root',
   'npm_config_workspace',
@@ -12,7 +12,17 @@ const npmWorkspaceConfigKeys = new Set([
 const packageJsonPath = resolve(process.cwd(), 'package.json');
 const readmePath = resolve(process.cwd(), 'README.md');
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-const expectedTarballFilename = `${packageJson.name}-${packageJson.version}.tgz`;
+const expectedPackageTarballName = packageJson.name.replace(/^@/, '').replace('/', '-');
+const expectedTarballFilename = `${expectedPackageTarballName}-${packageJson.version}.tgz`;
+const tempDirectoryPrefix = packageJson.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+const packDestination = mkdtempSync(join(tmpdir(), `${tempDirectoryPrefix}-pack-`));
+const npmPackArgs = [
+  'pack',
+  '--json',
+  '--pack-destination',
+  packDestination,
+  '--workspaces=false'
+];
 const expectedMetadata = [
   ['homepage', packageJson.homepage, 'https://mt4110.github.io/image-drop-input/'],
   ['repository.type', packageJson.repository?.type, 'git'],
@@ -62,6 +72,19 @@ const failures = [];
 function fail(message) {
   failures.push(message);
 }
+
+function cleanupPackDestination() {
+  try {
+    rmSync(packDestination, {
+      force: true,
+      recursive: true
+    });
+  } catch {
+    // The verification result is more important than cleanup diagnostics.
+  }
+}
+
+process.on('exit', cleanupPackDestination);
 
 function getRootPackEnv() {
   const env = { ...process.env };
@@ -128,6 +151,18 @@ function getPackedFilePaths(packResult) {
   return files;
 }
 
+function getPackedTarballPaths() {
+  try {
+    return readdirSync(packDestination, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith('.tgz'))
+      .map((entry) => join(packDestination, entry.name))
+      .sort();
+  } catch (error) {
+    fail(`Could not read temporary pack directory: ${error.message}`);
+    return [];
+  }
+}
+
 function isAllowedPackPath(path) {
   return allowedFiles.has(path) || allowedPrefixes.some((prefix) => path.startsWith(prefix));
 }
@@ -157,9 +192,36 @@ function verifyPackMetadata(packResult) {
     );
   }
 
-  if (packResult.filename !== expectedTarballFilename) {
+  if (basename(packResult.filename ?? '') !== expectedTarballFilename) {
     fail(
       `Expected tarball filename ${expectedTarballFilename}, received ${
+        packResult.filename ?? '(missing)'
+      }.`
+    );
+  }
+}
+
+function verifyTarballArtifact(packResult) {
+  const tarballs = getPackedTarballPaths();
+
+  if (tarballs.length !== 1) {
+    fail(
+      `Expected npm pack to create exactly one tarball, received ${tarballs.length}.`
+    );
+    return;
+  }
+
+  const tarballFilename = basename(tarballs[0]);
+
+  if (tarballFilename !== expectedTarballFilename) {
+    fail(
+      `Expected packed tarball ${expectedTarballFilename}, received ${tarballFilename}.`
+    );
+  }
+
+  if (basename(packResult.filename ?? '') !== tarballFilename) {
+    fail(
+      `Expected npm pack manifest filename to match ${tarballFilename}, received ${
         packResult.filename ?? '(missing)'
       }.`
     );
@@ -236,6 +298,7 @@ if (packResult) {
   const files = getPackedFilePaths(packResult);
 
   verifyPackMetadata(packResult);
+  verifyTarballArtifact(packResult);
   verifyPackageJsonMetadata();
   verifyFiles(files);
   verifyReadmeFace(files);
@@ -243,7 +306,7 @@ if (packResult) {
   if (failures.length === 0) {
     console.log(
       `Verified pack manifest for ${packageJson.name}@${packageJson.version}: ` +
-        `${files.size} files, ${packResult.filename}.`
+        `${files.size} files, ${expectedTarballFilename}.`
     );
   }
 }

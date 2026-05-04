@@ -68,11 +68,32 @@ Use these sources for context:
    npm run release:pr:check
    ```
 
-   This includes the packed package face check: `npm pack --json --dry-run`, README inclusion,
-   package metadata links, and deny-list validation for files that must stay out of the published tarball.
+   This includes release workflow gate checks, the packed package face check, temporary tarball creation, README inclusion,
+   package metadata links, exact tarball count, and deny-list validation for files that must stay out of the published tarball.
+
+   To isolate the tarball gate locally:
+
+   ```bash
+   ARTIFACT_DIR="$(mktemp -d)"
+   trap 'rm -rf "$ARTIFACT_DIR"' EXIT
+
+   npm pack --pack-destination "$ARTIFACT_DIR"
+   node scripts/resolve-npm-tarball.mjs "$ARTIFACT_DIR" --expect-package-json package.json
+   ```
 
 3. Add release-facing notes to the release PR body.
    Update `CHANGELOG.md` in the same PR.
+
+   Include a verification summary that can also be reused in the GitHub release notes:
+
+   ```text
+   Verification summary:
+   - Local checks: npm run verify, npm run smoke:consumer, npm run publish:check
+   - Release rehearsal: Release workflow passed with publish off and resolved exactly one tarball
+   - Publish: npm-publish environment used npm Trusted Publishing / OIDC and published the explicit tarball path
+   - Registry metadata: exact version, dist-tags.latest, repository.url, and engines.node matched package.json
+   - Provenance: npm provenance was visible and pointed back to the expected workflow run
+   ```
 
 4. Open a pull request with the `Release` template.
    Use a short release branch and a neutral title such as `release/0.2.0` and `release: 0.2.0`.
@@ -83,6 +104,7 @@ Use these sources for context:
    - first with `publish` turned off for a rehearsal; this runs the verification job, confirms there is exactly one package tarball, and stores that checked tarball as a short-lived workflow artifact
    - then with `publish` turned on for the real publish; this enters the `npm-publish` environment, confirms the downloaded artifact still contains exactly one package tarball, and publishes that resolved tarball path with OIDC
    - after publish, the workflow reads npm registry metadata for the package version, `latest` dist-tag, repository URL, and Node engine floor
+   - use the workflow summary as the source for the release verification summary
 
 6. After publishing, complete the release follow-up checklist.
 
@@ -104,6 +126,33 @@ Use these sources for context:
    - the docs link from the README opens successfully
    - provenance is visible for the published version
    - the provenance details point back to the expected GitHub workflow run
+
+   Registry metadata commands:
+
+   ```bash
+   PACKAGE=image-drop-input
+   VERSION="$(node -p 'require("./package.json").version')"
+
+   npm view "$PACKAGE@$VERSION" version
+   npm view "$PACKAGE" dist-tags.latest
+   npm view "$PACKAGE@$VERSION" repository.url
+   npm view "$PACKAGE@$VERSION" engines.node
+   npm view "$PACKAGE@$VERSION" dist.integrity
+   ```
+
+   Provenance/signature CLI check from a fresh project:
+
+   ```bash
+   PACKAGE=image-drop-input
+   VERSION="$(node -p 'require("./package.json").version')"
+   VERIFY_DIR="$(mktemp -d)"
+   trap 'rm -rf "$VERIFY_DIR"' EXIT
+
+   cd "$VERIFY_DIR"
+   npm init -y
+   npm install "$PACKAGE@$VERSION"
+   npm audit signatures
+   ```
 
    Token and package settings hardening:
 
