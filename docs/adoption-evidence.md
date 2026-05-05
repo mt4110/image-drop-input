@@ -40,13 +40,13 @@ Use these labels consistently:
 
 Do not relabel maintainer-owned work as third-party evidence. If the same person maintains both repositories, say so.
 
-## Current evidence
+## Current public materials
 
-| Evidence | Label | What it supports |
+| Material | Role | What it supports |
 | --- | --- | --- |
 | [Integration report](./integration-report.md) | Repo-maintained integration report | The single-image product form boundary is documented against shipped APIs. |
 | Consumer smoke fixtures | Repo-maintained verification | The packed package resolves in root TypeScript, headless CommonJS, and Vite React UI consumer shapes. |
-| [Usage report template](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) | Evidence intake template | Reports can capture relationship, category, package source, framework, storage pattern, friction, and evidence limits. |
+| [Usage report template](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) | Evidence intake | Reports can capture relationship, category, package source, framework, storage pattern, friction, and evidence limits. |
 
 ## External integration repo target
 
@@ -89,7 +89,7 @@ The external demo README should include:
 
 ## Usage reports
 
-Ask for usage reports when someone is using or evaluating the package in a real product. Useful reports include:
+Ask for usage reports when someone is using or evaluating the package in a product, internal tool, or external demo. Useful reports include:
 
 - package version
 - framework or bundler
