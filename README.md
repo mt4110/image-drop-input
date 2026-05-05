@@ -450,13 +450,17 @@ import {
 
 The root entry stays UI-first. Low-level utilities live under `/headless`.
 
-## Usage reports welcome
+## Adoption evidence
 
-Using this package in a real product? Open a [usage report](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) so docs, compatibility, and release polish can be prioritized from real integrations.
+The project values concrete integration signals over download counts:
 
-Useful reports include the use case, framework or bundler, upload pattern, and anything that slowed adoption. Public quotation is opt-in.
+- [Repo-maintained integration report](./docs/integration-report.md): documents the single-image product form boundary against shipped APIs.
+- Maintainer-owned external demo: planned Next.js draft lifecycle repo that installs the published npm package by version. This will not be labeled as third-party adoption.
+- [Third-party usage reports](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml): public reports from users or evaluators outside the maintainer workflow.
 
-The project values evidence over download counts. See [docs/adoption-evidence.md](./docs/adoption-evidence.md) for what repo-maintained examples, separate demo repos, and third-party reports prove.
+Using this package in a real product or evaluating it for one? Open a usage report so docs, compatibility, and release polish can be prioritized from real integrations. Useful reports include the use case, framework or bundler, package source, upload pattern, what worked, and anything that slowed adoption. Public quotation is opt-in.
+
+See [docs/adoption-evidence.md](./docs/adoption-evidence.md) for what repo-maintained examples, maintainer-owned demos, third-party reports, and production-adjacent case studies prove.
 
 ## When not to use this
 
