@@ -19,7 +19,7 @@ Evidence should stay modest. A maintainer-owned demo can be useful without being
 | --- | --- | --- | --- |
 | 0 | Repo-maintained examples and recipes | Public APIs can be composed into supported flows. | Independent adoption or real app fit. |
 | 1 | Repo-maintained integration report | A documented product-form boundary is traceable to shipped APIs and verification checks. | Customer endorsement, benchmark quality, or storage-provider integration. |
-| 2 | Separate maintainer-owned integration repo | The published npm package works outside this repository in a realistic app shape. | Third-party adoption or production use. |
+| 2 | Maintainer-owned external demo repo | The published npm package works outside this repository in a realistic app shape. | Third-party adoption or production use. |
 | 3 | Third-party usage report | Someone outside the maintainer workflow evaluated or used the package and reported context. | Production maturity unless the report says so. |
 | 4 | Production-adjacent case study | A real app or internal tool describes workflow, storage pattern, blockers, and version used. | Universal fit, security review, compliance readiness, or long-term support guarantees. |
 | 5 | Downstream issue or PR from real integration | A real integration found a docs gap, compatibility edge, or product need. | Broad adoption by itself. |
@@ -46,7 +46,7 @@ Do not relabel maintainer-owned work as third-party evidence. If the same person
 | --- | --- | --- |
 | [Integration report](./integration-report.md) | Repo-maintained integration report | The single-image product form boundary is documented against shipped APIs. |
 | Consumer smoke fixtures | Repo-maintained verification | The packed package resolves in root TypeScript, headless CommonJS, and Vite React UI consumer shapes. |
-| [Usage report template](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) | Third-party or production-adjacent intake | Reports can capture category, package source, framework, storage pattern, friction, and evidence limits. |
+| [Usage report template](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) | Evidence intake template | Reports can capture relationship, category, package source, framework, storage pattern, friction, and evidence limits. |
 
 ## External integration repo target
 

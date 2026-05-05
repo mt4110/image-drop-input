@@ -71,7 +71,7 @@ body:
     id: package-source
     attributes:
       label: Package source
-      description: Published npm installs are stronger evidence than local links or packed workspace tarballs.
+      description: Published npm installs are stronger evidence than local links or packed workspace tarballs. Maintainer-owned external demos should use the published package by version.
       options:
         - Published npm package
         - Packed tarball from this repository
