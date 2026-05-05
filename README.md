@@ -405,6 +405,8 @@ Use `image-drop-input` when you need one image field that keeps browser-only pre
 | Multi-file queues, retries, remote sources, or editors | Uppy, FilePond, Uploady, or a provider widget |
 | Single-image form field with a durable image-state boundary | `image-drop-input` |
 
+Maintainers use the [maintenance governance guide](./docs/maintenance-governance.md) to evaluate whether new requests deepen this boundary or belong in app code and dedicated uploader/editor tools.
+
 ## Accessibility
 
 The default component includes keyboard operation, paste support, action labels, status text, and a focus-managed preview dialog. The headless hook exposes the same behavior when you need custom markup.
@@ -472,6 +474,7 @@ Use another tool if you need:
 - drag sorting between lists
 - full crop, rotate, or annotation editing
 - provider-specific SDK wrappers
+- storage-as-a-service behavior
 - Node-side image processing
 
 This package is intentionally single-image first.

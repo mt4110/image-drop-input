@@ -75,7 +75,7 @@ This repo values software that feels quiet and durable in everyday use.
 
 ## Scope decisions
 
-Before accepting a feature, answer:
+Before accepting a feature, answer the same checklist used by the issue template:
 
 1. Does it protect durable product image state?
 2. Does it improve submit-boundary safety?
@@ -84,14 +84,16 @@ Before accepting a feature, answer:
 5. Does it improve explicit upload boundaries without storage lock-in?
 6. Does it improve adoption trust without expanding scope?
 
-If the answer is no, reject or redirect the request. Multi-file queues, resumable upload orchestration, remote sources, storage SDK wrappers, built-in image editing, and storage-as-a-service behavior are out of scope.
+A yes should be concrete and tied to the requested behavior. If the answer is no, reject or redirect the request. Multi-file queues, resumable upload orchestration, remote sources, storage provider SDK wrappers, built-in image editing, and storage-as-a-service behavior are out of scope.
 
 See [docs/maintenance-governance.md](./docs/maintenance-governance.md) for response templates, suggested labels, and semver policy.
 
 ## Semver
 
+Public contracts include exported subpaths, component props, hook options and return types, render props, message and customization keys, `ImageUploadValue`, persistable value helpers, upload adapter contracts, validation and budget helpers, and documented error codes or fields used for narrowing.
+
 Patch releases may include bug fixes, docs fixes, CI hardening, and internal refactors that preserve public behavior.
 
-Minor releases may add helpers, recipes, optional public types, or new non-breaking error codes.
+Minor releases may add helpers, recipes, optional public types, optional props that preserve current defaults, or new non-breaking error codes.
 
-Major releases are required for breaking public type changes, persistable guard behavior changes, lifecycle phase changes that affect user code, removed exports, renamed exports, or stricter runtime requirements.
+Major releases are required for breaking public type changes, persistable guard behavior changes, lifecycle phase changes that affect user code, removed exports, renamed exports, changed defaults that alter existing app outcomes, or new required peer, browser, framework, or runtime requirements.
