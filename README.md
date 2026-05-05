@@ -458,7 +458,7 @@ Current repo-maintained evidence includes the [integration report](./docs/integr
 
 The next external evidence target is a maintainer-owned Next.js draft lifecycle demo that installs the published npm package by version. That can prove repo-external package consumption, not third-party adoption.
 
-Using this package in a real product or evaluating it for one? Open a [usage report](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) so docs, compatibility, and release polish can be prioritized from concrete integration context. Useful reports include the relationship, use case, framework or bundler, package source, upload pattern, what worked, and anything that slowed adoption. Public quotation is opt-in.
+Using this package in a product, internal tool, or external demo, or evaluating it for one? Open a [usage report](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) so docs, compatibility, and release polish can be prioritized from concrete integration context. Useful reports include the relationship, use case, framework or bundler, package source, upload pattern, what worked, and anything that slowed adoption. Public quotation is opt-in.
 
 See [docs/adoption-evidence.md](./docs/adoption-evidence.md) for what repo-maintained examples, maintainer-owned demos, third-party reports, and production-adjacent case studies prove.
 

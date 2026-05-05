@@ -42,6 +42,8 @@ Do not relabel maintainer-owned work as third-party evidence. If the same person
 
 ## Current public materials
 
+These rows are not all adoption evidence. The role column keeps evidence, verification, and intake materials separate.
+
 | Material | Role | What it supports |
 | --- | --- | --- |
 | [Integration report](./integration-report.md) | Repo-maintained integration report | The single-image product form boundary is documented against shipped APIs. |
