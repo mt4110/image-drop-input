@@ -8,6 +8,8 @@ body:
     attributes:
       value: |
         Thanks for suggesting an improvement. Please describe the product workflow first; that makes it easier to keep the API small and predictable.
+
+        This project is focused on one product image field. Multi-file queues, resumable uploads, remote sources, storage provider SDK wrappers, storage-as-a-service behavior, and built-in cropper/editor UI are usually better handled by app code or dedicated uploader/editor tools.
   - type: dropdown
     id: use-case
     attributes:
@@ -42,18 +44,25 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: lifecycle-boundary
+    id: scope-checklist
     attributes:
-      label: Product-state boundary
-      description: Which durable image-state boundary does this request improve?
+      label: Scope decision checklist item
+      description: Which governance reason does this request satisfy?
       options:
-        - Local preview vs saved value
-        - Prepared bytes vs source file
-        - Upload success vs product save success
-        - Draft commit/discard/cleanup
-        - Server schema or storage contract
-        - Release, docs, or consumer verification
-        - Not related to product image state
+        - Durable product image state
+        - Submit-boundary safety
+        - Byte-policy verification
+        - Draft commit/discard/cleanup correctness
+        - Explicit upload boundary without storage lock-in
+        - Adoption trust without expanding scope
+        - Not sure / may be outside scope
+    validations:
+      required: true
+  - type: textarea
+    id: governance-fit
+    attributes:
+      label: Governance fit
+      description: Explain how this satisfies the checklist item above. If you selected "Not sure / may be outside scope", describe why it still belongs in this project.
     validations:
       required: true
   - type: textarea
@@ -89,9 +98,9 @@ body:
     attributes:
       label: Scope check
       options:
-        - label: This request is for a single-image input workflow.
+        - label: This request is for one image field in a product workflow, not a generic upload queue.
           required: true
-        - label: This request does not require adding a cloud SDK to the runtime bundle.
+        - label: This request does not require adding a cloud SDK, storage service, remote source connector, or built-in image editor.
           required: true
-        - label: This request is about durable image state, byte policy, draft lifecycle, upload boundaries, docs, or verification.
+        - label: This request fits one checklist item above, or the issue explains why the governance policy should change.
           required: true
