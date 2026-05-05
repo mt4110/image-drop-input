@@ -452,11 +452,11 @@ The root entry stays UI-first. Low-level utilities live under `/headless`.
 
 ## Adoption evidence
 
-The project values concrete integration signals over download counts:
+The project values concrete integration signals over download counts.
 
-- [Repo-maintained integration report](./docs/integration-report.md): documents the single-image product form boundary against shipped APIs.
-- Maintainer-owned external demo: planned Next.js draft lifecycle repo that installs the published npm package by version. This will not be labeled as third-party adoption.
-- [Third-party usage reports](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml): public reports from users or evaluators outside the maintainer workflow.
+Current repo-maintained evidence includes the [integration report](./docs/integration-report.md), which documents the single-image product form boundary against shipped APIs.
+
+The next external evidence target is a maintainer-owned Next.js draft lifecycle demo that installs the published npm package by version. Until there is a report from someone outside the maintainer workflow, it should not be read as third-party adoption.
 
 Using this package in a real product or evaluating it for one? Open a usage report so docs, compatibility, and release polish can be prioritized from real integrations. Useful reports include the use case, framework or bundler, package source, upload pattern, what worked, and anything that slowed adoption. Public quotation is opt-in.
 
