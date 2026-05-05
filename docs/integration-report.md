@@ -6,6 +6,20 @@ This is a repo-maintained integration report for the public docs. It records how
 
 The target integration is deliberately narrow: one image field in a profile, workspace, CMS, or product form where the saved record must not confuse browser preview state, draft upload state, and durable product state.
 
+## Evidence classification
+
+| Field | Value |
+| --- | --- |
+| Evidence label | Repo-maintained integration report |
+| Maintainer-owned | Yes |
+| Third-party usage | No |
+| Production-adjacent | No |
+| Package surface | Public APIs and packaged docs |
+
+This report supports one modest claim: the documented single-image product form boundary can be assembled from shipped APIs without adding provider SDKs or changing the public API.
+
+It does not prove production adoption, storage security, malware scanning, CDN invalidation, customer endorsement, or suitability for multi-file upload products.
+
 ## Scenario
 
 A React product form starts with an existing image value from the server:

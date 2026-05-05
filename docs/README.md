@@ -48,7 +48,7 @@ Security, privacy, and adoption:
 - [Security model](./security.md): storage credentials, signed URLs, drafts, and product save boundaries
 - [Telemetry and privacy](./telemetry-and-privacy.md): safe error tags, redaction patterns, and product copy mapping
 - [Integration report](./integration-report.md): repo-maintained report for the single-image product form boundary
-- [Adoption evidence](./adoption-evidence.md): what external examples and usage reports prove
+- [Adoption evidence](./adoption-evidence.md): what repo-maintained examples, maintainer-owned demos, third-party reports, and production-adjacent case studies prove
 - [Release verification](./release-verification.md): packed package, npm metadata, provenance, and local verification checks
 - [Maintenance governance](./maintenance-governance.md): scope decisions, non-goals, and semver policy
 

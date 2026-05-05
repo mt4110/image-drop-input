@@ -1,11 +1,38 @@
 name: Usage report
-description: Share real-world usage signals for product prioritization.
+description: Share usage or integration evidence for product prioritization.
 title: "usage: "
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for sharing how image-drop-input is being used. These reports help prioritize docs, compatibility, and release polish. They are product signals, not a showcase requirement.
+        Thanks for sharing concrete image-drop-input usage or integration evidence. These reports help prioritize docs, compatibility, and release polish. They are prioritization signals, not a showcase requirement.
+
+        Please label the relationship honestly. A maintainer-owned demo that installs the published npm package can prove that the package works outside this repository, but it is not third-party adoption.
+  - type: dropdown
+    id: evidence-category
+    attributes:
+      label: Evidence category
+      description: Pick the closest fit. This keeps repo-maintained examples, maintainer-owned demos, third-party usage, and production-adjacent evidence separate.
+      options:
+        - Third-party evaluation
+        - Third-party product integration
+        - Production-adjacent case study
+        - Maintainer-owned external demo
+        - Repo-maintained example or report
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: reporter-relationship
+    attributes:
+      label: Reporter relationship
+      options:
+        - External user or evaluator
+        - Project contributor
+        - Maintainer
+        - Other
+    validations:
+      required: true
   - type: dropdown
     id: use-case
     attributes:
@@ -19,11 +46,38 @@ body:
         - Other
     validations:
       required: true
+  - type: dropdown
+    id: integration-status
+    attributes:
+      label: Integration status
+      description: This is about where the package was tried, not whether the product is public.
+      options:
+        - Evaluating
+        - Prototype or demo
+        - Internal/admin tool
+        - Staging product flow
+        - Production product flow
+        - Not applicable
+    validations:
+      required: true
   - type: input
     id: package-version
     attributes:
       label: Package version
+      description: Use the installed version, or write "Not installed yet" / "Not sure" if the report is still an evaluation.
       placeholder: "0.3.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: package-source
+    attributes:
+      label: Package source
+      description: Published npm installs are stronger evidence than local links or packed workspace tarballs. Maintainer-owned external demos should use the published package by version.
+      options:
+        - Published npm package
+        - Packed tarball from this repository
+        - Local workspace link
+        - Not sure
     validations:
       required: true
   - type: input
@@ -46,8 +100,9 @@ body:
       label: Integration mode
       options:
         - Local preview only
-        - Upload after prepare
-        - Both local preview and upload
+        - Prepare and upload
+        - Draft lifecycle
+        - Persistable guard only
         - Evaluating
     validations:
       required: true
@@ -60,6 +115,8 @@ body:
         - Presigned PUT
         - Multipart POST
         - Raw PUT
+        - App endpoint upload
+        - Mock/no upload
         - Custom adapter
         - Not sure yet
     validations:
@@ -83,6 +140,14 @@ body:
       placeholder: "Presign route, draft commit endpoint, discard endpoint, TTL cleanup..."
     validations:
       required: false
+  - type: input
+    id: public-evidence-link
+    attributes:
+      label: Public evidence link
+      description: Optional. Link a demo repo, public app page, docs page, issue, PR, or write-up only if it is safe to share.
+      placeholder: "https://github.com/owner/repo"
+    validations:
+      required: false
   - type: textarea
     id: what-worked
     attributes:
@@ -95,6 +160,27 @@ body:
     attributes:
       label: Pain points, missing docs, or adoption blockers
       description: What slowed adoption, caused uncertainty, or needed extra local code? Leave this blank if nothing blocked you.
+    validations:
+      required: false
+  - type: textarea
+    id: evidence-proves
+    attributes:
+      label: What does this evidence prove?
+      description: "Examples: published npm install works in Next.js, draft lifecycle matched the form boundary, or the persistable guard caught preview-only state."
+    validations:
+      required: false
+  - type: textarea
+    id: evidence-limits
+    attributes:
+      label: What does this evidence not prove?
+      description: "Examples: not a production endorsement, no real storage security review, no malware scanning, no CDN invalidation, or no public customer adoption."
+    validations:
+      required: false
+  - type: textarea
+    id: bug-prevention
+    attributes:
+      label: Did it prevent a real bug or reduce risk?
+      description: For example, avoided saving blob URLs, avoided deleting the previous image too early, or clarified the server transaction.
     validations:
       required: false
   - type: input

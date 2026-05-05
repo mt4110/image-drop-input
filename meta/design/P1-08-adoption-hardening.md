@@ -128,12 +128,14 @@ Acceptance criteria:
 
 ### 4. Adoption proof
 
-The project already has a usage report template. The missing layer is at least one concrete report from a real integration.
+The project already has a usage report template and an evidence taxonomy. The missing layer is at least one concrete report from a real integration while keeping ownership and evidence strength explicit.
 
 Acceptance criteria:
 
-- Open one self-authored usage report from a real app or integration test repo.
+- Open one self-authored usage report from a real app or integration test repo, and label it as maintainer-owned unless ownership is independent.
 - Confirm at least one path from the docs works outside this repository, preferably Next.js App Router or React Hook Form/Zod.
+- For the next external demo target, use `image-drop-input-next-draft-demo`, install the published npm package by version, and link it as a maintainer-owned external demo.
+- Do not present a repo-maintained integration report or maintainer-owned external demo as third-party adoption, production evidence, or customer endorsement.
 - Link the report in release notes or maintainer notes only if it is useful and the report grants public quotation permission.
 - Treat pain points from the first report as docs or compatibility fixes before adding new features.
 
@@ -152,6 +154,6 @@ The v0.3 adoption hardening pass is done when:
 - a tokenless trusted publish path has been verified end to end
 - the main hook has a smaller upload orchestration boundary
 - upload failures can be classified without parsing English messages
-- at least one real usage report or equivalent integration proof exists
+- at least one real usage report or equivalent integration proof exists with relationship, package source, and evidence limits visible
 
 That is the bridge from "good package" to "safe dependency."
