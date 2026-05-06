@@ -21,10 +21,10 @@ import { isImageValidationError } from 'image-drop-input';
 
 ## Persistable value errors
 
-Import the class and code types from the root entry:
+Import the guard from the root or `/headless` entry:
 
 ```ts
-import { ImagePersistableValueError } from 'image-drop-input';
+import { isImagePersistableValueError } from 'image-drop-input';
 ```
 
 | Code | Meaning |

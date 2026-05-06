@@ -48,6 +48,7 @@ export type {
 export {
   assertPersistableImageValue,
   ImagePersistableValueError,
+  isImagePersistableValueError,
   isPersistableImageValue,
   isTemporaryImageSrc,
   toPersistableImageValue

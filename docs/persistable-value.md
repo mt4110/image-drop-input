@@ -50,13 +50,16 @@ By default, the helper rejects values that cannot safely represent product state
 - invalid metadata such as negative `size` or `width: 0`
 
 ```tsx
-import { ImagePersistableValueError, toPersistableImageValue } from 'image-drop-input';
+import {
+  isImagePersistableValueError,
+  toPersistableImageValue
+} from 'image-drop-input';
 
 try {
   const image = toPersistableImageValue(value);
   await save({ image });
 } catch (error) {
-  if (error instanceof ImagePersistableValueError) {
+  if (isImagePersistableValueError(error)) {
     // Show product-specific copy or log error.code.
   }
 }

@@ -50,10 +50,61 @@ export class ImagePersistableValueError extends Error {
   }
 }
 
+const imagePersistableValueErrorCodeList = [
+  'preview_src_not_persistable',
+  'src_is_temporary',
+  'empty_reference',
+  'invalid_metadata'
+] as const satisfies readonly ImagePersistableValueErrorCode[];
+
+const imagePersistableValueErrorCodes = new Set<ImagePersistableValueErrorCode>(
+  imagePersistableValueErrorCodeList
+);
+
 const temporarySrcSchemes = new Set(['blob', 'filesystem', 'data']);
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (!isObjectRecord(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+
+  return prototype === Object.prototype || prototype === null;
+}
+
+function hasOptionalString(
+  details: Record<string, unknown>,
+  key: keyof ImagePersistableValueErrorDetails
+): boolean {
+  return typeof details[key] === 'undefined' || typeof details[key] === 'string';
+}
+
+export function isImagePersistableValueError(
+  error: unknown
+): error is ImagePersistableValueError {
+  if (!isObjectRecord(error)) {
+    return false;
+  }
+
+  if (
+    error.name !== 'ImagePersistableValueError' ||
+    typeof error.message !== 'string' ||
+    typeof error.code !== 'string' ||
+    !imagePersistableValueErrorCodes.has(error.code as ImagePersistableValueErrorCode) ||
+    !isPlainRecord(error.details)
+  ) {
+    return false;
+  }
+
+  return (
+    hasOptionalString(error.details, 'field') &&
+    hasOptionalString(error.details, 'srcProtocol')
+  );
 }
 
 function getLowercaseScheme(src: string): string | null {

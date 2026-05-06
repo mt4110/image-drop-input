@@ -66,7 +66,7 @@ import { isImageValidationError } from 'image-drop-input';
 
 function toMessage(error: Error) {
   if (!isImageValidationError(error)) {
-    return error.message;
+    return 'Could not prepare this image.';
   }
 
   switch (error.code) {
@@ -75,7 +75,7 @@ function toMessage(error: Error) {
     case 'invalid_type':
       return 'Choose a supported image type.';
     default:
-      return error.message;
+      return 'Choose a different image.';
   }
 }
 ```

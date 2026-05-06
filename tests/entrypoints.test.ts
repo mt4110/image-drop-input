@@ -23,6 +23,7 @@ describe('package entrypoints', () => {
         "ImageUploadError",
         "ImageValidationError",
         "assertPersistableImageValue",
+        "isImagePersistableValueError",
         "isImageUploadError",
         "isImageValidationError",
         "isPersistableImageValue",
@@ -46,6 +47,7 @@ describe('package entrypoints', () => {
         "getImageMetadata",
         "isImageBudgetError",
         "isImageDraftLifecycleError",
+        "isImagePersistableValueError",
         "isImageUploadError",
         "isImageValidationError",
         "isPersistableImageValue",
@@ -70,6 +72,7 @@ describe('package entrypoints', () => {
     expect(root.ImageUploadError).toBeTypeOf('function');
     expect(root.isImageUploadError).toBeTypeOf('function');
     expect(root.ImagePersistableValueError).toBeTypeOf('function');
+    expect(root.isImagePersistableValueError).toBeTypeOf('function');
     expect(root.toPersistableImageValue).toBeTypeOf('function');
     expect(root.assertPersistableImageValue).toBeTypeOf('function');
     expect(root.isPersistableImageValue).toBeTypeOf('function');
@@ -97,6 +100,7 @@ describe('package entrypoints', () => {
     expect(headless.ImageUploadError).toBeTypeOf('function');
     expect(headless.isImageUploadError).toBeTypeOf('function');
     expect(headless.ImagePersistableValueError).toBeTypeOf('function');
+    expect(headless.isImagePersistableValueError).toBeTypeOf('function');
     expect(headless.toPersistableImageValue).toBeTypeOf('function');
     expect(headless.assertPersistableImageValue).toBeTypeOf('function');
     expect(headless.isPersistableImageValue).toBeTypeOf('function');

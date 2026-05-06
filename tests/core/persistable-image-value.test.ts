@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   assertPersistableImageValue,
   ImagePersistableValueError,
+  isImagePersistableValueError,
   isPersistableImageValue,
   isTemporaryImageSrc,
   toPersistableImageValue
@@ -249,6 +250,61 @@ describe('persistable image value guards', () => {
     expect(() => assertPersistableImageValue({ src: 'data:image/png;base64,abc' })).toThrow(
       ImagePersistableValueError
     );
+  });
+
+  it('narrows persistable value errors without relying on instanceof', () => {
+    const error = new ImagePersistableValueError(
+      'src_is_temporary',
+      'Temporary image src cannot be persisted.',
+      {
+        field: 'src',
+        srcProtocol: 'blob:'
+      }
+    );
+
+    expect(isImagePersistableValueError(error)).toBe(true);
+    expect(
+      isImagePersistableValueError({
+        name: 'ImagePersistableValueError',
+        message: 'Persistable image values need a durable src or key.',
+        code: 'empty_reference',
+        details: {}
+      })
+    ).toBe(true);
+    expect(
+      isImagePersistableValueError({
+        name: 'ImagePersistableValueError',
+        message: 'Unknown code.',
+        code: 'unknown',
+        details: {}
+      })
+    ).toBe(false);
+    expect(
+      isImagePersistableValueError({
+        name: 'ImagePersistableValueError',
+        message: 'Invalid details.',
+        code: 'invalid_metadata',
+        details: {
+          field: 42
+        }
+      })
+    ).toBe(false);
+    expect(
+      isImagePersistableValueError({
+        name: 'ImagePersistableValueError',
+        message: 'Invalid details.',
+        code: 'invalid_metadata',
+        details: []
+      })
+    ).toBe(false);
+    expect(
+      isImagePersistableValueError({
+        name: 'ImagePersistableValueError',
+        message: 'Invalid details.',
+        code: 'invalid_metadata',
+        details: new Date()
+      })
+    ).toBe(false);
   });
 
   it('rejects undefined from assertPersistableImageValue before narrowing', () => {
