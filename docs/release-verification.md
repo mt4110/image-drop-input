@@ -18,7 +18,7 @@ What they cover:
 | --- | --- |
 | `npm run verify` | Typecheck, unit tests, example builds, package linting, and type resolution checks. |
 | `npm run smoke:consumer` | Packs the package and installs it into root type, headless CJS, and Vite React UI consumer fixtures. |
-| `npm run publish:check` | Verifies release workflow gates, then creates a temporary package tarball and checks manifest metadata, included docs, exact tarball count, metadata links, and deny-listed files. |
+| `npm run publish:check` | Verifies release workflow gates, then creates a temporary package tarball and checks package description, core keywords, included docs, exact tarball count, metadata links, and deny-listed files. |
 
 To reproduce the release workflow tarball gate locally:
 

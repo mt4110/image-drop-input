@@ -16,6 +16,8 @@ const expectedPackageTarballName = packageJson.name.replace(/^@/, '').replace('/
 const expectedTarballFilename = `${expectedPackageTarballName}-${packageJson.version}.tgz`;
 const tempDirectoryPrefix = packageJson.name.replace(/[^a-zA-Z0-9._-]/g, '-');
 const packDestination = mkdtempSync(join(tmpdir(), `${tempDirectoryPrefix}-pack-`));
+const canonicalPackageDescription =
+  'Product-safe React image field for durable image state, byte-budget preparation, explicit uploads, and draft lifecycle.';
 const npmPackArgs = [
   'pack',
   '--json',
@@ -24,6 +26,7 @@ const npmPackArgs = [
   '--workspaces=false'
 ];
 const expectedMetadata = [
+  ['description', packageJson.description, canonicalPackageDescription],
   ['homepage', packageJson.homepage, 'https://mt4110.github.io/image-drop-input/'],
   ['repository.type', packageJson.repository?.type, 'git'],
   [
@@ -67,6 +70,14 @@ const deniedPatterns = [
 ];
 const canonicalReadmeTitle = '# image-drop-input';
 const canonicalReadmeSummary = 'A product-safe React image field.';
+const requiredKeywords = new Set([
+  'product-safe-image-field',
+  'image-field',
+  'persistable-image',
+  'image-draft',
+  'byte-budget',
+  'durable-image-state'
+]);
 const failures = [];
 
 function fail(message) {
@@ -240,6 +251,19 @@ function verifyPackageJsonMetadata() {
   }
 }
 
+function verifyPackageKeywords() {
+  if (!Array.isArray(packageJson.keywords)) {
+    fail('Expected package.json keywords to be an array.');
+    return;
+  }
+
+  for (const keyword of requiredKeywords) {
+    if (!packageJson.keywords.includes(keyword)) {
+      fail(`Expected package.json keywords to include ${keyword}.`);
+    }
+  }
+}
+
 function verifyReadmeFace(files) {
   if (!files.has('README.md')) {
     fail('Expected README.md to be included in the packed package.');
@@ -300,6 +324,7 @@ if (packResult) {
   verifyPackMetadata(packResult);
   verifyTarballArtifact(packResult);
   verifyPackageJsonMetadata();
+  verifyPackageKeywords();
   verifyFiles(files);
   verifyReadmeFace(files);
 
