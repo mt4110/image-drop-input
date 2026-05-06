@@ -51,6 +51,7 @@
   "keywords": [
     "react",
     "react-component",
+    "product-safe-image-field",
     "product-image-field",
     "image-field",
     "image-input",
@@ -69,6 +70,7 @@
     "object-storage",
     "webp",
     "avatar-upload",
+    "durable-image-state",
     "cms"
   ],
   "sideEffects": [

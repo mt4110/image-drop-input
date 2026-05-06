@@ -69,7 +69,7 @@ Use these sources for context:
    ```
 
    This includes release workflow gate checks, the packed package face check, temporary tarball creation, README inclusion,
-   package metadata links, exact tarball count, and deny-list validation for files that must stay out of the published tarball.
+   package description, core keywords, metadata links, exact tarball count, and deny-list validation for files that must stay out of the published tarball.
 
    To isolate the tarball gate locally:
 
