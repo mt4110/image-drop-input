@@ -19,6 +19,7 @@ export { ImageValidationError, isImageValidationError } from './core/validate-im
 export {
   assertPersistableImageValue,
   ImagePersistableValueError,
+  isImagePersistableValueError,
   isPersistableImageValue,
   isTemporaryImageSrc,
   toPersistableImageValue

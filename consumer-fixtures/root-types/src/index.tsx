@@ -4,6 +4,7 @@ import {
   ImageUploadError,
   ImageValidationError,
   assertPersistableImageValue,
+  isImagePersistableValueError,
   isPersistableImageValue,
   isImageUploadError,
   isTemporaryImageSrc,
@@ -75,6 +76,7 @@ const persistableError = new ImagePersistableValueError(
 
 void node;
 void isImageUploadError(uploadError);
+void isImagePersistableValueError(persistableError);
 void isTemporaryImageSrc('blob:preview');
 void isPersistableImageValue(persistableValue);
 void assertPersistableImageValue(persistableValue);

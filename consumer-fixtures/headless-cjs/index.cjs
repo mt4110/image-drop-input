@@ -7,6 +7,7 @@ const expectedRootExports = [
   'ImageUploadError',
   'ImageValidationError',
   'assertPersistableImageValue',
+  'isImagePersistableValueError',
   'isImageUploadError',
   'isImageValidationError',
   'isPersistableImageValue',
@@ -28,6 +29,7 @@ const expectedHeadlessExports = [
   'getImageMetadata',
   'isImageBudgetError',
   'isImageDraftLifecycleError',
+  'isImagePersistableValueError',
   'isImageUploadError',
   'isImageValidationError',
   'isPersistableImageValue',
@@ -54,6 +56,7 @@ const requiredFunctions = [
   'ImageUploadError',
   'isImageUploadError',
   'ImagePersistableValueError',
+  'isImagePersistableValueError',
   'toPersistableImageValue',
   'assertPersistableImageValue',
   'isPersistableImageValue',
@@ -101,6 +104,11 @@ const lifecycleError = new headless.ImageDraftLifecycleError(
   'Draft uploads must return draftKey or key.',
   { phase: 'uploading-draft' }
 );
+const persistableError = new headless.ImagePersistableValueError(
+  'src_is_temporary',
+  'Temporary image src cannot be persisted.',
+  { field: 'src', srcProtocol: 'blob:' }
+);
 
 if (!headless.isImageUploadError(uploadError)) {
   throw new Error('Expected headless isImageUploadError to narrow ImageUploadError.');
@@ -116,6 +124,10 @@ if (!headless.isImageBudgetError(budgetError)) {
 
 if (!headless.isImageDraftLifecycleError(lifecycleError)) {
   throw new Error('Expected headless isImageDraftLifecycleError to narrow ImageDraftLifecycleError.');
+}
+
+if (!headless.isImagePersistableValueError(persistableError)) {
+  throw new Error('Expected headless isImagePersistableValueError to narrow ImagePersistableValueError.');
 }
 
 const persistableValue = headless.toPersistableImageValue({

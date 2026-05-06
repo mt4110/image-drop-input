@@ -64,7 +64,7 @@ function bucketBytes(size: number | undefined): SafeImageFieldTelemetry['sizeBuc
 
 ```ts
 import {
-  ImagePersistableValueError,
+  isImagePersistableValueError,
   isImageUploadError,
   isImageValidationError
 } from 'image-drop-input';
@@ -115,7 +115,7 @@ function toSafeImageTelemetry(error: unknown): SafeImageFieldTelemetry | null {
     };
   }
 
-  if (error instanceof ImagePersistableValueError) {
+  if (isImagePersistableValueError(error)) {
     return {
       package: 'image-drop-input',
       event: 'image.persistable_guard_failed',
