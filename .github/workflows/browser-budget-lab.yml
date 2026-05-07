@@ -35,15 +35,61 @@ jobs:
       - run: npm --version
       - run: npm ci
 
-      - name: Install Playwright browsers
+      - name: Resolve browser input
+        id: resolve-browsers
+        env:
+          BROWSER_INPUT: ${{ inputs.browsers }}
         run: |
-          npx playwright install --with-deps $(echo "${{ inputs.browsers }}" | tr ',' ' ')
+          node <<'NODE'
+          const { appendFileSync } = require('node:fs');
+
+          const allowed = new Set(['chromium', 'firefox', 'webkit']);
+          const browsers = (process.env.BROWSER_INPUT || '')
+            .split(',')
+            .map((browser) => browser.trim())
+            .filter(Boolean);
+
+          if (browsers.length === 0) {
+            throw new Error('At least one browser must be selected.');
+          }
+
+          for (const browser of browsers) {
+            if (!allowed.has(browser)) {
+              throw new Error(`Unsupported browser "${browser}". Use chromium, firefox, or webkit.`);
+            }
+          }
+
+          appendFileSync(process.env.GITHUB_OUTPUT, `browsers=${browsers.join(',')}\n`);
+          NODE
+
+      - name: Install Playwright browsers
+        env:
+          BROWSERS: ${{ steps.resolve-browsers.outputs.browsers }}
+        run: |
+          node <<'NODE'
+          const { spawnSync } = require('node:child_process');
+
+          const browsers = (process.env.BROWSERS || '').split(',').filter(Boolean);
+          const result = spawnSync(
+            'npx',
+            ['playwright', 'install', '--with-deps', ...browsers],
+            { stdio: 'inherit' }
+          );
+
+          if (result.error) {
+            throw result.error;
+          }
+
+          process.exit(result.status ?? 1);
+          NODE
 
       - name: Run browser budget lab
+        env:
+          BROWSERS: ${{ steps.resolve-browsers.outputs.browsers }}
         run: |
           mkdir -p .artifacts
           npm run browser:budget-lab -- \
-            --browsers="${{ inputs.browsers }}" \
+            --browsers="${BROWSERS}" \
             --json-output=.artifacts/browser-budget-lab.json \
             --markdown-output=.artifacts/browser-budget-lab.md
 

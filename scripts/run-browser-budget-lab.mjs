@@ -1,10 +1,11 @@
 import { createServer } from 'node:http';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium, firefox, webkit } from 'playwright';
 
 const rootDirectory = process.cwd();
+const realRootDirectory = realpathSync(rootDirectory);
 const defaultBrowsers = ['chromium', 'firefox'];
 const browserTypes = { chromium, firefox, webkit };
 const contentTypes = new Map([
@@ -16,7 +17,7 @@ const contentTypes = new Map([
 ]);
 
 function isPathWithinRoot(path) {
-  const relativePath = relative(rootDirectory, path);
+  const relativePath = relative(realRootDirectory, path);
 
   return (
     relativePath === '' ||
@@ -24,6 +25,16 @@ function isPathWithinRoot(path) {
       relativePath !== '..' &&
       !isAbsolute(relativePath))
   );
+}
+
+function resolveContainedPath(path) {
+  const realPath = realpathSync(path);
+
+  if (!isPathWithinRoot(realPath)) {
+    return undefined;
+  }
+
+  return realPath;
 }
 
 function parseArgs(argv) {
@@ -367,17 +378,18 @@ function createStaticServer() {
       return;
     }
 
-    const requestedPath = resolve(rootDirectory, `.${url.pathname}`);
-
-    if (!isPathWithinRoot(requestedPath)) {
-      response.writeHead(403);
-      response.end('Forbidden');
-      return;
-    }
-
     try {
-      const content = readFileSync(requestedPath);
-      const contentType = contentTypes.get(extname(requestedPath)) ?? 'application/octet-stream';
+      const requestedPath = resolve(rootDirectory, `.${url.pathname}`);
+      const containedPath = resolveContainedPath(requestedPath);
+
+      if (!containedPath) {
+        response.writeHead(403);
+        response.end('Forbidden');
+        return;
+      }
+
+      const content = readFileSync(containedPath);
+      const contentType = contentTypes.get(extname(containedPath)) ?? 'application/octet-stream';
       response.writeHead(200, { 'content-type': contentType });
       response.end(content);
     } catch {
@@ -426,6 +438,14 @@ async function runBrowser(browserName, origin) {
     });
     page.on('pageerror', (error) => {
       diagnostics.push(`pageerror: ${error.stack || error.message}`);
+    });
+    page.on('requestfailed', (request) => {
+      diagnostics.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? ''}`);
+    });
+    page.on('response', (response) => {
+      if (!response.ok()) {
+        diagnostics.push(`response: ${response.status()} ${response.url()}`);
+      }
     });
 
     await page.goto(`${origin}/lab.html`, { waitUntil: 'networkidle' });

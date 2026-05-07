@@ -122,13 +122,17 @@ describe('draft lifecycle model invariants', () => {
       cleanupPrevious
     });
     const { result } = renderHook(() => useImageDraftLifecycle(options));
-    let commitPromise: Promise<PersistableImageValue | null>;
+    let commitPromise: Promise<PersistableImageValue | null> | undefined;
 
     await uploadDraft(result);
 
     act(() => {
       commitPromise = result.current.commit();
     });
+
+    if (!commitPromise) {
+      throw new Error('Expected commit promise to be initialized.');
+    }
 
     await waitFor(() => {
       expect(result.current.phase).toBe('committing');
