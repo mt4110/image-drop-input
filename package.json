@@ -1,6 +1,6 @@
 {
   "name": "image-drop-input",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Product-safe React image field for durable image state, byte-budget preparation, explicit uploads, and draft lifecycle.",
   "license": "MIT",
   "type": "module",

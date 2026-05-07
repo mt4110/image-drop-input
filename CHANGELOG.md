@@ -2,6 +2,20 @@
 
 Notable changes for `image-drop-input` are tracked here.
 
+## 0.3.3 - 2026-05-07
+
+### Added
+
+- Added server-side persistable image schema recipes and a transaction-focused product submit recipe for draft image replacement flows.
+- Added public security, telemetry/privacy, adoption evidence, and maintenance governance docs for product-safe image field usage.
+- Added `ImagePersistableValueError` and `isImagePersistableValueError()` for stable persistable payload guard handling.
+
+### Changed
+
+- Hardened the byte-budget solver internals while preserving the public API and deterministic failure reporting.
+- Strengthened draft lifecycle docs around commit/save consistency, previous cleanup timing, and orphan draft cleanup.
+- Tightened release and package-face verification for packed package metadata and release workflow gates.
+
 ## 0.3.2 - 2026-05-03
 
 ### Added
