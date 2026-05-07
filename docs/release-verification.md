@@ -107,6 +107,30 @@ Manual checks:
 - repository and bugs links point to `mt4110/image-drop-input`.
 - provenance is visible for the published version.
 - provenance points back to the expected GitHub workflow run.
+- GitHub Releases latest matches the npm `dist-tags.latest` version.
+- GitHub release notes carry the same highlights as `CHANGELOG.md`.
+- GitHub release notes include the release verification summary.
+
+## GitHub release surface
+
+The npm registry, `package.json`, git tag, `CHANGELOG.md`, and GitHub Releases page are all public release surfaces. Keep them aligned for each published version.
+
+After publish, verify:
+
+```bash
+PACKAGE=image-drop-input
+VERSION="$(node -p 'require("./package.json").version')"
+
+test "$(npm view "$PACKAGE" dist-tags.latest)" = "$VERSION"
+gh release view "v$VERSION" --repo mt4110/image-drop-input --json tagName,name,publishedAt,url
+test "$(
+  gh release list --repo mt4110/image-drop-input --limit 1 --json tagName,isLatest \
+    --jq ".[0] | select(.tagName == \"v$VERSION\" and .isLatest == true) | .tagName"
+)" = "v$VERSION"
+gh release list --repo mt4110/image-drop-input --limit 5
+```
+
+The GitHub release for `v$VERSION` should be the latest release when npm `latest` points at the same version. If npm is already published but the GitHub release entry is missing, create or update the GitHub release without publishing a new npm version.
 
 ## Provenance verification
 
