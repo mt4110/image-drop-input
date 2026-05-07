@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { extname, resolve } from 'node:path';
+import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium, firefox, webkit } from 'playwright';
 
@@ -14,6 +14,17 @@ const contentTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.json', 'application/json; charset=utf-8']
 ]);
+
+function isPathWithinRoot(path) {
+  const relativePath = relative(rootDirectory, path);
+
+  return (
+    relativePath === '' ||
+    (!relativePath.startsWith(`..${sep}`) &&
+      relativePath !== '..' &&
+      !isAbsolute(relativePath))
+  );
+}
 
 function parseArgs(argv) {
   const options = {
@@ -358,7 +369,7 @@ function createStaticServer() {
 
     const requestedPath = resolve(rootDirectory, `.${url.pathname}`);
 
-    if (!requestedPath.startsWith(rootDirectory)) {
+    if (!isPathWithinRoot(requestedPath)) {
       response.writeHead(403);
       response.end('Forbidden');
       return;
