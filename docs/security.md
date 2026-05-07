@@ -62,3 +62,5 @@ Upload success is not product save success.
 For high-value product records, prefer a server submit endpoint that validates the draft, commits the image, saves the form fields in one server-owned transaction, and enqueues previous cleanup only after that transaction succeeds.
 
 See [Backend contracts](./backend-contracts.md) and [Product submit with image draft](./recipes/product-submit-with-image-draft.md).
+
+For repository-level dependency review, static analysis, release gates, and tarball trust checks, see [Supply-chain security](./supply-chain-security.md).

@@ -38,6 +38,8 @@ The helper does not upscale. If the source image or the fitted `maxWidth` / `max
 
 Attempt order is deterministic inside one browser runtime. Browser canvas encoders can still produce different byte sizes across engines, so avoid treating the output as byte-identical between browsers.
 
+The [browser budget lab](./browser-budget-lab.md) verifies the public helper in Chromium and Firefox. It asserts budget, MIME, dimension, no-upscale, and stable error behavior, but it intentionally does not assert byte-identical output across engines.
+
 The result describes the prepared output, not the source image:
 
 ```ts

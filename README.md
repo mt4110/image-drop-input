@@ -124,13 +124,13 @@ Start with the [local preview recipe](./docs/recipes/local-preview.md).
 
 Add `prepareImageToBudget()` and an explicit upload adapter when the image must fit upload policy before transfer. Upload wiring stays app-owned and explicit.
 
-Start with the [byte-budget guide](./docs/byte-budget.md), [presigned PUT recipe](./docs/recipes/presigned-put.md), and [upload docs](./docs/uploads.md).
+Start with the [byte-budget guide](./docs/byte-budget.md), [browser budget lab](./docs/browser-budget-lab.md), [presigned PUT recipe](./docs/recipes/presigned-put.md), and [upload docs](./docs/uploads.md).
 
 ### 3. Product-safe replacement flow
 
 Use `toPersistableImageValue()` and `useImageDraftLifecycle()` when a draft upload must wait for product save before it becomes persisted state.
 
-Start with the [draft lifecycle guide](./docs/draft-lifecycle.md), [backend contracts](./docs/backend-contracts.md), and [product submit recipe](./docs/recipes/product-submit-with-image-draft.md).
+Start with the [draft lifecycle guide](./docs/draft-lifecycle.md), [state machine](./docs/state-machine.md), [backend contracts](./docs/backend-contracts.md), and [product submit recipe](./docs/recipes/product-submit-with-image-draft.md).
 
 ## Choose image-drop-input when...
 
@@ -300,7 +300,7 @@ type PresignedPutTarget = {
 
 See [docs/uploads.md](./docs/uploads.md) for presigned PUT, multipart POST, raw PUT, custom adapters, progress, and abort behavior.
 
-For product forms that upload a temporary draft and only make it durable when the form is saved, keep the backend lifecycle in your app: [backend contracts](./docs/backend-contracts.md), [draft lifecycle](./docs/draft-lifecycle.md), and the [Next.js draft lifecycle recipe](./docs/recipes/nextjs-draft-lifecycle.md).
+For product forms that upload a temporary draft and only make it durable when the form is saved, keep the backend lifecycle in your app: [backend contracts](./docs/backend-contracts.md), [backend reference protocol](./docs/backend-reference-protocol.md), [draft lifecycle](./docs/draft-lifecycle.md), [state machine](./docs/state-machine.md), and the [Next.js draft lifecycle recipe](./docs/recipes/nextjs-draft-lifecycle.md).
 
 ## Upload error handling
 
@@ -375,8 +375,11 @@ Read more in [docs/transforms.md](./docs/transforms.md).
 
 - [Persistable value](./docs/persistable-value.md)
 - [Byte-budget solver](./docs/byte-budget.md)
+- [Browser budget lab](./docs/browser-budget-lab.md)
 - [Backend contracts](./docs/backend-contracts.md)
+- [Backend reference protocol](./docs/backend-reference-protocol.md)
 - [Draft lifecycle](./docs/draft-lifecycle.md)
+- [Draft lifecycle state machine](./docs/state-machine.md)
 - [Server persistable image schema with Zod](./docs/recipes/server-persistable-image-zod.md)
 - [Server persistable image schema without dependencies](./docs/recipes/server-persistable-image-custom.md)
 - [Product submit with image draft](./docs/recipes/product-submit-with-image-draft.md)
@@ -457,6 +460,11 @@ The root entry stays UI-first. Low-level utilities live under `/headless`.
 The project values concrete integration signals over download counts.
 
 Current repo-maintained evidence includes the [integration report](./docs/integration-report.md), which documents the single-image product form boundary against shipped APIs. It is not production-adjacent evidence or a customer endorsement.
+
+The [durable image boundary](./docs/durable-image-boundary.md) explains the category, non-goals, and evidence map.
+The [claim ledger](./docs/claim-ledger.md) maps public claims to evidence,
+disproof paths, and proof status.
+It keeps the project honest about what is proven, partially proven, or not proven yet.
 
 The next external evidence target is a maintainer-owned Next.js draft lifecycle demo that installs the published npm package by version. That can prove repo-external package consumption, not third-party adoption.
 

@@ -303,6 +303,14 @@ function verifyFiles(files) {
   }
 }
 
+function formatByteCount(value) {
+  if (!Number.isFinite(value)) {
+    return '(unknown size)';
+  }
+
+  return `${value} bytes`;
+}
+
 let packOutput = '';
 
 try {
@@ -331,7 +339,9 @@ if (packResult) {
   if (failures.length === 0) {
     console.log(
       `Verified pack manifest for ${packageJson.name}@${packageJson.version}: ` +
-        `${files.size} files, ${expectedTarballFilename}.`
+        `${files.size} files, ${expectedTarballFilename}, ` +
+        `packed ${formatByteCount(packResult.size)}, ` +
+        `unpacked ${formatByteCount(packResult.unpackedSize)}.`
     );
   }
 }

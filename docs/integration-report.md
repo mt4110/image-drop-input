@@ -95,8 +95,10 @@ browser selects image
 - [Value model](./value-model.md) defines `src`, `previewSrc`, `key`, and prepared metadata.
 - [Persistable value guard](./persistable-value.md) shows the submit-boundary guard for durable payloads.
 - [Byte budget solver](./byte-budget.md) shows active preparation to an output byte budget.
+- [Browser budget lab](./browser-budget-lab.md) verifies the byte-budget helper in Chromium and Firefox.
 - [Draft lifecycle](./draft-lifecycle.md) describes upload draft, commit, discard, and cleanup behavior.
 - [Backend contracts](./backend-contracts.md) describes app-owned presign, commit, discard, previous cleanup, and TTL cleanup.
+- [Backend reference protocol](./backend-reference-protocol.md) documents atomic submit, idempotency, stale previous defense, and cleanup workers.
 - [Next.js draft lifecycle recipe](./recipes/nextjs-draft-lifecycle.md) wires the pieces into one product-form flow.
 - The repository's consumer smoke checks exercise the packed package from root, headless CommonJS, and Vite React consumer shapes.
 

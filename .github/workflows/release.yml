@@ -62,13 +62,19 @@ jobs:
           retention-days: 7
 
       - name: Summarize release artifact gate
+        shell: bash
         run: |
+          TARBALL="${{ steps.packed-artifact.outputs.tarball }}"
+          ENTRY_COUNT="$(tar -tzf "$TARBALL" | wc -l | xargs)"
+          PACKED_BYTES="$(wc -c < "$TARBALL" | xargs)"
+
           {
             echo "### Release artifact gate"
             echo "- Workflow concurrency uses \`cancel-in-progress: false\`."
             echo "- Verification command: \`npm run release:pr:check\`."
-            echo "- Packed artifact: \`${{ steps.packed-artifact.outputs.tarball }}\`."
+            echo "- Packed artifact: \`${TARBALL}\`."
             echo "- Tarball count before upload: exactly one."
+            echo "- Tarball summary: \`${ENTRY_COUNT}\` entries, \`${PACKED_BYTES}\` packed bytes."
           } >> "$GITHUB_STEP_SUMMARY"
 
   publish:
@@ -150,13 +156,18 @@ jobs:
           exit 1
 
       - name: Summarize npm publish gate
+        shell: bash
         run: |
           PACKAGE_SPEC="$(node -p 'require("./package.json").name + "@" + require("./package.json").version')"
+          TARBALL="${{ steps.publish-artifact.outputs.tarball }}"
+          ENTRY_COUNT="$(tar -tzf "$TARBALL" | wc -l | xargs)"
+          PACKED_BYTES="$(wc -c < "$TARBALL" | xargs)"
 
           {
             echo "### npm publish gate"
-            echo "- Published artifact: \`${{ steps.publish-artifact.outputs.tarball }}\`."
+            echo "- Published artifact: \`${TARBALL}\`."
             echo "- Tarball count before npm publish: exactly one."
+            echo "- Tarball summary: \`${ENTRY_COUNT}\` entries, \`${PACKED_BYTES}\` packed bytes."
             echo "- Authentication path: npm Trusted Publishing / OIDC."
             echo "- Registry metadata checked: exact version, \`dist-tags.latest\`, \`repository.url\`, and \`engines.node\`."
             echo "- Provenance follow-up: confirm npm shows provenance for \`${PACKAGE_SPEC}\` and links it to this workflow run."

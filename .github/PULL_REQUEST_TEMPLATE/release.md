@@ -19,6 +19,8 @@
 - Publish path:
 - Registry metadata:
 - Provenance:
+- Tarball summary:
+- Browser budget lab:
 
 ## Checks
 
@@ -26,7 +28,9 @@
 - [ ] `CHANGELOG.md` includes the release-facing notes
 - [ ] release-facing notes are included in the PR body
 - [ ] `npm run release:pr:check`
+- [ ] `npm run browser:budget-lab` or the manual `Browser budget lab` workflow
 - [ ] packed package contains the English canonical `README.md`, docs, license, dist files, and no local-only files
+- [ ] release notes include tarball file count, tarball filename, packed size, and unpacked size from `npm run publish:check`
 - [ ] demo still looks right in the consumer you care about
 
 ## Publish Readiness
@@ -63,6 +67,7 @@
 - [ ] GitHub Releases marks `v<version>` as Latest when it matches npm `dist-tags.latest`
 - [ ] GitHub release notes include the same release-facing highlights as `CHANGELOG.md`
 - [ ] GitHub release notes include the release verification summary
+- [ ] GitHub release notes include the tarball summary from the release checkout
 - [ ] if this is the first trusted publish, the old npm automation token is revoked and removed from GitHub Actions secrets or environment secrets
 - [ ] if this is the first trusted publish, npm publishing access requires 2FA and disallows tokens
 - [ ] initial usage report follow-up is linked in Notes or explicitly queued
