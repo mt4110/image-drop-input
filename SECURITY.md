@@ -32,7 +32,8 @@ Temporary `blob:` preview URLs are UI state only and should not be persisted as 
 
 ## Threat Model Notes
 
-The package helps with browser-side image intake, prepared bytes, explicit uploads, draft lifecycle state, and persistable payload guards. It does not make storage, product records, or server authorization safe by itself.
+The public product threat model is maintained in [docs/security.md](./docs/security.md).
+In short, the package helps with browser-side image intake, prepared bytes, explicit uploads, draft lifecycle state, and persistable payload guards. It does not make storage, product records, or server authorization safe by itself.
 
 Consuming applications should protect:
 

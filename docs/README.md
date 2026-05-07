@@ -45,7 +45,7 @@ Recipes:
 
 Security, privacy, and adoption:
 
-- [Security model](./security.md): storage credentials, signed URLs, drafts, and product save boundaries
+- [Security model](./security.md): practical threat model for temporary URLs, signed URLs, drafts, cleanup, and server authority
 - [Telemetry and privacy](./telemetry-and-privacy.md): safe error tags, redaction patterns, and product copy mapping
 - [Integration report](./integration-report.md): repo-maintained report for the single-image product form boundary
 - [Adoption evidence](./adoption-evidence.md): what repo-maintained examples, maintainer-owned demos, third-party reports, and production-adjacent case studies prove
