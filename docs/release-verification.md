@@ -9,6 +9,7 @@ Run these before a release PR:
 ```bash
 npm run verify
 npm run smoke:consumer
+npm run browser:budget-lab
 npm run publish:check
 ```
 
@@ -18,6 +19,7 @@ What they cover:
 | --- | --- |
 | `npm run verify` | Typecheck, unit tests, example builds, package linting, and type resolution checks. |
 | `npm run smoke:consumer` | Packs the package and installs it into root type, headless CJS, and Vite React UI consumer fixtures. |
+| `npm run browser:budget-lab` | Runs the byte-budget solver in real browser engines. Keep it manual until repeated workflow runs prove it is stable enough for required CI. |
 | `npm run publish:check` | Verifies release workflow gates, then creates a temporary package tarball and checks package description, core keywords, included docs, exact tarball count, metadata links, and deny-listed files. |
 
 To reproduce the release workflow tarball gate locally:
@@ -62,12 +64,21 @@ Use this shape in release PRs and GitHub release notes:
 
 ```text
 Verification summary:
-- Local checks: npm run verify, npm run smoke:consumer, npm run publish:check
+- Local checks: npm run verify, npm run smoke:consumer, npm run browser:budget-lab, npm run publish:check
 - Release rehearsal: Release workflow passed with publish off and resolved exactly one tarball
 - Publish: npm-publish environment used npm Trusted Publishing / OIDC and published the explicit tarball path
 - Registry metadata: exact version, dist-tags.latest, repository.url, and engines.node matched package.json
 - Provenance: npm provenance was visible and pointed back to the expected workflow run
+- Tarball summary: <file count> files, <tarball filename>, packed <bytes>, unpacked <bytes>
 ```
+
+`npm run publish:check` prints the tarball summary in this form:
+
+```text
+Verified pack manifest for image-drop-input@<version>: <file count> files, image-drop-input-<version>.tgz, packed <bytes> bytes, unpacked <bytes> bytes.
+```
+
+Use the exact values from the release checkout. Do not copy values from an older release.
 
 ## Post-publish npm checks
 

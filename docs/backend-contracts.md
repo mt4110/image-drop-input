@@ -259,6 +259,7 @@ app/api/images/cleanup-previous/route.ts
 
 For a complete App Router recipe, see [Next.js draft lifecycle](./recipes/nextjs-draft-lifecycle.md).
 For the submit transaction pattern, see [Product submit with image draft](./recipes/product-submit-with-image-draft.md).
+For idempotency choices, stale previous defense, and cleanup worker pseudo-routes, see [Backend reference protocol](./backend-reference-protocol.md).
 
 ## Package defaults stay opt-in
 

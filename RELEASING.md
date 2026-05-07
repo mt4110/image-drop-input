@@ -88,11 +88,12 @@ Use these sources for context:
 
    ```text
    Verification summary:
-   - Local checks: npm run verify, npm run smoke:consumer, npm run publish:check
+   - Local checks: npm run verify, npm run smoke:consumer, npm run browser:budget-lab, npm run publish:check
    - Release rehearsal: Release workflow passed with publish off and resolved exactly one tarball
    - Publish: npm-publish environment used npm Trusted Publishing / OIDC and published the explicit tarball path
    - Registry metadata: exact version, dist-tags.latest, repository.url, and engines.node matched package.json
    - Provenance: npm provenance was visible and pointed back to the expected workflow run
+   - Tarball summary: <file count> files, <tarball filename>, packed <bytes>, unpacked <bytes>
    ```
 
 4. Open a pull request with the `Release` template.
@@ -134,6 +135,7 @@ Use these sources for context:
    - the GitHub release is marked as Latest when it matches `dist-tags.latest`
    - the GitHub release notes include the same release-facing highlights as `CHANGELOG.md`
    - the GitHub release notes include the verification summary from the release workflow
+   - the GitHub release notes include the tarball summary from `npm run publish:check`
 
    Registry metadata commands:
 
@@ -199,5 +201,6 @@ Do not change `engines.node` unless the packed tarball smoke fixtures support th
 npm run release:prepare -- patch
 npm run release:pr:check
 npm run smoke:consumer
+npm run browser:budget-lab
 npm run publish:check
 ```

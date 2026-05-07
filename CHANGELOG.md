@@ -2,6 +2,19 @@
 
 Notable changes for `image-drop-input` are tracked here.
 
+## Unreleased
+
+### Added
+
+- Added a claim ledger, durable image boundary narrative, draft lifecycle state machine, and lifecycle model invariant tests.
+- Added a browser byte-budget lab for Chromium and Firefox with a manual GitHub Actions workflow.
+- Added backend reference protocol docs for atomic submit, idempotency, stale previous defense, and cleanup workers.
+- Added supply-chain security docs plus dependency review and CodeQL workflows.
+
+### Changed
+
+- Strengthened release verification docs, release checklist, and package manifest output with tarball summary details.
+
 ## 0.3.3 - 2026-05-07
 
 ### Added

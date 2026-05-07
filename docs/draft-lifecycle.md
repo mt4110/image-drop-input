@@ -33,7 +33,7 @@ committed image A
 
 The package does not include an object-storage SDK. Your app owns signed URLs, auth, object keys, draft TTLs, transactions, and cleanup policy.
 
-For the app-side endpoint shapes, security rules, and atomic submit caveat, read [Backend contracts](./backend-contracts.md). For a transaction-focused server recipe, read [Product submit with image draft](./recipes/product-submit-with-image-draft.md).
+For the formal phases, transition table, and invariants, read [Draft lifecycle state machine](./state-machine.md). For the app-side endpoint shapes, security rules, and atomic submit caveat, read [Backend contracts](./backend-contracts.md) and [Backend reference protocol](./backend-reference-protocol.md). For a transaction-focused server recipe, read [Product submit with image draft](./recipes/product-submit-with-image-draft.md).
 
 ## Hook
 
