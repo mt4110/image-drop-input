@@ -127,6 +127,14 @@ Use these sources for context:
    - provenance is visible for the published version
    - the provenance details point back to the expected GitHub workflow run
 
+   GitHub release surface:
+
+   - the GitHub release tag is `v` followed by the published npm version, for example `v0.3.3`
+   - the GitHub release title is the plain version tag, for example `v0.3.3`
+   - the GitHub release is marked as Latest when it matches `dist-tags.latest`
+   - the GitHub release notes include the same release-facing highlights as `CHANGELOG.md`
+   - the GitHub release notes include the verification summary from the release workflow
+
    Registry metadata commands:
 
    ```bash

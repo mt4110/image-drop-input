@@ -59,6 +59,10 @@
 - [ ] docs link from the npm README opens successfully
 - [ ] npm provenance is visible for the published version
 - [ ] npm provenance details point back to the expected GitHub workflow run
+- [ ] GitHub Release `v<version>` exists
+- [ ] GitHub Releases marks `v<version>` as Latest when it matches npm `dist-tags.latest`
+- [ ] GitHub release notes include the same release-facing highlights as `CHANGELOG.md`
+- [ ] GitHub release notes include the release verification summary
 - [ ] if this is the first trusted publish, the old npm automation token is revoked and removed from GitHub Actions secrets or environment secrets
 - [ ] if this is the first trusted publish, npm publishing access requires 2FA and disallows tokens
 - [ ] initial usage report follow-up is linked in Notes or explicitly queued
