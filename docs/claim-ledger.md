@@ -241,11 +241,11 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 
 ### Static security checks
 
-- Claim checked: Repository-level dependency review and CodeQL checks exist without changing the runtime package surface.
-- Evidence level: Public docs
-- Evidence: [supply-chain security](./supply-chain-security.md), `.github/workflows/security.yml`, `scripts/verify-pack-manifest.mjs`.
-- Disproof path: Security tooling adds runtime browser dependencies, or workflows are removed without updating docs.
-- Status: Proven
+- Claim checked: Repository-level dependency review exists in the repository, and CodeQL is handled by GitHub default setup rather than a duplicate advanced workflow.
+- Evidence level: Public docs + repository settings
+- Evidence: [supply-chain security](./supply-chain-security.md), `.github/workflows/security.yml`, `scripts/verify-pack-manifest.mjs`, GitHub CodeQL default setup.
+- Disproof path: Security tooling adds runtime browser dependencies, the dependency-review workflow is removed, or GitHub default CodeQL setup is disabled without updating docs.
+- Status: Partially proven
 
 ## Maintenance rule
 

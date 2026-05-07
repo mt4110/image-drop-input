@@ -9,7 +9,7 @@ Notable changes for `image-drop-input` are tracked here.
 - Added a claim ledger, durable image boundary narrative, draft lifecycle state machine, and lifecycle model invariant tests.
 - Added a browser byte-budget lab for Chromium and Firefox with a manual GitHub Actions workflow.
 - Added backend reference protocol docs for atomic submit, idempotency, stale previous defense, and cleanup workers.
-- Added supply-chain security docs plus dependency review and CodeQL workflows.
+- Added supply-chain security docs, dependency review workflow coverage, and CodeQL default setup guidance.
 
 ### Changed
 
