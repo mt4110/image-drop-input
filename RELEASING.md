@@ -100,12 +100,14 @@ Use these sources for context:
    Use a short release branch and a neutral title such as `release/0.2.0` and `release: 0.2.0`.
    If you create a GitHub release entry, keep that title plain too, for example `v0.2.0`.
 
-5. After the release PR is merged to `main`, run the GitHub `Release` workflow:
+5. After the release PR is merged to `main`, run the GitHub `Release` workflow manually:
 
    - first with `publish` turned off for a rehearsal; this runs the verification job, confirms there is exactly one package tarball, and stores that checked tarball as a short-lived workflow artifact
    - then with `publish` turned on for the real publish; this enters the `npm-publish` environment, confirms the downloaded artifact still contains exactly one package tarball, and publishes that resolved tarball path with OIDC
    - after publish, the workflow reads npm registry metadata for the package version, `latest` dist-tag, repository URL, and Node engine floor
    - use the workflow summary as the source for the release verification summary
+
+   Do not use GitHub Release publication as the npm publish trigger. The GitHub Release should be created or updated after the manual publish workflow succeeds, using the already-pushed signed tag.
 
 6. After publishing, complete the release follow-up checklist.
 
@@ -133,6 +135,7 @@ Use these sources for context:
    - the GitHub release tag is `v` followed by the published npm version, for example `v0.3.3`
    - the GitHub release title is the plain version tag, for example `v0.3.3`
    - the GitHub release is marked as Latest when it matches `dist-tags.latest`
+   - publishing or editing the GitHub release does not attempt to publish the same package version to npm
    - the GitHub release notes include the same release-facing highlights as `CHANGELOG.md`
    - the GitHub release notes include the verification summary from the release workflow
    - the GitHub release notes include the tarball summary from `npm run publish:check`

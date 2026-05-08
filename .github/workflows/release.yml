@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  release:
-    types:
-      - published
   workflow_dispatch:
     inputs:
       publish:
@@ -79,7 +76,7 @@ jobs:
 
   publish:
     needs: verify
-    if: ${{ github.event_name == 'release' || github.event.inputs.publish == 'true' }}
+    if: ${{ github.event.inputs.publish == 'true' }}
     runs-on: ubuntu-latest
     environment: npm-publish
     permissions:

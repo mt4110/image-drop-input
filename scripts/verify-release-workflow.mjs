@@ -58,6 +58,88 @@ function getBlock(headerPattern, label) {
   return lines.slice(startIndex, endIndex).join('\n');
 }
 
+function stripYamlComment(line) {
+  let quote;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+
+    if (quote) {
+      if (character === quote) {
+        quote = undefined;
+      }
+
+      continue;
+    }
+
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+
+    if (character === '#') {
+      return line.slice(0, index);
+    }
+  }
+
+  return line;
+}
+
+function getTopLevelKeyBlock(key, label) {
+  const keyPattern = new RegExp(`^${key}\\s*:`);
+  const startIndex = lines.findIndex((line) => {
+    return getIndent(line) === 0 && keyPattern.test(stripYamlComment(line).trim());
+  });
+
+  if (startIndex === -1) {
+    fail(`Expected release workflow to include ${label}.`);
+    return '';
+  }
+
+  let endIndex = lines.length;
+
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (line.trim() && getIndent(line) === 0) {
+      endIndex = index;
+      break;
+    }
+  }
+
+  return lines.slice(startIndex, endIndex).join('\n');
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function hasYamlTrigger(triggerBlock, triggerName) {
+  const escapedTriggerName = escapeRegExp(triggerName);
+  const quotedTriggerName = `(?:"${escapedTriggerName}"|'${escapedTriggerName}'|${escapedTriggerName})`;
+  const mappingKeyPattern = new RegExp(`^${quotedTriggerName}\\s*:`);
+  const listItemPattern = new RegExp(`^[-?]\\s*${quotedTriggerName}(?:\\s*:|\\s|$|,)`);
+  const inlineMappingPattern = new RegExp(`(?:^|[{,])\\s*${quotedTriggerName}\\s*:`);
+  const inlineListPattern = new RegExp(`\\[(?:[^\\]]*,\\s*)*${quotedTriggerName}(?:\\s*,|\\s*\\])`);
+  const scalarOnPattern = new RegExp(`^on\\s*:\\s*${quotedTriggerName}\\s*$`);
+
+  return triggerBlock.split(/\r?\n/).some((line) => {
+    const trimmedLine = stripYamlComment(line).trim();
+
+    if (!trimmedLine) {
+      return false;
+    }
+
+    return (
+      mappingKeyPattern.test(trimmedLine) ||
+      listItemPattern.test(trimmedLine) ||
+      inlineMappingPattern.test(trimmedLine) ||
+      inlineListPattern.test(trimmedLine) ||
+      scalarOnPattern.test(trimmedLine)
+    );
+  });
+}
+
 function requireIncludes(source, expected, message) {
   if (!source.includes(expected)) {
     fail(message);
@@ -70,9 +152,18 @@ function requireAbsent(source, denied, message) {
   }
 }
 
+const triggerBlock = getTopLevelKeyBlock('on', 'workflow triggers');
 const concurrencyBlock = getBlock(/^concurrency:\s*$/, 'top-level concurrency');
 const verifyJob = getBlock(/^  verify:\s*$/, 'verify job');
 const publishJob = getBlock(/^  publish:\s*$/, 'publish job');
+
+if (!hasYamlTrigger(triggerBlock, 'workflow_dispatch')) {
+  fail('Expected release workflow to be manually dispatchable.');
+}
+
+if (hasYamlTrigger(triggerBlock, 'release')) {
+  fail('Release workflow must not publish from GitHub Release events; use workflow_dispatch publish=true instead.');
+}
 
 requireIncludes(
   concurrencyBlock,
@@ -102,6 +193,11 @@ requireIncludes(
 );
 
 requireIncludes(publishJob, 'needs: verify', 'Expected publish job to depend on verify.');
+requireIncludes(
+  publishJob,
+  "if: ${{ github.event.inputs.publish == 'true' }}",
+  'Expected publish job to run only when workflow_dispatch publish=true is selected.'
+);
 requireIncludes(
   publishJob,
   'id-token: write',
