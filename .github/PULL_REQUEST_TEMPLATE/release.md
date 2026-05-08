@@ -47,6 +47,7 @@
 - [ ] confirm the publish run resolved exactly one package tarball before `npm publish`
 - [ ] confirm `npm publish` used the explicit resolved tarball path
 - [ ] confirm the publish job used the `npm-publish` environment
+- [ ] create or update GitHub Release `v<version>` after npm publish succeeds
 
 ## Post-publish Checks
 
@@ -65,6 +66,7 @@
 - [ ] npm provenance details point back to the expected GitHub workflow run
 - [ ] GitHub Release `v<version>` exists
 - [ ] GitHub Releases marks `v<version>` as Latest when it matches npm `dist-tags.latest`
+- [ ] publishing or editing the GitHub Release did not start an npm publish run
 - [ ] GitHub release notes include the same release-facing highlights as `CHANGELOG.md`
 - [ ] GitHub release notes include the release verification summary
 - [ ] GitHub release notes include the tarball summary from the release checkout

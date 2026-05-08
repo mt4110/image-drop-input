@@ -4,6 +4,10 @@ Notable changes for `image-drop-input` are tracked here.
 
 ## Unreleased
 
+### Changed
+
+- Changed the release workflow to publish only from manual `workflow_dispatch` runs with `publish=true`, preventing GitHub Release publication from attempting a duplicate npm publish.
+
 ## 0.3.4 - 2026-05-08
 
 ### Added

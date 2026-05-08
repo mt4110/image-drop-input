@@ -49,6 +49,8 @@ Keep these stable unless a release intentionally changes them:
 `.github/workflows/release.yml` should keep these properties:
 
 - release concurrency is enabled with `cancel-in-progress: false`
+- the publish job runs only from `workflow_dispatch` with `publish=true`
+- publishing a GitHub Release does not attempt to publish the same package version to npm
 - publish waits for verify
 - verify creates exactly one tarball
 - publish downloads exactly one tarball
@@ -142,6 +144,8 @@ gh release list --repo mt4110/image-drop-input --limit 5
 ```
 
 The GitHub release for `v$VERSION` should be the latest release when npm `latest` points at the same version. If npm is already published but the GitHub release entry is missing, create or update the GitHub release without publishing a new npm version.
+
+GitHub Releases are release notes and discovery surfaces, not the npm publish trigger. Publish to npm through the manual `Release` workflow first, then create or update the GitHub Release for the already-published version.
 
 ## Provenance verification
 
