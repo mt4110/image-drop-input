@@ -26,6 +26,20 @@ If Scorecard is added later, document:
 - which score changes block releases
 - which findings are accepted as project policy
 
+## Package scanner scores
+
+External package scanners are useful triage signals, not release correctness signals. A lower score on a newly published package can reflect package age, recent release timing, one-maintainer status, download count, or scanner cache state rather than a code vulnerability.
+
+When reviewing a scanner score:
+
+- open the underlying alerts before changing code
+- separate runtime dependency risk from dev-tooling metadata
+- re-check recently published versions after 24 hours, 72 hours, and 7 days
+- compare the scanner's visible version with `npm view image-drop-input dist-tags.latest`
+- prefer release evidence, provenance, signed tags, consumer smoke tests, and third-party usage reports over score chasing
+
+Do not distort the package to improve a scanner score. In particular, do not add fake maintainers, remove normal dev dependencies through publish-time hacks, add runtime security packages, or commit generated SBOM files without an owner and maintenance policy.
+
 ## Runtime dependency rule
 
 Security tooling may add dev dependencies, GitHub workflow checks, or repository-level checks. It must not add runtime dependencies to the browser package unless a release explicitly justifies the change.
