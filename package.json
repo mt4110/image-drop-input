@@ -108,6 +108,7 @@
     "smoke:consumer": "npm run pack:consumer-smoke && npm run smoke:consumer:root-types && npm run smoke:consumer:headless-cjs && npm run smoke:consumer:vite-react-ui:run",
     "browser:budget-lab": "npm run build:lib && node scripts/run-browser-budget-lab.mjs",
     "browser:budget-lab:install": "playwright install chromium firefox",
+    "browser:budget-lab:install:webkit": "playwright install webkit",
     "publish:check": "node scripts/verify-release-workflow.mjs && node scripts/verify-pack-manifest.mjs",
     "release:pr:check": "npm run verify && npm run publish:check",
     "typecheck:examples": "npm run typecheck --workspace examples/vite && npm run typecheck --workspace examples/rsbuild",

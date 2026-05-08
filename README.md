@@ -468,7 +468,9 @@ It keeps the project honest about what is proven, partially proven, or not prove
 
 Current external evidence includes a maintainer-owned [Next.js draft lifecycle demo](https://github.com/mt4110/image-drop-input-next-draft-demo) that installs `image-drop-input` from npm by version. That proves repo-external package consumption, not third-party adoption.
 
-Using this package in a product, internal tool, or external demo, or evaluating it for one? Open a [usage report](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) so docs, compatibility, and release polish can be prioritized from concrete integration context. Useful reports include the relationship, use case, framework or bundler, package source, upload pattern, what worked, and anything that slowed adoption. Public quotation is opt-in.
+No public non-maintainer usage report is linked yet. The project should not claim third-party adoption or production-adjacent usage until a report from outside the maintainer workflow supports that label.
+
+Using this package in a product, internal tool, or external demo, or evaluating it for one? Open a [usage report](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) or respond from the [external usage report request](https://github.com/mt4110/image-drop-input/issues/51) so docs, compatibility, and release polish can be prioritized from concrete integration context. Useful reports include the relationship, use case, framework or bundler, package source, upload pattern, what worked, and anything that slowed adoption. Critical feedback is welcome, and public quotation is opt-in.
 
 See [docs/adoption-evidence.md](./docs/adoption-evidence.md) for what repo-maintained examples, maintainer-owned demos, third-party reports, and production-adjacent case studies prove.
 

@@ -11,7 +11,7 @@ Byte-identical output across browsers is not claimed.
 
 ## Command
 
-Install the Playwright browsers once:
+Install the Chromium and Firefox browsers once:
 
 ```bash
 npm run browser:budget-lab:install
@@ -26,6 +26,7 @@ npm run browser:budget-lab
 To include WebKit in an exploratory run:
 
 ```bash
+npm run browser:budget-lab:install:webkit
 npm run browser:budget-lab -- --browsers=chromium,firefox,webkit
 ```
 
@@ -89,6 +90,30 @@ npm run browser:budget-lab -- --browsers=chromium,firefox
 | Firefox | transparent png resize | passed | image/png | 2574 | 256x256 | resize | 1 |
 | Firefox | tiny image is not upscaled | passed | image/webp | 72 | 48x32 | quality-search | 1 |
 | Firefox | budget-unreachable reports attempts | passed | image/webp | 0 | 0x0 | expected-error | 3 |
+
+## Current WebKit exploratory run
+
+Run date: 2026-05-08 JST.
+
+Setup:
+
+```bash
+npm run browser:budget-lab:install:webkit
+```
+
+Command:
+
+```bash
+npm run browser:budget-lab -- --browsers=chromium,firefox,webkit --json-output=.artifacts/browser-budget-lab-webkit.json --markdown-output=.artifacts/browser-budget-lab-webkit.md
+```
+
+Result:
+
+| Engine | Status | Finding | Claim impact |
+| --- | --- | --- | --- |
+| WebKit 26.4 (Playwright `webkit` v2272) | failed | `ImageBudgetError: This browser cannot encode image/webp.` | WebKit is not part of the verified browser budget matrix. Do not market WebKit byte-budget support yet. |
+
+This is a useful negative result. It shows that the WebP policies used by the current lab are not portable to this WebKit environment, so the WebKit claim should stay unproven until a stable pass path exists or WebKit-specific policy limits are documented.
 
 ## CI policy
 

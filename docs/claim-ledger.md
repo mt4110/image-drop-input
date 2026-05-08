@@ -8,7 +8,9 @@ It is deliberately conservative. A claim can be useful without being fully prove
 
 | Status | Meaning |
 | --- | --- |
-| Proven | Covered by shipped API behavior, tests, and public docs inside the stated package boundary. |
+| Positioned | Public docs and package metadata consistently define the category. This is a positioning claim, not behavioral proof. |
+| Publicly bounded | Public docs define a scope boundary or non-goal. This limits marketing language, but is not a runtime proof. |
+| Proven | Covered by shipped API behavior, tests, package metadata, or another directly inspectable artifact inside the stated package boundary. |
 | Partially proven | Supported by repo-maintained docs or tests, but missing broader evidence such as browser matrix, model tests, or external usage. |
 | Not proven | No qualifying evidence yet. The project should not market this as true. |
 | Not claimed | The checked claim is deliberately outside the package scope. |
@@ -23,6 +25,7 @@ It is deliberately conservative. A claim can be useful without being fully prove
 | Consumer smoke | Verified through packed-package consumer fixtures. |
 | Repo-maintained report | A maintainer-authored report tying shipped APIs together. |
 | Maintainer-owned external demo | Separate maintainer-owned repo installing the published npm package. |
+| Exploratory local run | Dated maintainer run that can reveal support gaps, but does not upgrade a matrix claim by itself. |
 | Third-party report | Usage report from someone outside the maintainer workflow. |
 | Production-adjacent case study | Real app or internal tool report with workflow, constraints, and evidence limits. |
 | None yet | No qualifying evidence exists yet. |
@@ -33,11 +36,11 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 
 ### Product-safe image field category
 
-- Claim checked: The package is a product-safe React image field for single-image forms.
-- Evidence level: Public docs
-- Evidence: [README](../README.md), [docs index](./README.md), [maintenance governance](./maintenance-governance.md).
+- Claim checked: Public docs position the package as a product-safe React image field for single-image forms.
+- Evidence level: Public docs, Package metadata
+- Evidence: [README](../README.md), [docs index](./README.md), [maintenance governance](./maintenance-governance.md), [package metadata](../package.json).
 - Disproof path: Public docs or defaults reposition it as a generic queue, editor, provider SDK, or multi-file uploader.
-- Status: Proven
+- Status: Positioned
 
 ### Preview state boundary
 
@@ -69,7 +72,7 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 - Evidence level: Public docs
 - Evidence: [persistable value guard](./persistable-value.md), [backend contracts](./backend-contracts.md), [security model](./security.md).
 - Disproof path: Docs imply client validation replaces server authorization, storage checks, or product persistence rules.
-- Status: Proven
+- Status: Publicly bounded
 
 ### Provider SDK boundary
 
@@ -114,9 +117,9 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 ### WebKit browser budget matrix
 
 - Claim checked: Browser byte-budget behavior has been verified across WebKit.
-- Evidence level: None yet
-- Evidence: WebKit is available as an exploratory `--browsers=webkit` target but is not part of the current documented pass matrix.
-- Disproof path: No stable WebKit lab run exists, or WebKit fails the documented success/error expectations.
+- Evidence level: Exploratory local run
+- Evidence: [browser budget lab](./browser-budget-lab.md). A 2026-05-08 JST WebKit 26.4 exploratory run failed with `ImageBudgetError: This browser cannot encode image/webp.` WebKit remains outside the current documented pass matrix.
+- Disproof path: The recorded exploratory WebKit run cannot encode the WebP policies used by the lab, no stable WebKit pass artifact exists, or WebKit fails the documented success/error expectations.
 - Status: Not proven
 
 ### Upload and durable state boundary
@@ -215,12 +218,20 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 - Disproof path: No separate public repo exists, or it uses a local workspace link instead of npm.
 - Status: Proven
 
+### Third-party usage report
+
+- Claim checked: A non-maintainer usage report exists.
+- Evidence level: None yet
+- Evidence: [usage report template](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml), [external usage report request](https://github.com/mt4110/image-drop-input/issues/51), [adoption evidence](./adoption-evidence.md). No public non-maintainer usage report is linked yet; the request issue is intake, not evidence.
+- Disproof path: No non-maintainer usage report or downstream integration evidence exists.
+- Status: Not proven
+
 ### Third-party adoption
 
-- Claim checked: Third-party adoption exists.
+- Claim checked: Third-party product integration exists.
 - Evidence level: None yet
-- Evidence: [usage report template](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml), [adoption evidence](./adoption-evidence.md).
-- Disproof path: No non-maintainer usage report or downstream integration evidence exists.
+- Evidence: [adoption evidence](./adoption-evidence.md) defines the evidence level and report update path. No third-party product integration report is linked yet.
+- Disproof path: No non-maintainer report describes a product, internal tool, public demo, or downstream integration that used the package.
 - Status: Not proven
 
 ### Production-adjacent usage
@@ -251,4 +262,4 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 
 Update this ledger when a public claim changes, when new tests prove a boundary, or when external evidence arrives.
 
-Do not upgrade an adoption claim from "not proven" without a linked maintainer-owned external demo, third-party report, or production-adjacent case study.
+Do not upgrade a third-party or production-adjacent claim from "not proven" without a linked non-maintainer usage report or production-adjacent case study. Keep maintainer-owned external demos in their own evidence level.
