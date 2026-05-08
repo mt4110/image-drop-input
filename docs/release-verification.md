@@ -147,6 +147,46 @@ The GitHub release for `v$VERSION` should be the latest release when npm `latest
 
 GitHub Releases are release notes and discovery surfaces, not the npm publish trigger. Publish to npm through the manual `Release` workflow first, then create or update the GitHub Release for the already-published version.
 
+## Public surface cache checks
+
+Review tools and package pages can show stale repository metadata after a release. Treat API and registry checks as the source of truth before changing release state.
+
+Use this check when a public page appears to show an older version, tag, release, or repository description:
+
+```bash
+PACKAGE=image-drop-input
+VERSION="$(node -p 'require("./package.json").version')"
+
+git fetch origin --tags --prune --prune-tags
+test "$(npm view "$PACKAGE" dist-tags.latest)" = "$VERSION"
+test "$(npm view "$PACKAGE@$VERSION" version)" = "$VERSION"
+git ls-remote --tags origin "v$VERSION"
+gh release view "v$VERSION" --repo mt4110/image-drop-input --json tagName,name,publishedAt,url
+test "$(
+  gh release list --repo mt4110/image-drop-input --limit 1 --json tagName,isLatest \
+    --jq ".[0] | select(.tagName == \"v$VERSION\" and .isLatest == true) | .tagName"
+)" = "v$VERSION"
+gh repo view mt4110/image-drop-input --json description,latestRelease,url
+npm view "$PACKAGE@$VERSION" repository.url
+npm view "$PACKAGE@$VERSION" engines.node
+npm view "$PACKAGE@$VERSION" dist.integrity
+```
+
+The repository About description should remain:
+
+```text
+Product-safe React image field for durable image state.
+```
+
+If the checks above pass but a browser page still shows older metadata, assume a cache or indexing delay first. Do not republish to npm to fix a stale GitHub, Socket, npm, or browser view.
+
+Manual follow-up checks:
+
+- hard-refresh the stale page or retry it in a private browser session
+- verify the npm README with `npm view image-drop-input readme | head -40`
+- verify the GitHub Pages demo with a cache-busting URL such as `https://mt4110.github.io/image-drop-input/?v=$VERSION`
+- wait and re-check third-party package scanners after their cache window passes
+
 ## Provenance verification
 
 The npm package page should show provenance for the published version. The provenance details should link to the source commit and the release workflow run that published the tarball.

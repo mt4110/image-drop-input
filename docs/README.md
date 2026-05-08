@@ -54,8 +54,8 @@ Security, privacy, and adoption:
 - [Durable image boundary](./durable-image-boundary.md): public category narrative, evidence map, and non-goals
 - [Integration report](./integration-report.md): repo-maintained report for the single-image product form boundary
 - [Adoption evidence](./adoption-evidence.md): what repo-maintained examples, maintainer-owned demos, third-party reports, and production-adjacent case studies prove
-- [Release verification](./release-verification.md): packed package, npm metadata, provenance, and local verification checks
-- [Supply-chain security](./supply-chain-security.md): dependency review, CodeQL, release gates, and runtime dependency limits
+- [Release verification](./release-verification.md): packed package, npm metadata, provenance, public release surfaces, and cache checks
+- [Supply-chain security](./supply-chain-security.md): dependency review, CodeQL, release gates, scanner score triage, and runtime dependency limits
 - [Maintenance governance](./maintenance-governance.md): scope decisions, non-goals, and semver policy
 
 The package stays single-image first. Use Uppy, FilePond, Uploady, or provider widgets when you need queues, remote sources, resumable uploads, image editing, or storage-as-a-service. Use this package when one image field must keep temporary preview state, draft upload state, and persisted product state separate.
