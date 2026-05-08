@@ -47,15 +47,16 @@ These rows are not all adoption evidence. The role column keeps evidence, verifi
 | Material | Role | What it supports |
 | --- | --- | --- |
 | [Integration report](./integration-report.md) | Repo-maintained integration report | The single-image product form boundary is documented against shipped APIs. |
+| [Next.js draft lifecycle demo](https://github.com/mt4110/image-drop-input-next-draft-demo) | Maintainer-owned external demo | The published npm package installs and builds outside this repository in a realistic App Router draft lifecycle shape. |
 | Consumer smoke fixtures | Repo-maintained verification | The packed package resolves in root TypeScript, headless CommonJS, and Vite React UI consumer shapes. |
 | [Usage report template](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) | Evidence intake | Reports can capture relationship, category, package source, framework, storage pattern, friction, and evidence limits. |
 
-## External integration repo target
+## Maintainer-owned external demo
 
-The first separate repo should be labeled as a maintainer-owned external demo unless ownership changes. It should install `image-drop-input` from npm by version and demonstrate:
+The first separate repo is labeled as a maintainer-owned external demo because it is owned by the maintainer. It installs `image-drop-input@0.3.3` from npm by version and demonstrates:
 
 - Next.js App Router
-- product profile form
+- product image form
 - draft upload mock backend
 - commit endpoint
 - discard endpoint
@@ -63,22 +64,13 @@ The first separate repo should be labeled as a maintainer-owned external demo un
 - product submit endpoint that commits draft and saves fields together
 - README that explains what the example proves and what it does not prove
 
-Suggested repository name and eventual link shape:
+Maintainer-owned external demo:
 
-```txt
-image-drop-input-next-draft-demo
-https://github.com/mt4110/image-drop-input-next-draft-demo
-```
-
-When the repo exists, link it with wording like:
-
-```md
-Maintainer-owned external demo: [Next.js draft lifecycle demo](https://github.com/mt4110/image-drop-input-next-draft-demo)
-```
+[`image-drop-input-next-draft-demo`](https://github.com/mt4110/image-drop-input-next-draft-demo)
 
 That wording proves the package was installed outside this repository. It does not claim third-party adoption.
 
-The external demo README should include:
+The external demo README includes:
 
 - exact package version tested
 - framework and React version

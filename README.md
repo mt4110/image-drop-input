@@ -466,7 +466,7 @@ The [claim ledger](./docs/claim-ledger.md) maps public claims to evidence,
 disproof paths, and proof status.
 It keeps the project honest about what is proven, partially proven, or not proven yet.
 
-The next external evidence target is a maintainer-owned Next.js draft lifecycle demo that installs the published npm package by version. That can prove repo-external package consumption, not third-party adoption.
+Current external evidence includes a maintainer-owned [Next.js draft lifecycle demo](https://github.com/mt4110/image-drop-input-next-draft-demo) that installs `image-drop-input@0.3.3` from npm by version. That proves repo-external package consumption, not third-party adoption.
 
 Using this package in a product, internal tool, or external demo, or evaluating it for one? Open a [usage report](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) so docs, compatibility, and release polish can be prioritized from concrete integration context. Useful reports include the relationship, use case, framework or bundler, package source, upload pattern, what worked, and anything that slowed adoption. Public quotation is opt-in.
 
