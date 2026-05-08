@@ -11,7 +11,7 @@ Byte-identical output across browsers is not claimed.
 
 ## Command
 
-Install the default Playwright browsers once:
+Install the Chromium and Firefox browsers once:
 
 ```bash
 npm run browser:budget-lab:install
