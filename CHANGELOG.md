@@ -4,6 +4,8 @@ Notable changes for `image-drop-input` are tracked here.
 
 ## Unreleased
 
+## 0.3.4 - 2026-05-08
+
 ### Added
 
 - Added a claim ledger, durable image boundary narrative, draft lifecycle state machine, and lifecycle model invariant tests.
