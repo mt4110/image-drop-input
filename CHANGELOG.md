@@ -10,10 +10,14 @@ Notable changes for `image-drop-input` are tracked here.
 - Added a browser byte-budget lab for Chromium and Firefox with a manual GitHub Actions workflow.
 - Added backend reference protocol docs for atomic submit, idempotency, stale previous defense, and cleanup workers.
 - Added supply-chain security docs, dependency review workflow coverage, and CodeQL default setup guidance.
+- Added a WebKit browser install helper for exploratory browser budget lab runs.
+- Added links to the public external usage report request and tightened usage report intake copy.
 
 ### Changed
 
 - Strengthened release verification docs, release checklist, and package manifest output with tarball summary details.
+- Refined claim ledger statuses to separate positioning and public-boundary claims from behavioral proof.
+- Recorded the WebKit exploratory browser budget result as unproven because Playwright WebKit 26.4 could not encode the lab's WebP policy in the local run.
 
 ## 0.3.3 - 2026-05-07
 

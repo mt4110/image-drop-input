@@ -50,6 +50,15 @@ These rows are not all adoption evidence. The role column keeps evidence, verifi
 | [Next.js draft lifecycle demo](https://github.com/mt4110/image-drop-input-next-draft-demo) | Maintainer-owned external demo | The published npm package installs and builds outside this repository in a realistic App Router draft lifecycle shape. |
 | Consumer smoke fixtures | Repo-maintained verification | The packed package resolves in root TypeScript, headless CommonJS, and Vite React UI consumer shapes. |
 | [Usage report template](https://github.com/mt4110/image-drop-input/issues/new?template=usage-report.yml) | Evidence intake | Reports can capture relationship, category, package source, framework, storage pattern, friction, and evidence limits. |
+| [External usage report request](https://github.com/mt4110/image-drop-input/issues/51) | Evidence intake | Public request for a non-maintainer report. The request itself is not third-party evidence. |
+
+## Current third-party status
+
+No public non-maintainer usage report is linked yet.
+
+Current public evidence stops at the maintainer-owned external demo level until a report arrives from someone outside the maintainer workflow. Maintainer-created reports, owner-created issues, and maintainer-owned demo repositories can still be useful evidence, but they must not satisfy the third-party usage report gate.
+
+This status is intentional. It keeps the evidence ladder useful without turning a request for feedback into an adoption claim.
 
 ## Maintainer-owned external demo
 
@@ -99,3 +108,27 @@ Public quotation is opt-in. Company, project name, and URL should stay optional.
 Reports should also say whether the package came from the published npm registry, a packed tarball, or a local workspace link. Published npm installs are stronger external evidence than local links.
 
 Good reports are allowed to include friction. "This was confusing" is more useful than vague praise because it points to docs, compatibility, or API boundaries that need work.
+
+## First external request
+
+Use a request that asks for a concrete workflow and leaves room for critical feedback:
+
+```txt
+Could you try the product-safe replacement flow in a small form and open a usage report with what confused you?
+Praise is optional. Friction is more useful.
+```
+
+Ask for a public usage report when the reporter is comfortable sharing one. Do not ask for stars, endorsements, or private praise as a substitute for integration context.
+
+## After a third-party report arrives
+
+Keep the update sequence evidence-led:
+
+1. Confirm the reporter relationship is outside the maintainer workflow.
+2. Confirm the report names the package version, package source, framework or bundler, React version when known, use case, upload pattern, friction, and evidence limits.
+3. Link follow-up docs, tests, or issues that came from the report. Critical feedback is valid evidence when it changes the project.
+4. Update this page with a new row under current public materials using the label `Third-party usage report`.
+5. Update [claim ledger](./claim-ledger.md) only for the claim the report actually supports. A third-party evaluation can prove that a non-maintainer evaluated the package; it does not prove production use.
+6. Update the README adoption evidence section with the same label and limitations. Do not describe the report as customer adoption, production maturity, or endorsement unless the report explicitly supports that.
+
+If the report comes from a maintainer, contributor, or maintainer-owned repository, keep it below the third-party usage report level and say so.

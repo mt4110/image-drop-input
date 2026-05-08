@@ -13,7 +13,7 @@ body:
     attributes:
       label: Package version
       description: The installed image-drop-input version.
-      placeholder: "0.2.x"
+      placeholder: "0.3.x"
     validations:
       required: true
   - type: input
