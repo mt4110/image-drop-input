@@ -202,7 +202,7 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 ### Product-form integration shape
 
 - Claim checked: The documented single-image product form boundary can be assembled from shipped APIs.
-- Evidence level: Repo-maintained report, Maintainer-owned external demo
+- Evidence level: Public docs, Repo-maintained report, Maintainer-owned external demo
 - Evidence: [integration report](./integration-report.md), [Next.js draft lifecycle recipe](./recipes/nextjs-draft-lifecycle.md), [product submit recipe](./recipes/product-submit-with-image-draft.md), [Next.js draft lifecycle demo](https://github.com/mt4110/image-drop-input-next-draft-demo).
 - Disproof path: The flow requires unshipped APIs, provider SDKs, or undocumented behavior.
 - Status: Partially proven
