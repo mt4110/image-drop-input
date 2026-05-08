@@ -53,7 +53,7 @@ These rows are not all adoption evidence. The role column keeps evidence, verifi
 
 ## Maintainer-owned external demo
 
-The first separate repo is labeled as a maintainer-owned external demo because it is owned by the maintainer. It installs `image-drop-input@0.3.3` from npm by version and demonstrates:
+The separate demo repo is labeled as a maintainer-owned external demo because it is owned by the maintainer. It installs the published `image-drop-input` package from npm by version and demonstrates:
 
 - Next.js App Router
 - product image form
