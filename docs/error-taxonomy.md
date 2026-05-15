@@ -91,6 +91,22 @@ import { isImageDraftLifecycleError } from 'image-drop-input/headless';
 
 Draft error details may include `draftKey`. If your keys contain tenant or user identifiers, redact or hash them before telemetry.
 
+## Local draft persistence errors
+
+Import from `/headless`:
+
+```ts
+import { isLocalImageDraftError } from 'image-drop-input/headless';
+```
+
+| Code | Meaning |
+| --- | --- |
+| `draft_not_found` | A manifest or referenced local draft file could not be restored. |
+| `invalid_input` | A caller provided malformed local draft input, such as an empty `fieldId` or invalid phase. |
+| `quota_exceeded` | Browser storage did not have enough available quota for the draft bytes. |
+
+For `quota_exceeded`, show user-facing copy that asks the user to free browser storage or choose a smaller image. Do not treat this as a server upload failure.
+
 ## Privacy rules
 
 Use [Telemetry and privacy](./telemetry-and-privacy.md) for logging patterns. The short version:

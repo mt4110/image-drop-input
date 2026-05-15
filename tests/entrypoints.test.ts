@@ -38,8 +38,10 @@ describe('package entrypoints', () => {
         "ImagePersistableValueError",
         "ImageUploadError",
         "ImageValidationError",
+        "LocalImageDraftError",
         "assertPersistableImageValue",
         "compressImage",
+        "createLocalImageDraftStore",
         "createMultipartUploader",
         "createObjectUrl",
         "createPresignedPutUploader",
@@ -50,6 +52,8 @@ describe('package entrypoints', () => {
         "isImagePersistableValueError",
         "isImageUploadError",
         "isImageValidationError",
+        "isLocalImageDraftError",
+        "isLocalImageDraftManifest",
         "isPersistableImageValue",
         "isTemporaryImageSrc",
         "normalizeAspectRatio",
@@ -61,6 +65,7 @@ describe('package entrypoints', () => {
         "uploadWithSignedTarget",
         "useImageDraftLifecycle",
         "useImageDropInput",
+        "useLocalImageDraftRecovery",
         "validateImage",
       ]
     `);
@@ -84,6 +89,9 @@ describe('package entrypoints', () => {
     expect(root).not.toHaveProperty('ImageDraftLifecycleError');
     expect(root).not.toHaveProperty('isImageDraftLifecycleError');
     expect(root).not.toHaveProperty('useImageDraftLifecycle');
+    expect(root).not.toHaveProperty('LocalImageDraftError');
+    expect(root).not.toHaveProperty('createLocalImageDraftStore');
+    expect(root).not.toHaveProperty('useLocalImageDraftRecovery');
     expect(root).not.toHaveProperty('createPresignedPutUploader');
     expect(root).not.toHaveProperty('useImageDropInput');
     expect(root).not.toHaveProperty('validateImage');
@@ -107,8 +115,13 @@ describe('package entrypoints', () => {
     expect(headless.isTemporaryImageSrc).toBeTypeOf('function');
     expect(headless.ImageDraftLifecycleError).toBeTypeOf('function');
     expect(headless.isImageDraftLifecycleError).toBeTypeOf('function');
+    expect(headless.LocalImageDraftError).toBeTypeOf('function');
+    expect(headless.isLocalImageDraftError).toBeTypeOf('function');
+    expect(headless.isLocalImageDraftManifest).toBeTypeOf('function');
+    expect(headless.createLocalImageDraftStore).toBeTypeOf('function');
     expect(headless.useImageDropInput).toBeTypeOf('function');
     expect(headless.useImageDraftLifecycle).toBeTypeOf('function');
+    expect(headless.useLocalImageDraftRecovery).toBeTypeOf('function');
     expect(headless.validateImage).toBeTypeOf('function');
   });
 });

@@ -33,7 +33,7 @@ committed image A
 
 The package does not include an object-storage SDK. Your app owns signed URLs, auth, object keys, draft TTLs, transactions, and cleanup policy.
 
-For the formal phases, transition table, and invariants, read [Draft lifecycle state machine](./state-machine.md). For the app-side endpoint shapes, security rules, and atomic submit caveat, read [Backend contracts](./backend-contracts.md) and [Backend reference protocol](./backend-reference-protocol.md). For a transaction-focused server recipe, read [Product submit with image draft](./recipes/product-submit-with-image-draft.md).
+For the formal phases, transition table, and invariants, read [Draft lifecycle state machine](./state-machine.md). For crash-resilient local draft recovery after reload or tab crash, read [Local draft persistence](./local-draft-persistence.md). For the app-side endpoint shapes, security rules, and atomic submit caveat, read [Backend contracts](./backend-contracts.md) and [Backend reference protocol](./backend-reference-protocol.md). For a transaction-focused server recipe, read [Product submit with image draft](./recipes/product-submit-with-image-draft.md).
 
 ## Hook
 
@@ -195,3 +195,5 @@ If your backend returns a draft authorization token, treat it as sensitive:
 - keep it short-lived and single-purpose
 
 Client discard is best-effort. Browser tabs close, networks fail, and unmount handlers do not always finish. Server-side TTL cleanup is required.
+
+Local OPFS/IndexedDB recovery is also best-effort. It can help after reload or tab crash, but browser eviction and user-cleared site data remain outside its guarantee.
