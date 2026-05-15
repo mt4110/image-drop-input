@@ -1,5 +1,6 @@
 import './setup';
 import { beforeAll, describe, expect, it } from 'vitest';
+import entrypointContract from '../scripts/package-entrypoint-contract.json';
 
 let root: Record<string, unknown>;
 let headless: Record<string, unknown>;
@@ -16,59 +17,8 @@ beforeAll(async () => {
 
 describe('package entrypoints', () => {
   it('keeps the runtime export surface explicit', () => {
-    expect(Object.keys(root).sort()).toMatchInlineSnapshot(`
-      [
-        "ImageDropInput",
-        "ImagePersistableValueError",
-        "ImageUploadError",
-        "ImageValidationError",
-        "assertPersistableImageValue",
-        "isImagePersistableValueError",
-        "isImageUploadError",
-        "isImageValidationError",
-        "isPersistableImageValue",
-        "isTemporaryImageSrc",
-        "toPersistableImageValue",
-      ]
-    `);
-    expect(Object.keys(headless).sort()).toMatchInlineSnapshot(`
-      [
-        "ImageBudgetError",
-        "ImageDraftLifecycleError",
-        "ImagePersistableValueError",
-        "ImageUploadError",
-        "ImageValidationError",
-        "LocalImageDraftError",
-        "assertPersistableImageValue",
-        "compressImage",
-        "createLocalImageDraftStore",
-        "createMultipartUploader",
-        "createObjectUrl",
-        "createPresignedPutUploader",
-        "createRawPutUploader",
-        "getImageMetadata",
-        "isImageBudgetError",
-        "isImageDraftLifecycleError",
-        "isImagePersistableValueError",
-        "isImageUploadError",
-        "isImageValidationError",
-        "isLocalImageDraftError",
-        "isLocalImageDraftManifest",
-        "isPersistableImageValue",
-        "isTemporaryImageSrc",
-        "normalizeAspectRatio",
-        "prepareImageToBudget",
-        "resolveDisplaySrc",
-        "resolveImageDropInputMessages",
-        "sendUploadRequest",
-        "toPersistableImageValue",
-        "uploadWithSignedTarget",
-        "useImageDraftLifecycle",
-        "useImageDropInput",
-        "useLocalImageDraftRecovery",
-        "validateImage",
-      ]
-    `);
+    expect(Object.keys(root).sort()).toEqual([...entrypointContract.rootExports].sort());
+    expect(Object.keys(headless).sort()).toEqual([...entrypointContract.headlessExports].sort());
   });
 
   it('keeps advanced helper utilities off the root entry', () => {

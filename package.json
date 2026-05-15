@@ -97,7 +97,7 @@
     "prepublishOnly": "npm run check:package",
     "pretest": "npm run build:lib",
     "release:prepare": "node scripts/prepare-release.mjs",
-    "verify": "npm run typecheck && npm test && npm run build:examples && npm run check:package",
+    "verify": "npm run typecheck && npm test && npm run build:examples && npm run check:package && npm run smoke:consumer",
     "pack:consumer-smoke": "npm run build:lib && node scripts/prepare-consumer-smoke-artifact.mjs",
     "smoke:consumer:root-types": "npm install --prefix consumer-fixtures/root-types --no-package-lock && npm run typecheck --prefix consumer-fixtures/root-types",
     "smoke:consumer:headless-cjs": "npm install --prefix consumer-fixtures/headless-cjs --no-package-lock && npm run smoke --prefix consumer-fixtures/headless-cjs",
