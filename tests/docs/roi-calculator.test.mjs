@@ -198,6 +198,21 @@ describe('estimateImagePipelineRoi', () => {
     );
   });
 
+  it('rounds negative half-cent cost totals away from zero', () => {
+    const result = estimateImagePipelineRoi({
+      monthlyUploads: 1,
+      averageRawBytes: 0.5,
+      averagePreparedBytes: 1,
+      bandwidthCostPerGb: 10_000_000
+    });
+
+    expect(result.avoidedGbPerMonth).toBe(-0.000000001);
+    expect(result.costBreakdown).toEqual({
+      bandwidth: -0.01
+    });
+    expect(result.estimatedMonthlySavings).toBe(-0.01);
+  });
+
   it('only shows the default transformation-unit caveat when units are omitted', () => {
     const omittedUnitsResult = estimateImagePipelineRoi({
       monthlyUploads: 100,

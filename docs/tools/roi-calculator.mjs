@@ -83,7 +83,9 @@ function roundNumber(value, digits = 9) {
   }
 
   const scale = 10 ** digits;
-  const rounded = Math.round((value + Number.EPSILON) * scale) / scale;
+  const sign = Math.sign(value) || 1;
+  const rounded =
+    (sign * Math.round((Math.abs(value) + Number.EPSILON) * scale)) / scale;
 
   return Object.is(rounded, -0) ? 0 : rounded;
 }
