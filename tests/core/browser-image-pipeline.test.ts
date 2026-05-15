@@ -12,6 +12,7 @@ import {
   type BrowserImagePipelineWorkerResponse,
   type PreparedImageToBudgetResult
 } from '../../src/headless';
+import { inferIndexedDbDraftDatabaseName } from '../../src/browser-image-pipeline-worker';
 
 const workerSupport: BrowserImagePipelineSupport = {
   worker: true,
@@ -171,6 +172,40 @@ describe('browser image pipeline', () => {
     expect(result.result.size).toBeLessThanOrEqual(80_000);
     expect(progress).toContain('main-thread:queued');
     expect(progress).toContain('main-thread:finalize');
+  });
+
+  it('rejects the main-thread fallback when the processing timeout is reached', async () => {
+    Object.defineProperty(globalThis, 'createImageBitmap', {
+      configurable: true,
+      value: vi.fn(() => new Promise(() => {}))
+    });
+
+    const source = new File([new Uint8Array(120_000)], 'source.png', { type: 'image/png' });
+
+    await expect(
+      prepareImageInBrowserPipeline(
+        {
+          draftId: 'main-thread-timeout-draft',
+          file: source,
+          policy: {
+            outputMaxBytes: 80_000,
+            outputType: 'image/webp'
+          }
+        },
+        {
+          support: mainThreadOnlySupport,
+          timeoutMs: 1
+        }
+      )
+    ).rejects.toMatchObject({
+      name: 'ImagePipelineError',
+      code: 'timeout',
+      details: {
+        draftId: 'main-thread-timeout-draft',
+        mode: 'main-thread',
+        timeoutMs: 1
+      }
+    });
   });
 
   it('uses the worker path by default when module workers are supported', async () => {
@@ -424,5 +459,17 @@ describe('browser image pipeline', () => {
       code: 'worker_unavailable',
       details: { draftId: 'draft-1', mode: 'worker' }
     });
+  });
+
+  it('infers IndexedDB draft databases from namespaced worker file keys', () => {
+    expect(inferIndexedDbDraftDatabaseName({
+      pathOrKey: 'team:prod:draft-1:raw:file-1'
+    })).toBe('team:prod:local-image-drafts');
+    expect(inferIndexedDbDraftDatabaseName({
+      pathOrKey: 'team:prod:draft-1:prepared:file-2'
+    })).toBe('team:prod:local-image-drafts');
+    expect(inferIndexedDbDraftDatabaseName({
+      pathOrKey: 'malformed-key'
+    })).toBeUndefined();
   });
 });

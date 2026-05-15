@@ -64,7 +64,7 @@ await job; // rejects with ImagePipelineError code "cancelled"
 
 The worker protocol accepts either a structured-cloned `File` / `Blob` or a `LocalImageDraftFileRef`. File refs are worker-only because the main-thread fallback cannot resolve a ref without the app-owned draft store instance.
 
-For OPFS refs, the worker reads through `navigator.storage.getDirectory()`. For IndexedDB refs, pass `storage.databaseName` when using a custom draft-store namespace.
+For OPFS refs, the worker reads through `navigator.storage.getDirectory()`. For IndexedDB refs, the worker infers the draft-store database from the file key; pass `storage.databaseName` only when using an app-owned key shape.
 
 ## Format Stance
 

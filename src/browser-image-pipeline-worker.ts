@@ -102,14 +102,26 @@ async function readOpfsFileRef(ref: LocalImageDraftFileRef): Promise<File> {
   return blobToFile(file, ref.fileName, ref.mimeType || file.type);
 }
 
-function inferDatabaseName(ref: LocalImageDraftFileRef): string | undefined {
-  const separator = ref.pathOrKey.indexOf(':');
+export function inferIndexedDbDraftDatabaseName(
+  ref: Pick<LocalImageDraftFileRef, 'pathOrKey'>
+): string | undefined {
+  const slotIndex = Math.max(
+    ref.pathOrKey.lastIndexOf(':raw:'),
+    ref.pathOrKey.lastIndexOf(':prepared:')
+  );
 
-  if (separator <= 0) {
+  if (slotIndex <= 0) {
     return undefined;
   }
 
-  return `${ref.pathOrKey.slice(0, separator)}:local-image-drafts`;
+  const namespaceAndDraftId = ref.pathOrKey.slice(0, slotIndex);
+  const draftIdSeparator = namespaceAndDraftId.lastIndexOf(':');
+
+  if (draftIdSeparator <= 0) {
+    return undefined;
+  }
+
+  return `${namespaceAndDraftId.slice(0, draftIdSeparator)}:local-image-drafts`;
 }
 
 function openDatabase(databaseName: string): Promise<IDBDatabase> {
@@ -147,7 +159,7 @@ async function readIndexedDbFileRef(
     );
   }
 
-  const databaseName = storage?.databaseName ?? inferDatabaseName(ref);
+  const databaseName = storage?.databaseName ?? inferIndexedDbDraftDatabaseName(ref);
 
   if (!databaseName) {
     throw new ImagePipelineError(

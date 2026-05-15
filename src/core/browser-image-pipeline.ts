@@ -225,6 +225,18 @@ function createCancelledError(draftId: string, mode: BrowserImagePipelineMode): 
   );
 }
 
+function createTimeoutError(
+  draftId: string,
+  mode: BrowserImagePipelineMode,
+  timeoutMs: number
+): ImagePipelineError {
+  return new ImagePipelineError(
+    'timeout',
+    'Image preparation exceeded the configured processing timeout.',
+    { draftId, mode, timeoutMs }
+  );
+}
+
 function throwIfAborted(
   signal: AbortSignal | undefined,
   draftId: string,
@@ -584,14 +596,7 @@ async function prepareWithWorker(
 
     timeoutId = timeoutMs
       ? setTimeout(() => {
-          finish(
-            undefined,
-            new ImagePipelineError(
-              'timeout',
-              'Image preparation exceeded the configured processing timeout.',
-              { draftId, mode: 'worker', timeoutMs }
-            )
-          );
+          finish(undefined, createTimeoutError(draftId, 'worker', timeoutMs));
         }, timeoutMs)
       : undefined;
 
@@ -675,16 +680,72 @@ async function prepareOnMainThread(
   }
 
   const startedAt = now();
+  const timeoutMs = resolveTimeoutMs(input, options);
+  const preparationController = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let abortListener: (() => void) | undefined;
+  let externalAbortListener: (() => void) | undefined;
+
+  const abortAsCancelled = () => {
+    if (!preparationController.signal.aborted) {
+      preparationController.abort(createCancelledError(draftId, 'main-thread'));
+    }
+  };
 
   throwIfAborted(options.signal, draftId, 'main-thread');
   options.onProgress?.({ draftId, mode: 'main-thread', stage: 'queued', percent: 0 });
 
-  try {
-    const result = await prepareImageToBudget(input.file, input.policy, {
-      signal: options.signal
-    });
+  if (options.signal) {
+    externalAbortListener = abortAsCancelled;
 
-    throwIfAborted(options.signal, draftId, 'main-thread');
+    if (options.signal.aborted) {
+      abortAsCancelled();
+    } else {
+      options.signal.addEventListener('abort', externalAbortListener, { once: true });
+    }
+  }
+
+  if (timeoutMs) {
+    timeoutId = setTimeout(() => {
+      if (!preparationController.signal.aborted) {
+        preparationController.abort(createTimeoutError(draftId, 'main-thread', timeoutMs));
+      }
+    }, timeoutMs);
+  }
+
+  try {
+    const abortPromise = new Promise<never>((_, reject) => {
+      abortListener = () => {
+        const reason = preparationController.signal.reason;
+
+        reject(reason instanceof Error ? reason : createCancelledError(draftId, 'main-thread'));
+      };
+
+      if (preparationController.signal.aborted) {
+        abortListener();
+        return;
+      }
+
+      preparationController.signal.addEventListener('abort', abortListener, { once: true });
+    });
+    const result = await Promise.race([
+      prepareImageToBudget(input.file, input.policy, {
+        signal: preparationController.signal
+      }),
+      abortPromise
+    ]);
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
+
+    if (preparationController.signal.aborted) {
+      const reason = preparationController.signal.reason;
+
+      throw reason instanceof Error ? reason : createCancelledError(draftId, 'main-thread');
+    }
+
     options.onProgress?.({ draftId, mode: 'main-thread', stage: 'finalize', percent: 100 });
 
     return {
@@ -695,11 +756,27 @@ async function prepareOnMainThread(
       support
     };
   } catch (error) {
-    if (options.signal?.aborted || isAbortError(error)) {
+    if (isImagePipelineError(error) && (error.code === 'cancelled' || error.code === 'timeout')) {
+      throw error;
+    }
+
+    if (preparationController.signal.aborted || options.signal?.aborted || isAbortError(error)) {
       throw createCancelledError(draftId, 'main-thread');
     }
 
     throw error;
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    if (abortListener) {
+      preparationController.signal.removeEventListener('abort', abortListener);
+    }
+
+    if (options.signal && externalAbortListener) {
+      options.signal.removeEventListener('abort', externalAbortListener);
+    }
   }
 }
 
