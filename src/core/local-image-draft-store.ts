@@ -14,6 +14,7 @@ export type LocalImageDraftFileStore = 'opfs' | 'indexeddb';
 export interface LocalImageDraftFileRef {
   store: LocalImageDraftFileStore;
   pathOrKey: string;
+  databaseName?: string;
   fileName: string;
   mimeType: string;
   size: number;
@@ -297,6 +298,7 @@ function isLocalImageDraftFileRef(value: unknown): value is LocalImageDraftFileR
   return (
     (value.store === 'opfs' || value.store === 'indexeddb') &&
     hasText(value.pathOrKey) &&
+    isOptionalText(value.databaseName) &&
     hasText(value.fileName) &&
     typeof value.mimeType === 'string' &&
     isNonNegativeNumber(value.size)
@@ -989,6 +991,7 @@ export function createLocalImageDraftStore(
     return {
       store: 'indexeddb',
       pathOrKey: key,
+      ...(backend.database ? { databaseName } : {}),
       fileName,
       mimeType: record.mimeType,
       size: record.size

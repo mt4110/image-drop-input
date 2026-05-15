@@ -311,6 +311,7 @@ describe('createLocalImageDraftStore', () => {
 
     expect(await store.getMode()).toBe('indexeddb');
     expect(manifest.raw?.store).toBe('indexeddb');
+    expect(manifest.raw?.databaseName).toBe('indexeddb-fallback-test');
     expect(onWarning).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'opfs_unavailable' })
     );
@@ -320,6 +321,33 @@ describe('createLocalImageDraftStore', () => {
 
     expect(await restored?.raw?.text()).toBe('raw fallback');
     expect(restored?.recoveredSlot).toBe('raw');
+  });
+
+  it('stores IndexedDB database names on refs when namespace and draft id contain colons', async () => {
+    const store = createLocalImageDraftStore({
+      namespace: 'team:prod',
+      indexedDB: new IDBFactory(),
+      navigator: createNavigator({
+        estimate: async () => ({ quota: 10_000_000, usage: 0 })
+      })
+    });
+
+    const manifest = await store.saveDraft({
+      draftId: 'session:42',
+      fieldId: 'article.cover',
+      raw: {
+        blob: createBlob(['raw fallback'], { type: 'image/png' }),
+        fileName: 'cover.png'
+      }
+    });
+
+    expect(manifest.raw).toMatchObject({
+      store: 'indexeddb',
+      databaseName: 'team:prod:local-image-drafts'
+    });
+    expect(await store.restoreDraft('session:42')).toMatchObject({
+      recoveredSlot: 'raw'
+    });
   });
 
   it('warns once when OPFS probing throws and then falls back to IndexedDB', async () => {

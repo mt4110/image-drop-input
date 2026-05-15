@@ -12,7 +12,10 @@ import {
   type BrowserImagePipelineWorkerResponse,
   type PreparedImageToBudgetResult
 } from '../../src/headless';
-import { inferIndexedDbDraftDatabaseName } from '../../src/browser-image-pipeline-worker';
+import {
+  inferIndexedDbDraftDatabaseName,
+  resolveIndexedDbDraftDatabaseName
+} from '../../src/browser-image-pipeline-worker';
 
 const workerSupport: BrowserImagePipelineSupport = {
   worker: true,
@@ -471,5 +474,22 @@ describe('browser image pipeline', () => {
     expect(inferIndexedDbDraftDatabaseName({
       pathOrKey: 'malformed-key'
     })).toBeUndefined();
+  });
+
+  it('prefers the explicit IndexedDB database name on worker file refs', () => {
+    expect(resolveIndexedDbDraftDatabaseName(
+      {
+        pathOrKey: 'team:prod:session:42:raw:file-1',
+        databaseName: 'team:prod:local-image-drafts'
+      },
+      undefined
+    )).toBe('team:prod:local-image-drafts');
+    expect(resolveIndexedDbDraftDatabaseName(
+      {
+        pathOrKey: 'team:prod:session:42:raw:file-1',
+        databaseName: 'team:prod:local-image-drafts'
+      },
+      { databaseName: 'app-owned-drafts' }
+    )).toBe('app-owned-drafts');
   });
 });

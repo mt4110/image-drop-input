@@ -124,6 +124,13 @@ export function inferIndexedDbDraftDatabaseName(
   return `${namespaceAndDraftId.slice(0, draftIdSeparator)}:local-image-drafts`;
 }
 
+export function resolveIndexedDbDraftDatabaseName(
+  ref: Pick<LocalImageDraftFileRef, 'pathOrKey' | 'databaseName'>,
+  storage: BrowserImagePipelineStorageOptions | undefined
+): string | undefined {
+  return storage?.databaseName ?? ref.databaseName ?? inferIndexedDbDraftDatabaseName(ref);
+}
+
 function openDatabase(databaseName: string): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(databaseName, databaseVersion);
@@ -159,7 +166,7 @@ async function readIndexedDbFileRef(
     );
   }
 
-  const databaseName = storage?.databaseName ?? inferIndexedDbDraftDatabaseName(ref);
+  const databaseName = resolveIndexedDbDraftDatabaseName(ref, storage);
 
   if (!databaseName) {
     throw new ImagePipelineError(
