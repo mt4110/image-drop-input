@@ -79,9 +79,37 @@ export type {
   ImageBudgetErrorDetails,
   ImageBudgetErrorOptions,
   ImageBudgetPolicy,
+  ImageBudgetPreparationOptions,
   ImageBudgetStrategy,
   PreparedImageToBudgetResult
 } from './core/prepare-image-to-budget';
+export {
+  deserializeImagePipelineError,
+  detectBrowserImagePipelineSupport,
+  ImagePipelineError,
+  isImagePipelineError,
+  prepareImageInBrowserPipeline,
+  serializeImagePipelineError
+} from './core/browser-image-pipeline';
+export type {
+  BrowserImagePipelineMode,
+  BrowserImagePipelineOptions,
+  BrowserImagePipelineOutputType,
+  BrowserImagePipelinePrepareInput,
+  BrowserImagePipelinePreferredMode,
+  BrowserImagePipelineProgress,
+  BrowserImagePipelineProgressStage,
+  BrowserImagePipelineResult,
+  BrowserImagePipelineStorageOptions,
+  BrowserImagePipelineSupport,
+  BrowserImagePipelineWorkerRequest,
+  BrowserImagePipelineWorkerResponse,
+  DetectBrowserImagePipelineSupportOptions,
+  ImagePipelineErrorCode,
+  ImagePipelineErrorDetails,
+  ImagePipelineErrorOptions,
+  SerializedImagePipelineError
+} from './core/browser-image-pipeline';
 export {
   assertPersistableImageValue,
   ImagePersistableValueError,

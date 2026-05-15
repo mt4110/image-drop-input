@@ -16,6 +16,7 @@ product images, and admin forms. Not generic file queues.
 
 - Persistable value guard: `toPersistableImageValue()` removes temporary `previewSrc` before submit.
 - Byte-budget solver: `prepareImageToBudget()` prepares images to fit upload policy.
+- Worker pipeline: `prepareImageInBrowserPipeline()` prefers worker preparation with cancellation and fallback.
 - Draft lifecycle: `useImageDraftLifecycle()` coordinates draft upload, commit, discard, and previous cleanup.
 - Local draft recovery: `createLocalImageDraftStore()` and `useLocalImageDraftRecovery()` add crash-resilient OPFS/IndexedDB recovery for unsaved local drafts.
 
@@ -123,9 +124,9 @@ Start with the [local preview recipe](./docs/recipes/local-preview.md).
 
 ### 2. Prepare and upload one image
 
-Add `prepareImageToBudget()` and an explicit upload adapter when the image must fit upload policy before transfer. Upload wiring stays app-owned and explicit.
+Add `prepareImageToBudget()` or `prepareImageInBrowserPipeline()` and an explicit upload adapter when the image must fit upload policy before transfer. Upload wiring stays app-owned and explicit.
 
-Start with the [byte-budget guide](./docs/byte-budget.md), [browser budget lab](./docs/browser-budget-lab.md), [presigned PUT recipe](./docs/recipes/presigned-put.md), and [upload docs](./docs/uploads.md).
+Start with the [byte-budget guide](./docs/byte-budget.md), [browser pipeline guide](./docs/browser-pipeline.md), [browser budget lab](./docs/browser-budget-lab.md), [presigned PUT recipe](./docs/recipes/presigned-put.md), and [upload docs](./docs/uploads.md).
 
 ### 3. Product-safe replacement flow
 
@@ -422,7 +423,7 @@ Read the checklist in [docs/accessibility.md](./docs/accessibility.md).
 | Import | Exports |
 | --- | --- |
 | `image-drop-input` | `ImageDropInput`, UI props and render types, `ImageUploadValue`, persistable value helpers, upload types, validation and upload error helpers |
-| `image-drop-input/headless` | `useImageDropInput`, `useImageDraftLifecycle`, `compressImage`, `prepareImageToBudget`, `validateImage`, metadata helpers, upload factories, budget/validation/upload error helpers |
+| `image-drop-input/headless` | `useImageDropInput`, `useImageDraftLifecycle`, `compressImage`, `prepareImageToBudget`, `prepareImageInBrowserPipeline`, `validateImage`, metadata helpers, upload factories, budget/pipeline/validation/upload error helpers |
 | `image-drop-input/style.css` | default component styles |
 
 ```ts
@@ -440,11 +441,15 @@ import {
 ```ts
 import {
   ImageBudgetError,
+  ImagePipelineError,
   compressImage,
   createMultipartUploader,
   createPresignedPutUploader,
   createRawPutUploader,
+  detectBrowserImagePipelineSupport,
   isImageBudgetError,
+  isImagePipelineError,
+  prepareImageInBrowserPipeline,
   prepareImageToBudget,
   useImageDraftLifecycle,
   useImageDropInput,

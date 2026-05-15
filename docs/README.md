@@ -17,6 +17,7 @@ Core docs:
 - [Value model](./value-model.md): how `src`, `previewSrc`, `key`, and metadata fit together
 - [Persistable value guard](./persistable-value.md): remove temporary preview state before submit and mirror the rule on the server
 - [Byte budget solver](./byte-budget.md): prepare images to fit an output byte budget
+- [Browser pipeline](./browser-pipeline.md): worker-first byte-budget preparation, cancellation, capability detection, and fallback
 - [Browser budget lab](./browser-budget-lab.md): Chromium/Firefox engine evidence for byte-budget behavior
 - [Draft lifecycle](./draft-lifecycle.md): upload drafts, commit on form save, discard on cancel, and cleanup previous images
 - [Local draft persistence](./local-draft-persistence.md): crash-resilient OPFS/IndexedDB recovery for unsaved local image drafts

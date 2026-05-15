@@ -8,6 +8,18 @@ const rootDirectory = process.cwd();
 const realRootDirectory = realpathSync(rootDirectory);
 const defaultBrowsers = ['chromium', 'firefox'];
 const browserTypes = { chromium, firefox, webkit };
+const maxMainThreadBlockingMs = 120;
+const browserProfiles = [
+  {
+    name: 'desktop',
+    viewport: { width: 1280, height: 900 }
+  },
+  {
+    name: 'mobile',
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3
+  }
+];
 const contentTypes = new Map([
   ['.html', 'text/html; charset=utf-8'],
   ['.js', 'text/javascript; charset=utf-8'],
@@ -97,7 +109,13 @@ function createLabHtml() {
 </head>
 <body>
 <script type="module">
-import { prepareImageToBudget, isImageBudgetError } from '/dist/headless.js';
+import {
+  detectBrowserImagePipelineSupport,
+  isImageBudgetError,
+  prepareImageInBrowserPipeline
+} from '/dist/headless.js';
+
+const maxMainThreadBlockingMs = ${maxMainThreadBlockingMs};
 
 function assert(condition, message) {
   if (!condition) {
@@ -180,7 +198,47 @@ async function createFixture({ kind, width, height, type, name }) {
   };
 }
 
-function summarizeSuccess(label, fixture, policy, result) {
+function createMainThreadBlockMonitor() {
+  const intervalMs = 50;
+  let lastTick = performance.now();
+  let maxDelayMs = 0;
+  let samples = 0;
+  const intervalId = setInterval(() => {
+    const tick = performance.now();
+    maxDelayMs = Math.max(maxDelayMs, tick - lastTick - intervalMs);
+    lastTick = tick;
+    samples += 1;
+  }, intervalMs);
+
+  return {
+    stop() {
+      clearInterval(intervalId);
+
+      return {
+        mainThreadBlockingMs: Math.max(0, Math.round(maxDelayMs)),
+        blockingSamples: samples
+      };
+    }
+  };
+}
+
+function getByteReduction(sourceSize, resultSize) {
+  const byteReduction = Math.max(0, sourceSize - resultSize);
+
+  return {
+    sourceSize,
+    byteReduction,
+    byteReductionRatio: sourceSize > 0 ? byteReduction / sourceSize : 0
+  };
+}
+
+function summarizeSuccess(profile, label, fixture, policy, pipelineResult, blocking) {
+  const result = pipelineResult.result;
+
+  if (pipelineResult.support.moduleWorker) {
+    assert(pipelineResult.mode === 'worker', label + ': expected worker pipeline mode');
+  }
+
   assert(result.size <= policy.outputMaxBytes, label + ': result exceeds outputMaxBytes');
   assert(result.file.size === result.size, label + ': file size metadata mismatch');
   assert(result.file.type === policy.outputType, label + ': file type mismatch');
@@ -204,27 +262,53 @@ function summarizeSuccess(label, fixture, policy, result) {
     assert(result.height >= policy.minHeight, label + ': result is below minHeight');
   }
 
+  assert(
+    blocking.mainThreadBlockingMs <= maxMainThreadBlockingMs,
+    label + ': main-thread blocking exceeded ' + maxMainThreadBlockingMs + 'ms'
+  );
+
   return {
+    profile,
     label,
     status: 'passed',
+    mode: pipelineResult.mode,
     strategy: result.strategy,
     size: result.size,
+    ...getByteReduction(fixture.file.size, result.size),
     width: result.width,
     height: result.height,
     mimeType: result.mimeType,
-    attempts: result.attempts.length
+    attempts: result.attempts.length,
+    durationMs: Math.round(pipelineResult.durationMs),
+    mainThreadBlockingMs: blocking.mainThreadBlockingMs,
+    blockingSamples: blocking.blockingSamples
   };
 }
 
-async function runSuccessCase(label, fixtureOptions, policy) {
+async function runSuccessCase(profile, label, fixtureOptions, policy) {
   const fixture = await createFixture(fixtureOptions);
-  const result = await prepareImageToBudget(fixture.file, policy);
+  const monitor = createMainThreadBlockMonitor();
+  let blocking;
 
-  return summarizeSuccess(label, fixture, policy, result);
+  try {
+    const pipelineResult = await prepareImageInBrowserPipeline({
+      draftId: profile + '-' + label.replace(/[^a-z0-9]+/gi, '-').toLowerCase(),
+      file: fixture.file,
+      policy
+    });
+
+    blocking = monitor.stop();
+
+    return summarizeSuccess(profile, label, fixture, policy, pipelineResult, blocking);
+  } catch (error) {
+    blocking = monitor.stop();
+    throw error;
+  }
 }
 
-async function runBudgetUnreachableCase() {
+async function runBudgetUnreachableCase(profile, support) {
   const label = 'budget-unreachable reports attempts';
+  let observedMode = 'unknown';
   const fixture = await createFixture({
     kind: 'noise',
     width: 400,
@@ -232,43 +316,72 @@ async function runBudgetUnreachableCase() {
     type: 'image/png',
     name: 'unreachable-noise.png'
   });
+  const monitor = createMainThreadBlockMonitor();
+  const startedAt = performance.now();
 
   try {
-    await prepareImageToBudget(fixture.file, {
-      outputMaxBytes: 1,
-      outputType: 'image/webp',
-      minWidth: 300,
-      minHeight: 225,
-      maxEncodeAttempts: 3,
-      initialQuality: 0.8,
-      minQuality: 0.7
+    await prepareImageInBrowserPipeline({
+      draftId: profile + '-budget-unreachable',
+      file: fixture.file,
+      policy: {
+        outputMaxBytes: 1,
+        outputType: 'image/webp',
+        minWidth: 300,
+        minHeight: 225,
+        maxEncodeAttempts: 3,
+        initialQuality: 0.8,
+        minQuality: 0.7
+      }
+    }, {
+      onProgress(event) {
+        observedMode = event.mode;
+      }
     });
   } catch (error) {
+    const blocking = monitor.stop();
+
+    assert(
+      blocking.mainThreadBlockingMs <= maxMainThreadBlockingMs,
+      label + ': main-thread blocking exceeded ' + maxMainThreadBlockingMs + 'ms'
+    );
+
     assert(isImageBudgetError(error), label + ': expected ImageBudgetError');
     assert(error.code === 'budget_unreachable', label + ': expected budget_unreachable');
+    if (support.moduleWorker) {
+      assert(observedMode === 'worker', label + ': expected worker pipeline mode');
+    }
     assert(
       Array.isArray(error.details.attempts) && error.details.attempts.length > 0,
       label + ': expected attempts in error details'
     );
 
     return {
+      profile,
       label,
       status: 'passed',
+      mode: observedMode,
       strategy: 'expected-error',
       size: 0,
+      ...getByteReduction(fixture.file.size, 0),
       width: 0,
       height: 0,
       mimeType: 'image/webp',
-      attempts: error.details.attempts.length
+      attempts: error.details.attempts.length,
+      durationMs: Math.round(performance.now() - startedAt),
+      mainThreadBlockingMs: blocking.mainThreadBlockingMs,
+      blockingSamples: blocking.blockingSamples
     };
   }
 
+  monitor.stop();
   throw new Error(label + ': expected budget_unreachable error.');
 }
 
-window.runBrowserBudgetLab = async () => {
+window.runBrowserBudgetLab = async ({ profile }) => {
+  const support = await detectBrowserImagePipelineSupport({ forceRefresh: true });
   const cases = [
     await runSuccessCase(
+      profile,
       'gradient to webp budget',
       {
         kind: 'gradient',
@@ -287,6 +400,7 @@ window.runBrowserBudgetLab = async () => {
       }
     ),
     await runSuccessCase(
+      profile,
       'noise to jpeg budget',
       {
         kind: 'noise',
@@ -306,6 +420,7 @@ window.runBrowserBudgetLab = async () => {
       }
     ),
     await runSuccessCase(
+      profile,
       'transparent png resize',
       {
         kind: 'transparent',
@@ -322,6 +437,7 @@ window.runBrowserBudgetLab = async () => {
       }
     ),
     await runSuccessCase(
+      profile,
       'tiny image is not upscaled',
       {
         kind: 'solid',
@@ -337,11 +453,13 @@ window.runBrowserBudgetLab = async () => {
         maxHeight: 256
       }
     ),
-    await runBudgetUnreachableCase()
+    await runBudgetUnreachableCase(profile, support)
   ];
 
   return {
+    profile,
     userAgent: navigator.userAgent,
+    support,
     cases
   };
 };
@@ -430,44 +548,57 @@ async function runBrowser(browserName, origin) {
   }
 
   try {
-    const page = await browser.newPage();
-    const diagnostics = [];
+    const runs = [];
 
-    page.on('console', (message) => {
-      diagnostics.push(`${message.type()}: ${message.text()}`);
-    });
-    page.on('pageerror', (error) => {
-      diagnostics.push(`pageerror: ${error.stack || error.message}`);
-    });
-    page.on('requestfailed', (request) => {
-      diagnostics.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? ''}`);
-    });
-    page.on('response', (response) => {
-      if (!response.ok()) {
-        diagnostics.push(`response: ${response.status()} ${response.url()}`);
+    for (const profile of browserProfiles) {
+      const { name, ...pageOptions } = profile;
+      const page = await browser.newPage(pageOptions);
+      const diagnostics = [];
+
+      page.on('console', (message) => {
+        diagnostics.push(`${message.type()}: ${message.text()}`);
+      });
+      page.on('pageerror', (error) => {
+        diagnostics.push(`pageerror: ${error.stack || error.message}`);
+      });
+      page.on('requestfailed', (request) => {
+        diagnostics.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? ''}`);
+      });
+      page.on('response', (response) => {
+        if (!response.ok()) {
+          diagnostics.push(`response: ${response.status()} ${response.url()}`);
+        }
+      });
+
+      await page.goto(`${origin}/lab.html`, { waitUntil: 'networkidle' });
+
+      try {
+        await page.waitForFunction(() => typeof window.runBrowserBudgetLab === 'function');
+      } catch (error) {
+        const detail = diagnostics.length > 0
+          ? diagnostics.join('\n')
+          : 'No browser console diagnostics were emitted.';
+
+        throw new Error(
+          `${browserName} did not initialize the ${name} browser budget lab.\n${detail}`,
+          { cause: error }
+        );
       }
-    });
 
-    await page.goto(`${origin}/lab.html`, { waitUntil: 'networkidle' });
+      runs.push(await page.evaluate((profileName) => window.runBrowserBudgetLab({
+        profile: profileName
+      }), name));
 
-    try {
-      await page.waitForFunction(() => typeof window.runBrowserBudgetLab === 'function');
-    } catch (error) {
-      const detail = diagnostics.length > 0
-        ? diagnostics.join('\n')
-        : 'No browser console diagnostics were emitted.';
-
-      throw new Error(
-        `${browserName} did not initialize the browser budget lab.\n${detail}`,
-        { cause: error }
-      );
+      await page.close();
     }
 
-    const result = await page.evaluate(() => window.runBrowserBudgetLab());
+    const cases = runs.flatMap((run) => run.cases);
 
     return {
       browser: browserName,
-      ...result
+      userAgent: runs[0]?.userAgent ?? '',
+      profiles: runs.map(({ profile, support }) => ({ profile, support })),
+      cases
     };
   } finally {
     await browser.close();
@@ -480,15 +611,17 @@ function formatMarkdown(report) {
     '',
     `Generated at: ${report.generatedAt}`,
     '',
-    '| Engine | Case | Status | MIME | Size | Dimensions | Strategy | Attempts |',
-    '| --- | --- | --- | --- | ---: | --- | --- | ---: |'
+    '| Engine | Profile | Case | Status | Mode | MIME | Size | Bytes saved | Time ms | Main block ms | Dimensions | Strategy | Attempts |',
+    '| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | ---: |'
   ];
 
   for (const engine of report.engines) {
     for (const testCase of engine.cases) {
       lines.push(
-        `| ${engine.browser} | ${testCase.label} | ${testCase.status} | ` +
-          `${testCase.mimeType} | ${testCase.size} | ` +
+        `| ${engine.browser} | ${testCase.profile} | ${testCase.label} | ` +
+          `${testCase.status} | ${testCase.mode} | ${testCase.mimeType} | ` +
+          `${testCase.size} | ${testCase.byteReduction} | ` +
+          `${testCase.durationMs} | ${testCase.mainThreadBlockingMs} | ` +
           `${testCase.width}x${testCase.height} | ${testCase.strategy} | ` +
           `${testCase.attempts} |`
       );
@@ -497,6 +630,7 @@ function formatMarkdown(report) {
 
   lines.push('');
   lines.push('The lab asserts budget, MIME, dimension, and stable error behavior.');
+  lines.push('It reports processing time, byte reduction, selected pipeline mode, and sampled main-thread blocking.');
   lines.push('It does not assert byte-identical output across browser engines.');
   lines.push('');
 

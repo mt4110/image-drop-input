@@ -119,14 +119,22 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 - Claim checked: Browser byte-budget behavior has been verified across Chromium and Firefox.
 - Evidence level: Public docs
 - Evidence: [browser budget lab](./browser-budget-lab.md), `npm run browser:budget-lab`.
-- Disproof path: The browser lab is removed, or Chromium/Firefox fail the documented success/error expectations.
+- Disproof path: The browser lab is removed, or Chromium/Firefox fail the documented worker, success/error, timing, byte-reduction, or main-thread blocking expectations.
+- Status: Proven
+
+### Worker-first browser pipeline
+
+- Claim checked: Browser preparation can prefer a worker and retain an explicit main-thread fallback.
+- Evidence level: Unit test, Public docs, Browser lab
+- Evidence: [browser pipeline](./browser-pipeline.md), [browser budget lab](./browser-budget-lab.md), `tests/core/browser-image-pipeline.test.ts`.
+- Disproof path: `prepareImageInBrowserPipeline()` cannot select worker mode in supported browsers, cannot fall back when module workers are unavailable, or emits a prepared result after cancellation.
 - Status: Proven
 
 ### WebKit browser budget matrix
 
 - Claim checked: Browser byte-budget behavior has been verified across WebKit.
 - Evidence level: Exploratory local run
-- Evidence: [browser budget lab](./browser-budget-lab.md). A 2026-05-08 JST WebKit 26.4 exploratory run failed with `ImageBudgetError: This browser cannot encode image/webp.` WebKit remains outside the current documented pass matrix.
+- Evidence: [browser budget lab](./browser-budget-lab.md). A 2026-05-15 JST WebKit 26.4 exploratory run failed with `ImageBudgetError: This browser cannot encode image/webp.` WebKit remains outside the current documented pass matrix.
 - Disproof path: The recorded exploratory WebKit run cannot encode the WebP policies used by the lab, no stable WebKit pass artifact exists, or WebKit fails the documented success/error expectations.
 - Status: Not proven
 

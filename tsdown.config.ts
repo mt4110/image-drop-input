@@ -11,7 +11,8 @@ export default defineConfig({
   dts: true,
   entry: [
     'src/index.ts',
-    'src/headless.ts'
+    'src/headless.ts',
+    'src/browser-image-pipeline-worker.ts'
   ],
   format: [
     'esm',

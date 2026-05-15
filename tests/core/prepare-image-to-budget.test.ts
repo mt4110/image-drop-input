@@ -485,6 +485,39 @@ describe('prepareImageToBudget', () => {
     expect(globalThis.createImageBitmap).not.toHaveBeenCalled();
   });
 
+  it('cleans up the decoded image when cancellation happens after decode', async () => {
+    const controller = new AbortController();
+    const source = new File([new Uint8Array(500_000)], 'avatar.jpg', { type: 'image/jpeg' });
+
+    Object.defineProperty(globalThis, 'createImageBitmap', {
+      configurable: true,
+      value: vi.fn(async () => {
+        controller.abort(new DOMException('Stopped after decode.', 'AbortError'));
+
+        return {
+          width: decodedWidth,
+          height: decodedHeight,
+          close
+        };
+      })
+    });
+
+    await expect(
+      prepareImageToBudget(
+        source,
+        {
+          outputMaxBytes: 250_000,
+          outputType: 'image/webp'
+        },
+        { signal: controller.signal }
+      )
+    ).rejects.toMatchObject({
+      name: 'AbortError'
+    });
+    expect(drawImage).not.toHaveBeenCalled();
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects browser encoder fallbacks that return a different MIME type', async () => {
     class FallbackOffscreenCanvas extends MockOffscreenCanvas {
       convertToBlob() {
