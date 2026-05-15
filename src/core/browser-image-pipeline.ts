@@ -513,10 +513,10 @@ async function prepareWithWorker(
   support: BrowserImagePipelineSupport,
   draftId: string
 ): Promise<BrowserImagePipelineResult> {
-  if (!support.moduleWorker && !options.workerUrl) {
+  if (!support.worker) {
     throw new ImagePipelineError(
       'worker_unavailable',
-      'Module workers are unavailable in this browser.',
+      'Workers are unavailable in this browser.',
       { draftId, mode: 'worker' }
     );
   }

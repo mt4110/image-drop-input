@@ -386,6 +386,63 @@ describe('browser image pipeline', () => {
     ]);
   });
 
+  it('tries the default worker URL when blob-based module worker probing is unavailable', async () => {
+    const source = new File([new Uint8Array(40_000)], 'source.png', { type: 'image/png' });
+
+    class MockWorker {
+      static constructorArgs: unknown[][] = [];
+
+      onmessage: ((event: MessageEvent<BrowserImagePipelineWorkerResponse>) => void) | null = null;
+      onerror: ((event: ErrorEvent) => void) | null = null;
+      postMessage = vi.fn((message: BrowserImagePipelineWorkerRequest) => {
+        if (message.type !== 'prepare') {
+          return;
+        }
+
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: {
+              type: 'prepared',
+              draftId: message.draftId,
+              result: createPreparedResult(source)
+            }
+          } as MessageEvent<BrowserImagePipelineWorkerResponse>);
+        });
+      });
+      terminate = vi.fn();
+
+      constructor(...args: unknown[]) {
+        MockWorker.constructorArgs.push(args);
+      }
+    }
+
+    Object.defineProperty(globalThis, 'Worker', {
+      configurable: true,
+      value: MockWorker
+    });
+
+    const result = await prepareImageInBrowserPipeline(
+      {
+        draftId: 'default-worker-draft',
+        file: source,
+        policy: {
+          outputMaxBytes: 10_000,
+          outputType: 'image/webp'
+        }
+      },
+      {
+        support: workerWithoutBlobModuleProbeSupport
+      }
+    );
+
+    expect(result.mode).toBe('worker');
+    expect(MockWorker.constructorArgs[0][0]).toBeInstanceOf(URL);
+    expect(MockWorker.constructorArgs[0][1]).toEqual({
+      type: 'module',
+      name: 'image-pipeline'
+    });
+  });
+
   it('terminates the worker on cancellation', async () => {
     const controller = new AbortController();
     const source = new File([new Uint8Array(40_000)], 'source.png', { type: 'image/png' });
