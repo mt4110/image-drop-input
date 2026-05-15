@@ -17,6 +17,7 @@ product images, and admin forms. Not generic file queues.
 - Persistable value guard: `toPersistableImageValue()` removes temporary `previewSrc` before submit.
 - Byte-budget solver: `prepareImageToBudget()` prepares images to fit upload policy.
 - Draft lifecycle: `useImageDraftLifecycle()` coordinates draft upload, commit, discard, and previous cleanup.
+- Local draft recovery: `createLocalImageDraftStore()` and `useLocalImageDraftRecovery()` add crash-resilient OPFS/IndexedDB recovery for unsaved local drafts.
 
 **Upload success is not product save success.** The package is built around that boundary: browser preview, prepared bytes, draft upload, committed image, and persisted form payload stay separate.
 
@@ -128,9 +129,9 @@ Start with the [byte-budget guide](./docs/byte-budget.md), [browser budget lab](
 
 ### 3. Product-safe replacement flow
 
-Use `toPersistableImageValue()` and `useImageDraftLifecycle()` when a draft upload must wait for product save before it becomes persisted state.
+Use `toPersistableImageValue()` and `useImageDraftLifecycle()` when a draft upload must wait for product save before it becomes persisted state. Add `createLocalImageDraftStore()` and `useLocalImageDraftRecovery()` when the form should offer bounded local recovery after reload or tab crash.
 
-Start with the [draft lifecycle guide](./docs/draft-lifecycle.md), [state machine](./docs/state-machine.md), [backend contracts](./docs/backend-contracts.md), and [product submit recipe](./docs/recipes/product-submit-with-image-draft.md).
+Start with the [draft lifecycle guide](./docs/draft-lifecycle.md), [local draft persistence](./docs/local-draft-persistence.md), [state machine](./docs/state-machine.md), [backend contracts](./docs/backend-contracts.md), and [product submit recipe](./docs/recipes/product-submit-with-image-draft.md).
 
 ## Choose image-drop-input when...
 
@@ -163,7 +164,7 @@ Browser image inputs create temporary values: `File`, `Blob`, object URLs, uploa
 
 Your database should store durable values: `src`, `key`, and prepared metadata.
 
-`image-drop-input` gives you helpers to keep that boundary explicit: sanitize submit payloads with `toPersistableImageValue()`, prepare files with `prepareImageToBudget()`, and opt into `useImageDraftLifecycle()` when upload success must remain separate from form save success.
+`image-drop-input` gives you helpers to keep that boundary explicit: sanitize submit payloads with `toPersistableImageValue()`, prepare files with `prepareImageToBudget()`, opt into `useImageDraftLifecycle()` when upload success must remain separate from form save success, and add `useLocalImageDraftRecovery()` when an unsaved local draft should be recoverable after reload or tab crash.
 
 Client sanitization is UX. Server validation is authority. Mirror the submit-boundary rules on the server with the [Zod schema recipe](./docs/recipes/server-persistable-image-zod.md) or the [custom validator recipe](./docs/recipes/server-persistable-image-custom.md).
 

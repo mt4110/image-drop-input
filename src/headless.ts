@@ -28,9 +28,46 @@ export type {
   UseImageDraftLifecycleOptions,
   UseImageDraftLifecycleReturn
 } from './react/use-image-draft-lifecycle';
+export { useLocalImageDraftRecovery } from './react/use-local-image-draft-recovery';
+export type {
+  LocalImageDraftRecoveryStatus,
+  UseLocalImageDraftRecoveryOptions,
+  UseLocalImageDraftRecoveryReturn
+} from './react/use-local-image-draft-recovery';
 export { compressImage } from './core/compress-image';
 export { createObjectUrl } from './core/create-object-url';
 export { getImageMetadata } from './core/get-image-metadata';
+export {
+  createLocalImageDraftStore,
+  isLocalImageDraftError,
+  isLocalImageDraftManifest,
+  LocalImageDraftError
+} from './core/local-image-draft-store';
+export type {
+  LocalImageDraftBlobInput,
+  LocalImageDraftCleanupResult,
+  LocalImageDraftErrorCode,
+  LocalImageDraftErrorDetails,
+  LocalImageDraftErrorOptions,
+  LocalImageDraftFileRef,
+  LocalImageDraftFileStore,
+  LocalImageDraftListOptions,
+  LocalImageDraftManifest,
+  LocalImageDraftPhase,
+  LocalImageDraftPreparedBlobInput,
+  LocalImageDraftPreparedFileRef,
+  LocalImageDraftPreparedMetadata,
+  LocalImageDraftRestoreResult,
+  LocalImageDraftStorageEstimate,
+  LocalImageDraftStorageMode,
+  LocalImageDraftStoragePressure,
+  LocalImageDraftStoragePressureReason,
+  LocalImageDraftStore,
+  LocalImageDraftStoreOptions,
+  LocalImageDraftStoreWarning,
+  LocalImageDraftStoreWarningCode,
+  SaveLocalImageDraftInput
+} from './core/local-image-draft-store';
 export {
   ImageBudgetError,
   isImageBudgetError,

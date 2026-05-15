@@ -10,7 +10,7 @@ Pick the path that matches your product:
 
 - Local preview only: [Local preview](./recipes/local-preview.md)
 - Prepare and upload one image: [Byte budget solver](./byte-budget.md) and [Uploads](./uploads.md)
-- Product-safe replacement flow: [Draft lifecycle](./draft-lifecycle.md), [State machine](./state-machine.md), [Backend contracts](./backend-contracts.md), and [Product submit with image draft](./recipes/product-submit-with-image-draft.md)
+- Product-safe replacement flow: [Draft lifecycle](./draft-lifecycle.md), [Local draft persistence](./local-draft-persistence.md), [State machine](./state-machine.md), [Backend contracts](./backend-contracts.md), and [Product submit with image draft](./recipes/product-submit-with-image-draft.md)
 
 Core docs:
 
@@ -19,6 +19,7 @@ Core docs:
 - [Byte budget solver](./byte-budget.md): prepare images to fit an output byte budget
 - [Browser budget lab](./browser-budget-lab.md): Chromium/Firefox engine evidence for byte-budget behavior
 - [Draft lifecycle](./draft-lifecycle.md): upload drafts, commit on form save, discard on cancel, and cleanup previous images
+- [Local draft persistence](./local-draft-persistence.md): crash-resilient OPFS/IndexedDB recovery for unsaved local image drafts
 - [Draft lifecycle state machine](./state-machine.md): lifecycle phases, transition table, invariants, and disproof paths
 - [Backend contracts](./backend-contracts.md): app-owned auth, signed URLs, commit, discard, previous cleanup, and TTL cleanup
 - [Backend reference protocol](./backend-reference-protocol.md): atomic submit, idempotency, stale previous defense, and cleanup workers

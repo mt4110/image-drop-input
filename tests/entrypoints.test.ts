@@ -1,5 +1,6 @@
 import './setup';
 import { beforeAll, describe, expect, it } from 'vitest';
+import entrypointContract from '../scripts/package-entrypoint-contract.json';
 
 let root: Record<string, unknown>;
 let headless: Record<string, unknown>;
@@ -16,54 +17,8 @@ beforeAll(async () => {
 
 describe('package entrypoints', () => {
   it('keeps the runtime export surface explicit', () => {
-    expect(Object.keys(root).sort()).toMatchInlineSnapshot(`
-      [
-        "ImageDropInput",
-        "ImagePersistableValueError",
-        "ImageUploadError",
-        "ImageValidationError",
-        "assertPersistableImageValue",
-        "isImagePersistableValueError",
-        "isImageUploadError",
-        "isImageValidationError",
-        "isPersistableImageValue",
-        "isTemporaryImageSrc",
-        "toPersistableImageValue",
-      ]
-    `);
-    expect(Object.keys(headless).sort()).toMatchInlineSnapshot(`
-      [
-        "ImageBudgetError",
-        "ImageDraftLifecycleError",
-        "ImagePersistableValueError",
-        "ImageUploadError",
-        "ImageValidationError",
-        "assertPersistableImageValue",
-        "compressImage",
-        "createMultipartUploader",
-        "createObjectUrl",
-        "createPresignedPutUploader",
-        "createRawPutUploader",
-        "getImageMetadata",
-        "isImageBudgetError",
-        "isImageDraftLifecycleError",
-        "isImagePersistableValueError",
-        "isImageUploadError",
-        "isImageValidationError",
-        "isPersistableImageValue",
-        "isTemporaryImageSrc",
-        "normalizeAspectRatio",
-        "prepareImageToBudget",
-        "resolveDisplaySrc",
-        "resolveImageDropInputMessages",
-        "sendUploadRequest",
-        "toPersistableImageValue",
-        "uploadWithSignedTarget",
-        "useImageDraftLifecycle",
-        "useImageDropInput",
-        "validateImage",
-      ]
-    `);
+    expect(Object.keys(root).sort()).toEqual([...entrypointContract.rootExports].sort());
+    expect(Object.keys(headless).sort()).toEqual([...entrypointContract.headlessExports].sort());
   });
 
   it('keeps advanced helper utilities off the root entry', () => {
@@ -84,6 +39,9 @@ describe('package entrypoints', () => {
     expect(root).not.toHaveProperty('ImageDraftLifecycleError');
     expect(root).not.toHaveProperty('isImageDraftLifecycleError');
     expect(root).not.toHaveProperty('useImageDraftLifecycle');
+    expect(root).not.toHaveProperty('LocalImageDraftError');
+    expect(root).not.toHaveProperty('createLocalImageDraftStore');
+    expect(root).not.toHaveProperty('useLocalImageDraftRecovery');
     expect(root).not.toHaveProperty('createPresignedPutUploader');
     expect(root).not.toHaveProperty('useImageDropInput');
     expect(root).not.toHaveProperty('validateImage');
@@ -107,8 +65,13 @@ describe('package entrypoints', () => {
     expect(headless.isTemporaryImageSrc).toBeTypeOf('function');
     expect(headless.ImageDraftLifecycleError).toBeTypeOf('function');
     expect(headless.isImageDraftLifecycleError).toBeTypeOf('function');
+    expect(headless.LocalImageDraftError).toBeTypeOf('function');
+    expect(headless.isLocalImageDraftError).toBeTypeOf('function');
+    expect(headless.isLocalImageDraftManifest).toBeTypeOf('function');
+    expect(headless.createLocalImageDraftStore).toBeTypeOf('function');
     expect(headless.useImageDropInput).toBeTypeOf('function');
     expect(headless.useImageDraftLifecycle).toBeTypeOf('function');
+    expect(headless.useLocalImageDraftRecovery).toBeTypeOf('function');
     expect(headless.validateImage).toBeTypeOf('function');
   });
 });

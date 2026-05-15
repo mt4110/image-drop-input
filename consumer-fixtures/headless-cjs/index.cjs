@@ -1,71 +1,10 @@
 const root = require('image-drop-input');
 const headless = require('image-drop-input/headless');
+const entrypointContract = require('../../scripts/package-entrypoint-contract.json');
 
-const expectedRootExports = [
-  'ImageDropInput',
-  'ImagePersistableValueError',
-  'ImageUploadError',
-  'ImageValidationError',
-  'assertPersistableImageValue',
-  'isImagePersistableValueError',
-  'isImageUploadError',
-  'isImageValidationError',
-  'isPersistableImageValue',
-  'isTemporaryImageSrc',
-  'toPersistableImageValue'
-];
-const expectedHeadlessExports = [
-  'ImageBudgetError',
-  'ImageDraftLifecycleError',
-  'ImagePersistableValueError',
-  'ImageUploadError',
-  'ImageValidationError',
-  'assertPersistableImageValue',
-  'compressImage',
-  'createMultipartUploader',
-  'createObjectUrl',
-  'createPresignedPutUploader',
-  'createRawPutUploader',
-  'getImageMetadata',
-  'isImageBudgetError',
-  'isImageDraftLifecycleError',
-  'isImagePersistableValueError',
-  'isImageUploadError',
-  'isImageValidationError',
-  'isPersistableImageValue',
-  'isTemporaryImageSrc',
-  'normalizeAspectRatio',
-  'prepareImageToBudget',
-  'resolveDisplaySrc',
-  'resolveImageDropInputMessages',
-  'sendUploadRequest',
-  'toPersistableImageValue',
-  'uploadWithSignedTarget',
-  'useImageDraftLifecycle',
-  'useImageDropInput',
-  'validateImage'
-];
-const requiredFunctions = [
-  'compressImage',
-  'prepareImageToBudget',
-  'ImageBudgetError',
-  'isImageBudgetError',
-  'createMultipartUploader',
-  'createPresignedPutUploader',
-  'createRawPutUploader',
-  'ImageUploadError',
-  'isImageUploadError',
-  'ImagePersistableValueError',
-  'isImagePersistableValueError',
-  'toPersistableImageValue',
-  'assertPersistableImageValue',
-  'isPersistableImageValue',
-  'isTemporaryImageSrc',
-  'ImageDraftLifecycleError',
-  'isImageDraftLifecycleError',
-  'useImageDraftLifecycle',
-  'validateImage'
-];
+const expectedRootExports = entrypointContract.rootExports;
+const expectedHeadlessExports = entrypointContract.headlessExports;
+const requiredRuntimeExports = entrypointContract.headlessRequiredRuntimeExports;
 
 function assertExportSurface(entrypoint, actualExports, expectedExports) {
   const actualKeys = Object.keys(actualExports).sort();
@@ -83,7 +22,7 @@ function assertExportSurface(entrypoint, actualExports, expectedExports) {
 assertExportSurface('root', root, expectedRootExports);
 assertExportSurface('headless', headless, expectedHeadlessExports);
 
-for (const name of requiredFunctions) {
+for (const name of requiredRuntimeExports) {
   if (typeof headless[name] !== 'function') {
     throw new Error(`Expected headless ${name} export.`);
   }
@@ -109,6 +48,11 @@ const persistableError = new headless.ImagePersistableValueError(
   'Temporary image src cannot be persisted.',
   { field: 'src', srcProtocol: 'blob:' }
 );
+const localDraftError = new headless.LocalImageDraftError(
+  'quota_exceeded',
+  'Local draft storage quota was exceeded.',
+  { mode: 'indexeddb', requestedBytes: 1024 }
+);
 
 if (!headless.isImageUploadError(uploadError)) {
   throw new Error('Expected headless isImageUploadError to narrow ImageUploadError.');
@@ -128,6 +72,24 @@ if (!headless.isImageDraftLifecycleError(lifecycleError)) {
 
 if (!headless.isImagePersistableValueError(persistableError)) {
   throw new Error('Expected headless isImagePersistableValueError to narrow ImagePersistableValueError.');
+}
+
+if (!headless.isLocalImageDraftError(localDraftError)) {
+  throw new Error('Expected headless isLocalImageDraftError to narrow LocalImageDraftError.');
+}
+
+if (
+  !headless.isLocalImageDraftManifest({
+    version: 1,
+    draftId: 'draft-1',
+    fieldId: 'hero-image',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    expiresAt: '2026-01-08T00:00:00.000Z',
+    phase: 'prepared'
+  })
+) {
+  throw new Error('Expected headless isLocalImageDraftManifest to accept versioned manifest-like objects.');
 }
 
 const persistableValue = headless.toPersistableImageValue({
