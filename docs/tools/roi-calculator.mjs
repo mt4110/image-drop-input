@@ -83,7 +83,9 @@ function roundNumber(value, digits = 9) {
   }
 
   const scale = 10 ** digits;
-  return Math.round((value + Number.EPSILON) * scale) / scale;
+  const rounded = Math.round((value + Number.EPSILON) * scale) / scale;
+
+  return Object.is(rounded, -0) ? 0 : rounded;
 }
 
 function bytesToGb(bytes) {
@@ -97,6 +99,12 @@ function isObjectRecord(value) {
 function normalizeMeasuredFields(fields = []) {
   if (!Array.isArray(fields)) {
     throw new Error('measuredFields must be an array.');
+  }
+
+  for (const [index, field] of fields.entries()) {
+    if (typeof field !== 'string') {
+      throw new Error(`measuredFields[${index}] must be a string.`);
+    }
   }
 
   const normalizedFields = Array.from(
@@ -220,7 +228,11 @@ function getAssumedInputs(input, measuredInputs) {
     .sort();
 }
 
-function buildCaveats(input, measuredInputs, result) {
+function hasOwnInput(input, field) {
+  return Object.prototype.hasOwnProperty.call(input, field);
+}
+
+function buildCaveats(input, providedInput, measuredInputs, result) {
   const caveats = ['This is a planning estimate, not a guarantee of savings.'];
   const measured = new Set(measuredInputs);
   const measuredBytes =
@@ -261,7 +273,7 @@ function buildCaveats(input, measuredInputs, result) {
 
   if (
     input.transformationCostPerUnit !== undefined &&
-    input.averageTransformationUnitsPerUpload === 1
+    !hasOwnInput(providedInput, 'averageTransformationUnitsPerUpload')
   ) {
     caveats.push(
       'Transformation savings assume one transformation unit per upload unless averageTransformationUnitsPerUpload is supplied.'
@@ -319,7 +331,7 @@ export function estimateImagePipelineRoi(input, options = {}) {
   );
   const avoidableRawGb = rawGbPerMonth * rawUploadBackendFraction;
   const avoidablePreparedGb = preparedGbPerMonth * rawUploadBackendFraction;
-  const avoidedGbPerMonth = Math.max(0, avoidableRawGb - avoidablePreparedGb);
+  const avoidedGbPerMonth = avoidableRawGb - avoidablePreparedGb;
   const avoidedBackendProcessingHours =
     (monthlyUploads *
       rawUploadBackendFraction *
@@ -406,7 +418,7 @@ export function estimateImagePipelineRoi(input, options = {}) {
     caveats: []
   };
 
-  result.caveats = buildCaveats(normalized, measuredInputs, result);
+  result.caveats = buildCaveats(normalized, input, measuredInputs, result);
 
   if (result.estimatedMonthlySavings === undefined) {
     delete result.estimatedMonthlySavings;
@@ -497,6 +509,10 @@ export function parseRoiArgs(argv) {
 function formatMoney(value) {
   if (value === undefined) {
     return 'not estimated';
+  }
+
+  if (value < 0) {
+    return `-$${Math.abs(value).toFixed(2)}`;
   }
 
   return `$${value.toFixed(2)}`;

@@ -64,6 +64,8 @@ The calculator reports:
 
 Draft support exposure is reported separately when `abandonedDraftRate` and `supportTicketCost` are provided. It is not counted as savings without incident data.
 
+Avoided backend GB/month can be negative when prepared images are larger than the original inputs. Negative byte deltas reduce bandwidth and storage savings instead of being clamped away.
+
 ## Confidence
 
 | Confidence | Rule |

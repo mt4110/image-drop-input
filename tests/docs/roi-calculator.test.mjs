@@ -122,6 +122,21 @@ describe('estimateImagePipelineRoi', () => {
     ).toThrow('measuredFields must be an array.');
   });
 
+  it('rejects non-string measured field entries', () => {
+    expect(() =>
+      estimateImagePipelineRoi(
+        {
+          monthlyUploads: 100,
+          averageRawBytes: 5_000_000,
+          averagePreparedBytes: 1_000_000
+        },
+        {
+          measuredFields: [123]
+        }
+      )
+    ).toThrow('measuredFields[0] must be a string.');
+  });
+
   it('rejects measured numeric fields without matching input values', () => {
     expect(() =>
       estimateImagePipelineRoi(
@@ -161,6 +176,49 @@ describe('estimateImagePipelineRoi', () => {
 
     expect(result.estimatedMonthlyDraftSupportExposure).toBe(1000);
     expect(result.estimatedMonthlySavings).toBe(0.4);
+  });
+
+  it('preserves negative byte deltas in bandwidth and storage math', () => {
+    const result = estimateImagePipelineRoi({
+      monthlyUploads: 100,
+      averageRawBytes: 1_000_000,
+      averagePreparedBytes: 2_000_000,
+      bandwidthCostPerGb: 0.1,
+      storageCostPerGbMonth: 0.2
+    });
+
+    expect(result.avoidedGbPerMonth).toBe(-0.1);
+    expect(result.costBreakdown).toEqual({
+      bandwidth: -0.01,
+      storage: -0.02
+    });
+    expect(result.estimatedMonthlySavings).toBe(-0.03);
+    expect(result.caveats).toContain(
+      'Prepared bytes exceed raw bytes; the pipeline may improve policy fit or privacy, but byte savings are not shown by these inputs.'
+    );
+  });
+
+  it('only shows the default transformation-unit caveat when units are omitted', () => {
+    const omittedUnitsResult = estimateImagePipelineRoi({
+      monthlyUploads: 100,
+      averageRawBytes: 5_000_000,
+      averagePreparedBytes: 1_000_000,
+      transformationCostPerUnit: 0.001
+    });
+    const explicitOneUnitResult = estimateImagePipelineRoi({
+      monthlyUploads: 100,
+      averageRawBytes: 5_000_000,
+      averagePreparedBytes: 1_000_000,
+      averageTransformationUnitsPerUpload: 1,
+      transformationCostPerUnit: 0.001
+    });
+
+    expect(omittedUnitsResult.caveats).toContain(
+      'Transformation savings assume one transformation unit per upload unless averageTransformationUnitsPerUpload is supplied.'
+    );
+    expect(explicitOneUnitResult.caveats).not.toContain(
+      'Transformation savings assume one transformation unit per upload unless averageTransformationUnitsPerUpload is supplied.'
+    );
   });
 });
 
@@ -230,5 +288,18 @@ describe('formatRoiMarkdown', () => {
     expect(markdown).toContain('Raw GB/month | 0.000001');
     expect(markdown).toContain('Prepared GB/month | 0.0000005');
     expect(markdown).toContain('Avoided backend GB/month | 0.0000005');
+  });
+
+  it('formats negative savings clearly', () => {
+    const result = estimateImagePipelineRoi({
+      monthlyUploads: 100,
+      averageRawBytes: 1_000_000,
+      averagePreparedBytes: 2_000_000,
+      bandwidthCostPerGb: 0.1
+    });
+
+    expect(formatRoiMarkdown(result)).toContain(
+      'Estimated monthly savings | -$0.01'
+    );
   });
 });
