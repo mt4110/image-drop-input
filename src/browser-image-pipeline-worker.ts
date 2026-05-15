@@ -121,6 +121,10 @@ export function inferIndexedDbDraftDatabaseName(
     return undefined;
   }
 
+  if (namespaceAndDraftId.slice(0, draftIdSeparator).includes(':')) {
+    return undefined;
+  }
+
   return `${namespaceAndDraftId.slice(0, draftIdSeparator)}:local-image-drafts`;
 }
 

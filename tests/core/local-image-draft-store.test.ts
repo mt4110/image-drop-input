@@ -350,6 +350,51 @@ describe('createLocalImageDraftStore', () => {
     });
   });
 
+  it('hydrates IndexedDB database names onto old manifests when reading drafts', async () => {
+    const indexedDB = new IDBFactory();
+    const store = createLocalImageDraftStore({
+      namespace: 'team:prod',
+      indexedDB,
+      navigator: createNavigator({
+        estimate: async () => ({ quota: 10_000_000, usage: 0 })
+      })
+    });
+
+    await store.getMode();
+
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('team:prod:local-image-drafts', 1);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+    const transaction = database.transaction('manifests', 'readwrite');
+
+    transaction.objectStore('manifests').put({
+      version: 1,
+      draftId: 'session:42',
+      fieldId: 'article.cover',
+      createdAt: '2026-05-15T00:00:00.000Z',
+      updatedAt: '2026-05-15T00:00:00.000Z',
+      expiresAt: '2026-05-16T00:00:00.000Z',
+      phase: 'raw-captured',
+      raw: {
+        store: 'indexeddb',
+        pathOrKey: 'team:prod:session:42:raw:file-1',
+        fileName: 'cover.png',
+        mimeType: 'image/png',
+        size: 9
+      }
+    });
+    await transactionDone(transaction);
+
+    const draft = await store.getDraft('session:42');
+    const drafts = await store.listDrafts({ includeExpired: true });
+
+    expect(draft?.raw?.databaseName).toBe('team:prod:local-image-drafts');
+    expect(drafts[0]?.raw?.databaseName).toBe('team:prod:local-image-drafts');
+  });
+
   it('warns once when OPFS probing throws and then falls back to IndexedDB', async () => {
     const onWarning = vi.fn();
     const store = createLocalImageDraftStore({

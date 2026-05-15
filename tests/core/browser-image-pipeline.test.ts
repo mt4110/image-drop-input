@@ -466,11 +466,11 @@ describe('browser image pipeline', () => {
 
   it('infers IndexedDB draft databases from namespaced worker file keys', () => {
     expect(inferIndexedDbDraftDatabaseName({
-      pathOrKey: 'team:prod:draft-1:raw:file-1'
-    })).toBe('team:prod:local-image-drafts');
+      pathOrKey: 'image-drop-input:draft-1:raw:file-1'
+    })).toBe('image-drop-input:local-image-drafts');
     expect(inferIndexedDbDraftDatabaseName({
-      pathOrKey: 'team:prod:draft-1:prepared:file-2'
-    })).toBe('team:prod:local-image-drafts');
+      pathOrKey: 'team:prod:session:42:prepared:file-2'
+    })).toBeUndefined();
     expect(inferIndexedDbDraftDatabaseName({
       pathOrKey: 'malformed-key'
     })).toBeUndefined();

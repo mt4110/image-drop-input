@@ -747,6 +747,38 @@ function isSameFileRef(
   return Boolean(left && right && left.store === right.store && left.pathOrKey === right.pathOrKey);
 }
 
+function withIndexedDbDatabaseName<T extends LocalImageDraftFileRef>(
+  ref: T | undefined,
+  databaseName: string
+): T | undefined {
+  if (!ref || ref.store !== 'indexeddb' || ref.databaseName) {
+    return ref;
+  }
+
+  return {
+    ...ref,
+    databaseName
+  };
+}
+
+function withManifestDatabaseName(
+  manifest: LocalImageDraftManifest,
+  databaseName: string
+): LocalImageDraftManifest {
+  const raw = withIndexedDbDatabaseName(manifest.raw, databaseName);
+  const prepared = withIndexedDbDatabaseName(manifest.prepared, databaseName);
+
+  if (raw === manifest.raw && prepared === manifest.prepared) {
+    return manifest;
+  }
+
+  return {
+    ...manifest,
+    ...(raw ? { raw } : {}),
+    ...(prepared ? { prepared } : {})
+  };
+}
+
 export function createLocalImageDraftStore(
   options: LocalImageDraftStoreOptions = {}
 ): LocalImageDraftStore {
@@ -935,12 +967,11 @@ export function createLocalImageDraftStore(
 
   const getManifest = async (draftId: string): Promise<LocalImageDraftManifest | null> => {
     const backend = await ensureBackend();
+    const manifest = backend.database
+      ? await getManifestFromIdb(backend.database, draftId)
+      : memoryManifests.get(draftId) ?? null;
 
-    if (backend.database) {
-      return getManifestFromIdb(backend.database, draftId);
-    }
-
-    return memoryManifests.get(draftId) ?? null;
+    return manifest ? withManifestDatabaseName(manifest, databaseName) : null;
   };
 
   const deleteManifest = async (backend: StorageBackend, draftId: string) => {
@@ -1097,26 +1128,28 @@ export function createLocalImageDraftStore(
         continue;
       }
 
-      if (!listOptions.includeExpired && isExpired(record, now)) {
+      const manifest = withManifestDatabaseName(record, databaseName);
+
+      if (!listOptions.includeExpired && isExpired(manifest, now)) {
         continue;
       }
 
-      if (listOptions.fieldId && record.fieldId !== listOptions.fieldId) {
+      if (listOptions.fieldId && manifest.fieldId !== listOptions.fieldId) {
         continue;
       }
 
       if (
         typeof listOptions.productId !== 'undefined' &&
-        record.productId !== listOptions.productId
+        manifest.productId !== listOptions.productId
       ) {
         continue;
       }
 
-      if (phaseSet && !phaseSet.has(record.phase)) {
+      if (phaseSet && !phaseSet.has(manifest.phase)) {
         continue;
       }
 
-      valid.push(record);
+      valid.push(manifest);
     }
 
     return valid.sort(
