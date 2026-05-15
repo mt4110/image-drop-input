@@ -38,7 +38,9 @@ The helper does not upscale. If the source image or the fitted `maxWidth` / `max
 
 Attempt order is deterministic inside one browser runtime. Browser canvas encoders can still produce different byte sizes across engines, so avoid treating the output as byte-identical between browsers.
 
-The [browser budget lab](./browser-budget-lab.md) verifies the public helper in Chromium and Firefox. It asserts budget, MIME, dimension, no-upscale, and stable error behavior, but it intentionally does not assert byte-identical output across engines.
+Use [`prepareImageInBrowserPipeline()`](./browser-pipeline.md) when the same byte-budget work should prefer a worker with a documented main-thread fallback and cancellation.
+
+The [browser budget lab](./browser-budget-lab.md) verifies the public helper in Chromium and Firefox. It asserts budget, MIME, dimension, no-upscale, stable error behavior, worker mode, byte reduction, processing time, and sampled main-thread blocking, but it intentionally does not assert byte-identical output across engines.
 
 The result describes the prepared output, not the source image:
 
@@ -73,6 +75,7 @@ type ImageBudgetPolicy = {
   qualitySearch?: 'binary';
   resizeStepRatio?: number;     // default: 0.85
   fileName?: string;
+  maxProcessingMs?: number;     // used by prepareImageInBrowserPipeline()
 };
 ```
 

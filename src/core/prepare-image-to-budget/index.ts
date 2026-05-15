@@ -20,6 +20,7 @@ import {
 import { solveLossyBudget, solvePngBudget } from './search';
 import type {
   ImageBudgetAttempt,
+  ImageBudgetPreparationOptions,
   ImageBudgetPolicy,
   PreparedImageToBudgetResult
 } from './types';
@@ -31,6 +32,7 @@ export type {
   ImageBudgetErrorDetails,
   ImageBudgetErrorOptions,
   ImageBudgetPolicy,
+  ImageBudgetPreparationOptions,
   ImageBudgetStrategy,
   PreparedImageToBudgetResult
 } from './types';
@@ -61,9 +63,24 @@ function assertDecodedImageDimensions(
   }
 }
 
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (!signal?.aborted) {
+    return;
+  }
+
+  throw signal.reason instanceof Error
+    ? signal.reason
+    : new DOMException('Image preparation was cancelled.', 'AbortError');
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
+}
+
 export async function prepareImageToBudget(
   file: File | Blob,
-  policy: ImageBudgetPolicy
+  policy: ImageBudgetPolicy,
+  options: ImageBudgetPreparationOptions = {}
 ): Promise<PreparedImageToBudgetResult> {
   if (!isObjectRecord(policy)) {
     throw createInvalidPolicyError('Image budget policy must be an object.', {});
@@ -75,8 +92,13 @@ export async function prepareImageToBudget(
   let decodedImage: DecodedImage;
 
   try {
+    throwIfAborted(options.signal);
     decodedImage = await decodeImage(file);
   } catch (error) {
+    if (options.signal?.aborted || isAbortError(error)) {
+      throw error;
+    }
+
     throw new ImageBudgetError(
       'decode_failed',
       'Unable to read image dimensions.',
@@ -90,6 +112,7 @@ export async function prepareImageToBudget(
   }
 
   try {
+    throwIfAborted(options.signal);
     assertDecodedImageDimensions(decodedImage, resolvedPolicy);
 
     const originalDimensions = {
@@ -142,15 +165,19 @@ export async function prepareImageToBudget(
             initialDimensions,
             originalDimensions,
             resolvedPolicy,
-            attempts
+            attempts,
+            options
           )
         : await solveLossyBudget(
             decodedImage,
             initialDimensions,
             originalDimensions,
             resolvedPolicy,
-            attempts
+            attempts,
+            options
           );
+
+    throwIfAborted(options.signal);
 
     if (!candidate) {
       throw createBudgetUnreachableError(resolvedPolicy, attempts);

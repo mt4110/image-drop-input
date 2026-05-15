@@ -52,6 +52,24 @@ import { isImageBudgetError } from 'image-drop-input/headless';
 
 `budget_unreachable` may include attempt history. Use counts and coarse diagnostics for telemetry; do not dump full app context into logs.
 
+## Browser pipeline errors
+
+Import from `/headless`:
+
+```ts
+import { isImagePipelineError } from 'image-drop-input/headless';
+```
+
+| Code | Meaning |
+| --- | --- |
+| `cancelled` | The caller aborted preparation. |
+| `file_ref_unavailable` | A worker could not read the requested local draft file reference. |
+| `timeout` | Preparation exceeded the configured `timeoutMs` or policy `maxProcessingMs`. |
+| `worker_failed` | The worker could not start, receive the request, or complete safely. |
+| `worker_unavailable` | Module workers are unavailable, or a file-ref request cannot fall back to the main thread. |
+
+Pipeline errors describe execution mode. Budget failures inside the worker are still reported as `ImageBudgetError`.
+
 ## Upload errors
 
 Import from the root or `/headless` entry:

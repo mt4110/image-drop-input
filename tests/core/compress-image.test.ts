@@ -150,6 +150,71 @@ describe('compressImage', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it('falls back to document canvas when OffscreenCanvas cannot export blobs', async () => {
+    class ReadOnlyOffscreenCanvas {
+      constructor(
+        public width: number,
+        public height: number
+      ) {}
+
+      getContext(contextId: string) {
+        if (contextId !== '2d') {
+          return null;
+        }
+
+        return {
+          drawImage
+        } as unknown as OffscreenCanvasRenderingContext2D;
+      }
+    }
+
+    const close = vi.fn();
+    const documentDrawImage = vi.fn();
+    const createImageBitmap = vi.fn(async () => ({
+      width: 1200,
+      height: 900,
+      close
+    })) as typeof globalThis.createImageBitmap;
+    const originalCreateElement = document.createElement.bind(document);
+    const createElement = vi.spyOn(document, 'createElement').mockImplementation((tagName) => {
+      if (tagName !== 'canvas') {
+        return originalCreateElement(tagName);
+      }
+
+      return {
+        width: 0,
+        height: 0,
+        getContext: vi.fn(() => ({
+          drawImage: documentDrawImage
+        })),
+        toBlob: vi.fn((callback: BlobCallback, type?: string) => {
+          callback(new Blob(['document-canvas'], { type: type ?? 'image/png' }));
+        })
+      } as unknown as HTMLCanvasElement;
+    });
+
+    Object.defineProperty(globalThis, 'OffscreenCanvas', {
+      configurable: true,
+      value: ReadOnlyOffscreenCanvas
+    });
+    Object.defineProperty(globalThis, 'createImageBitmap', {
+      configurable: true,
+      value: createImageBitmap
+    });
+
+    const source = new File(['hello'], 'avatar.jpg', { type: 'image/jpeg' });
+
+    try {
+      const result = await compressImage(source, { maxWidth: 600, outputType: 'image/webp' });
+
+      expect(result.type).toBe('image/webp');
+      expect(documentDrawImage).toHaveBeenCalledTimes(1);
+      expect(close).toHaveBeenCalledTimes(1);
+    } finally {
+      createElement.mockRestore();
+    }
+  });
+
   it('rejects explicit output types when canvas encoding falls back to another type', async () => {
     class FallbackOffscreenCanvas extends MockOffscreenCanvas {
       convertToBlob() {

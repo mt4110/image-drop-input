@@ -7,17 +7,16 @@ export function createImageCanvas(width: number, height: number): ImageCanvas {
   if (typeof OffscreenCanvas !== 'undefined') {
     const canvas = new OffscreenCanvas(width, height);
     const context = canvas.getContext('2d');
+    const convertToBlob = canvas.convertToBlob;
 
-    if (!context) {
-      throw new Error('2D canvas is unavailable in this environment.');
+    if (context && typeof convertToBlob === 'function') {
+      return {
+        context,
+        toBlob(type, quality) {
+          return convertToBlob.call(canvas, { type, quality });
+        }
+      };
     }
-
-    return {
-      context,
-      toBlob(type, quality) {
-        return canvas.convertToBlob({ type, quality });
-      }
-    };
   }
 
   if (typeof document === 'undefined') {

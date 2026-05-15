@@ -5,10 +5,21 @@ import type {
   EncodedImageCandidate,
   ImageBudgetAttempt,
   ImageDimensions,
+  ImageBudgetPreparationOptions,
   ResolvedImageBudgetPolicy
 } from './types';
 
 const qualitySearchEpsilon = 0.001;
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (!signal?.aborted) {
+    return;
+  }
+
+  throw signal.reason instanceof Error
+    ? signal.reason
+    : new DOMException('Image preparation was cancelled.', 'AbortError');
+}
 
 function roundQuality(value: number): number {
   return Number(value.toFixed(4));
@@ -19,11 +30,14 @@ export async function solvePngBudget(
   initialDimensions: ImageDimensions,
   originalDimensions: ImageDimensions,
   policy: ResolvedImageBudgetPolicy,
-  attempts: ImageBudgetAttempt[]
+  attempts: ImageBudgetAttempt[],
+  options: ImageBudgetPreparationOptions = {}
 ): Promise<EncodedImageCandidate | null> {
   let dimensions = initialDimensions;
 
   while (attempts.length < policy.maxEncodeAttempts) {
+    throwIfAborted(options.signal);
+
     const candidate = await encodeImageAttempt(
       decodedImage,
       dimensions,
@@ -33,6 +47,8 @@ export async function solvePngBudget(
       policy,
       attempts
     );
+
+    throwIfAborted(options.signal);
 
     if (candidate.attempt.withinBudget) {
       return candidate;
@@ -55,11 +71,14 @@ export async function solveLossyBudget(
   initialDimensions: ImageDimensions,
   originalDimensions: ImageDimensions,
   policy: ResolvedImageBudgetPolicy,
-  attempts: ImageBudgetAttempt[]
+  attempts: ImageBudgetAttempt[],
+  options: ImageBudgetPreparationOptions = {}
 ): Promise<EncodedImageCandidate | null> {
   let dimensions = initialDimensions;
 
   while (attempts.length < policy.maxEncodeAttempts) {
+    throwIfAborted(options.signal);
+
     const initialCandidate = await encodeImageAttempt(
       decodedImage,
       dimensions,
@@ -70,6 +89,8 @@ export async function solveLossyBudget(
       attempts
     );
 
+    throwIfAborted(options.signal);
+
     if (initialCandidate.attempt.withinBudget) {
       return initialCandidate;
     }
@@ -79,6 +100,8 @@ export async function solveLossyBudget(
     }
 
     if (policy.minQuality < policy.initialQuality) {
+      throwIfAborted(options.signal);
+
       const minCandidate = await encodeImageAttempt(
         decodedImage,
         dimensions,
@@ -88,6 +111,8 @@ export async function solveLossyBudget(
         policy,
         attempts
       );
+
+      throwIfAborted(options.signal);
 
       if (minCandidate.attempt.withinBudget) {
         let bestCandidate = minCandidate;
@@ -101,6 +126,8 @@ export async function solveLossyBudget(
             break;
           }
 
+          throwIfAborted(options.signal);
+
           const candidate = await encodeImageAttempt(
             decodedImage,
             dimensions,
@@ -110,6 +137,8 @@ export async function solveLossyBudget(
             policy,
             attempts
           );
+
+          throwIfAborted(options.signal);
 
           if (candidate.attempt.withinBudget) {
             bestCandidate = candidate;

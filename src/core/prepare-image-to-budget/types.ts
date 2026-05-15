@@ -17,6 +17,11 @@ export interface ImageBudgetPolicy {
   qualitySearch?: 'binary';
   resizeStepRatio?: number;
   fileName?: string;
+  maxProcessingMs?: number;
+}
+
+export interface ImageBudgetPreparationOptions {
+  signal?: AbortSignal;
 }
 
 export interface ImageBudgetAttempt {

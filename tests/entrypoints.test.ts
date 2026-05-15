@@ -36,6 +36,12 @@ describe('package entrypoints', () => {
     expect(root).not.toHaveProperty('ImageBudgetError');
     expect(root).not.toHaveProperty('isImageBudgetError');
     expect(root).not.toHaveProperty('prepareImageToBudget');
+    expect(root).not.toHaveProperty('ImagePipelineError');
+    expect(root).not.toHaveProperty('isImagePipelineError');
+    expect(root).not.toHaveProperty('prepareImageInBrowserPipeline');
+    expect(root).not.toHaveProperty('detectBrowserImagePipelineSupport');
+    expect(root).not.toHaveProperty('serializeImagePipelineError');
+    expect(root).not.toHaveProperty('deserializeImagePipelineError');
     expect(root).not.toHaveProperty('ImageDraftLifecycleError');
     expect(root).not.toHaveProperty('isImageDraftLifecycleError');
     expect(root).not.toHaveProperty('useImageDraftLifecycle');
@@ -52,6 +58,12 @@ describe('package entrypoints', () => {
     expect(headless.prepareImageToBudget).toBeTypeOf('function');
     expect(headless.ImageBudgetError).toBeTypeOf('function');
     expect(headless.isImageBudgetError).toBeTypeOf('function');
+    expect(headless.prepareImageInBrowserPipeline).toBeTypeOf('function');
+    expect(headless.detectBrowserImagePipelineSupport).toBeTypeOf('function');
+    expect(headless.ImagePipelineError).toBeTypeOf('function');
+    expect(headless.isImagePipelineError).toBeTypeOf('function');
+    expect(headless.serializeImagePipelineError).toBeTypeOf('function');
+    expect(headless.deserializeImagePipelineError).toBeTypeOf('function');
     expect(headless.createPresignedPutUploader).toBeTypeOf('function');
     expect(headless.ImageValidationError).toBeTypeOf('function');
     expect(headless.isImageValidationError).toBeTypeOf('function');

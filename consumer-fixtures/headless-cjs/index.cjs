@@ -53,6 +53,11 @@ const localDraftError = new headless.LocalImageDraftError(
   'Local draft storage quota was exceeded.',
   { mode: 'indexeddb', requestedBytes: 1024 }
 );
+const pipelineError = new headless.ImagePipelineError(
+  'worker_unavailable',
+  'Module workers are unavailable.',
+  { mode: 'worker' }
+);
 
 if (!headless.isImageUploadError(uploadError)) {
   throw new Error('Expected headless isImageUploadError to narrow ImageUploadError.');
@@ -64,6 +69,18 @@ if (budgetError.name !== 'ImageBudgetError' || budgetError.code !== 'budget_unre
 
 if (!headless.isImageBudgetError(budgetError)) {
   throw new Error('Expected headless isImageBudgetError to narrow ImageBudgetError.');
+}
+
+if (!headless.isImagePipelineError(pipelineError)) {
+  throw new Error('Expected headless isImagePipelineError to narrow ImagePipelineError.');
+}
+
+if (
+  headless.deserializeImagePipelineError(
+    headless.serializeImagePipelineError(pipelineError)
+  ).code !== 'worker_unavailable'
+) {
+  throw new Error('Expected headless pipeline error serialization to preserve code.');
 }
 
 if (!headless.isImageDraftLifecycleError(lifecycleError)) {
