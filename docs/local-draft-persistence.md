@@ -124,7 +124,7 @@ On mount, the hook runs TTL cleanup, lists recoverable drafts for the field/prod
 
 The store runs local TTL cleanup through `cleanupExpired()`, and the recovery hook calls it before listing drafts.
 
-Before writing large drafts, the store uses `navigator.storage.estimate()` when available. If available quota is too small, `saveDraft()` rejects with `LocalImageDraftError` code `quota_exceeded` and calls `onStoragePressure`.
+Before writing large drafts, the store uses `navigator.storage.estimate()` when available. If the estimate is unavailable or rejected by the browser, quota preflight is skipped and the write attempt proceeds. If available quota is too small, `saveDraft()` rejects with `LocalImageDraftError` code `quota_exceeded` and calls `onStoragePressure`.
 
 ```ts
 const localDrafts = createLocalImageDraftStore({

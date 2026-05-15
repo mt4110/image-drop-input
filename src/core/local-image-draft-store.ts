@@ -854,7 +854,13 @@ export function createLocalImageDraftStore(
   };
 
   const estimateStorage = async (): Promise<LocalImageDraftStorageEstimate | null> => {
-    const estimate = await browserNavigator?.storage?.estimate?.();
+    let estimate: StorageEstimate | undefined;
+
+    try {
+      estimate = await browserNavigator?.storage?.estimate?.();
+    } catch {
+      return null;
+    }
 
     if (!estimate) {
       return null;

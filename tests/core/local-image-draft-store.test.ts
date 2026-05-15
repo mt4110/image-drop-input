@@ -595,6 +595,35 @@ describe('createLocalImageDraftStore', () => {
     expect(await store.listDrafts({ includeExpired: true })).toHaveLength(0);
   });
 
+  it('treats rejected storage estimates as unavailable quota telemetry', async () => {
+    const onStoragePressure = vi.fn();
+    const store = createLocalImageDraftStore({
+      databaseName: 'quota-estimate-reject-test',
+      indexedDB: new IDBFactory(),
+      navigator: createNavigator({
+        estimate: async () => {
+          throw new DOMException('Storage estimate unavailable.', 'SecurityError');
+        }
+      }),
+      onStoragePressure
+    });
+
+    await expect(store.estimateStorage()).resolves.toBeNull();
+
+    const manifest = await store.saveDraft({
+      draftId: 'estimate-reject-draft',
+      fieldId: 'product.image',
+      raw: {
+        blob: createBlob(['image bytes']),
+        fileName: 'image.png'
+      }
+    });
+
+    expect(manifest.draftId).toBe('estimate-reject-draft');
+    expect(await store.findRecoverableDrafts({ fieldId: 'product.image' })).toHaveLength(1);
+    expect(onStoragePressure).not.toHaveBeenCalled();
+  });
+
   it('keeps an existing draft manifest when a later save is rejected by quota preflight', async () => {
     let usage = 0;
     const store = createLocalImageDraftStore({
