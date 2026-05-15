@@ -48,6 +48,11 @@ const workerWithoutBlobModuleProbeSupport: BrowserImagePipelineSupport = {
   moduleWorker: false
 };
 
+const workerWithoutBitmapDecodeSupport: BrowserImagePipelineSupport = {
+  ...workerSupport,
+  imageBitmap: false
+};
+
 function createPreparedResult(source: Blob): PreparedImageToBudgetResult {
   const file = new Blob([new Uint8Array(512)], { type: 'image/webp' });
 
@@ -283,6 +288,45 @@ describe('browser image pipeline', () => {
     expect(MockWorker.instances[0].terminate).toHaveBeenCalledTimes(1);
     expect(progress).toContain('worker:queued:0');
     expect(progress).toContain('worker:encode:60');
+  });
+
+  it('falls back to the main thread when worker bitmap decoding is unavailable', async () => {
+    const progress: string[] = [];
+    const source = new File([new Uint8Array(120_000)], 'source.png', { type: 'image/png' });
+
+    class UnexpectedWorker {
+      constructor() {
+        throw new Error('Worker should not be created when bitmap decoding is unavailable.');
+      }
+    }
+
+    Object.defineProperty(globalThis, 'Worker', {
+      configurable: true,
+      value: UnexpectedWorker
+    });
+
+    const result = await prepareImageInBrowserPipeline(
+      {
+        draftId: 'worker-decode-unavailable-draft',
+        file: source,
+        policy: {
+          outputMaxBytes: 80_000,
+          outputType: 'image/webp',
+          maxWidth: 500,
+          maxHeight: 500
+        }
+      },
+      {
+        support: workerWithoutBitmapDecodeSupport,
+        onProgress(event) {
+          progress.push(`${event.mode}:${event.stage}`);
+        }
+      }
+    );
+
+    expect(result.mode).toBe('main-thread');
+    expect(progress).toContain('main-thread:queued');
+    expect(progress).toContain('main-thread:finalize');
   });
 
   it('tries an explicit worker URL even when blob-based module worker probing is unavailable', async () => {

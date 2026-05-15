@@ -521,6 +521,14 @@ async function prepareWithWorker(
     );
   }
 
+  if (!support.imageBitmap) {
+    throw new ImagePipelineError(
+      'worker_unavailable',
+      'Worker image decoding is unavailable in this browser.',
+      { draftId, mode: 'worker' }
+    );
+  }
+
   throwIfAborted(options.signal, draftId, 'worker');
 
   const startedAt = now();
