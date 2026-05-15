@@ -98,6 +98,14 @@ Each entry checks a claim or boundary statement. Entries marked "Not claimed" do
 - Disproof path: A successful result reports `size > outputMaxBytes` for a supported policy.
 - Status: Proven
 
+### ROI estimate model
+
+- Claim checked: The ROI calculator distinguishes measured inputs from assumptions and reports caveats instead of guaranteed savings.
+- Evidence level: Unit test, Public docs
+- Evidence: [ROI model](./roi-model.md), [ROI calculator template](./roi-calculator-template.md), `tests/docs/roi-calculator.test.mjs`.
+- Disproof path: Calculator output presents assumptions as measured, hides missing cost inputs, or describes savings as guaranteed.
+- Status: Proven
+
 ### Byte-identical browser output
 
 - Claim checked: Byte-budget output is byte-identical across browser engines.
