@@ -125,6 +125,67 @@ describe('useLocalImageDraftRecovery', () => {
     expect(await store.getDraft('expired-draft')).toBeNull();
   });
 
+  it('keeps remaining drafts available when a selected restore disappears', async () => {
+    const now = '2026-05-15T00:00:00.000Z';
+    const later = '2026-05-16T00:00:00.000Z';
+    const firstDraft: LocalImageDraftManifest = {
+      version: 1,
+      draftId: 'first-draft',
+      fieldId: 'profile.avatar',
+      createdAt: now,
+      updatedAt: now,
+      expiresAt: later,
+      phase: 'raw-captured',
+      raw: {
+        store: 'indexeddb',
+        pathOrKey: 'first',
+        fileName: 'first.png',
+        mimeType: 'image/png',
+        size: 1
+      }
+    };
+    const secondDraft: LocalImageDraftManifest = {
+      ...firstDraft,
+      draftId: 'second-draft',
+      raw: {
+        ...firstDraft.raw!,
+        pathOrKey: 'second',
+        fileName: 'second.png'
+      }
+    };
+    const store: LocalImageDraftStore = {
+      getMode: vi.fn(async () => 'indexeddb' as const),
+      estimateStorage: vi.fn(async () => null),
+      requestPersistentStorage: vi.fn(async () => null),
+      saveDraft: vi.fn(async () => firstDraft),
+      getDraft: vi.fn(async () => null),
+      listDrafts: vi.fn(async () => []),
+      cleanupExpired: vi.fn(async () => ({ deletedDraftIds: [], deletedCount: 0 })),
+      restoreDraft: vi.fn(async () => null),
+      discardDraft: vi.fn(async () => undefined),
+      findRecoverableDrafts: vi.fn(async () => [firstDraft, secondDraft])
+    };
+    const { result } = renderHook(() =>
+      useLocalImageDraftRecovery({
+        fieldId: 'profile.avatar',
+        store
+      })
+    );
+
+    await waitFor(() => {
+      expect(result.current.status).toBe('available');
+    });
+
+    await act(async () => {
+      await result.current.restore('first-draft');
+    });
+
+    expect(result.current.status).toBe('available');
+    expect(result.current.drafts.map((draft) => draft.draftId)).toEqual(['second-draft']);
+    expect(result.current.canRestore).toBe(true);
+    expect(result.current.canDiscard).toBe(true);
+  });
+
   it('ignores stale refresh results when field filters change', async () => {
     const now = '2026-05-15T00:00:00.000Z';
     const later = '2026-05-16T00:00:00.000Z';

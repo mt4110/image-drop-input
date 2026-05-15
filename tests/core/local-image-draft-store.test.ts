@@ -5,7 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createLocalImageDraftStore,
   isLocalImageDraftError,
-  LocalImageDraftError
+  LocalImageDraftError,
+  type LocalImageDraftFileRef
 } from '../../src/core/local-image-draft-store';
 
 class FakeWritableFileStream {
@@ -127,6 +128,20 @@ function createBlob(
   ) as unknown as Blob;
 }
 
+async function removeFakeOpfsFile(
+  root: FakeDirectoryHandle,
+  ref: LocalImageDraftFileRef
+): Promise<void> {
+  const parts = ref.pathOrKey.split('/').filter(Boolean);
+  let directory = root as unknown as FileSystemDirectoryHandle;
+
+  for (const directoryName of parts.slice(0, -1)) {
+    directory = await directory.getDirectoryHandle(directoryName);
+  }
+
+  await directory.removeEntry(parts[parts.length - 1]);
+}
+
 function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -192,6 +207,83 @@ describe('createLocalImageDraftStore', () => {
     expect(restored?.recoveredSlot).toBe('prepared');
     expect(await restored?.prepared?.text()).toBe('prepared bytes');
     expect(await restored?.raw?.text()).toBe('raw bytes');
+  });
+
+  it('falls back to a surviving OPFS slot when another referenced file is missing', async () => {
+    const indexedDB = new IDBFactory();
+    const opfsRoot = new FakeDirectoryHandle('root');
+    const navigator = createNavigator({
+      estimate: async () => ({ quota: 10_000_000, usage: 0 }),
+      getDirectory: async () => opfsRoot as unknown as FileSystemDirectoryHandle
+    });
+    const options = {
+      databaseName: 'opfs-partial-loss-test',
+      indexedDB,
+      navigator,
+      crypto: { randomUUID: () => 'draft-opfs-partial' }
+    };
+    const store = createLocalImageDraftStore(options);
+
+    const manifest = await store.saveDraft({
+      fieldId: 'profile.avatar',
+      raw: {
+        blob: createBlob(['raw bytes'], { type: 'image/png' }),
+        fileName: 'avatar.png'
+      },
+      prepared: {
+        blob: createBlob(['prepared bytes'], { type: 'image/webp' }),
+        fileName: 'avatar.webp',
+        width: 128,
+        height: 128
+      }
+    });
+
+    await removeFakeOpfsFile(opfsRoot, manifest.raw!);
+
+    const reloadedStore = createLocalImageDraftStore(options);
+    const restored = await reloadedStore.restoreDraft('draft-opfs-partial');
+
+    expect(restored?.raw).toBeUndefined();
+    expect(restored?.recoveredSlot).toBe('prepared');
+    expect(await restored?.prepared?.text()).toBe('prepared bytes');
+  });
+
+  it('maps fully missing OPFS files to the local draft error taxonomy', async () => {
+    const indexedDB = new IDBFactory();
+    const opfsRoot = new FakeDirectoryHandle('root');
+    const navigator = createNavigator({
+      estimate: async () => ({ quota: 10_000_000, usage: 0 }),
+      getDirectory: async () => opfsRoot as unknown as FileSystemDirectoryHandle
+    });
+    const options = {
+      databaseName: 'opfs-full-loss-test',
+      indexedDB,
+      navigator,
+      crypto: { randomUUID: () => 'draft-opfs-missing' }
+    };
+    const store = createLocalImageDraftStore(options);
+
+    const manifest = await store.saveDraft({
+      fieldId: 'profile.avatar',
+      raw: {
+        blob: createBlob(['raw bytes'], { type: 'image/png' }),
+        fileName: 'avatar.png'
+      },
+      prepared: {
+        blob: createBlob(['prepared bytes'], { type: 'image/webp' }),
+        fileName: 'avatar.webp'
+      }
+    });
+
+    await removeFakeOpfsFile(opfsRoot, manifest.raw!);
+    await removeFakeOpfsFile(opfsRoot, manifest.prepared!);
+
+    const reloadedStore = createLocalImageDraftStore(options);
+
+    await expect(reloadedStore.restoreDraft('draft-opfs-missing')).rejects.toMatchObject({
+      name: 'LocalImageDraftError',
+      code: 'draft_not_found'
+    });
   });
 
   it('falls back to IndexedDB file storage when OPFS is unavailable', async () => {

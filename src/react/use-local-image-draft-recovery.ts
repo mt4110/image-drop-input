@@ -71,8 +71,23 @@ export function useLocalImageDraftRecovery({
   const [status, setStatus] = useState<LocalImageDraftRecoveryStatus>(
     autoCheck ? 'checking' : 'empty'
   );
-  const [drafts, setDrafts] = useState<LocalImageDraftManifest[]>([]);
+  const [drafts, setDraftsState] = useState<LocalImageDraftManifest[]>([]);
+  const draftsRef = useRef<LocalImageDraftManifest[]>([]);
   const [error, setError] = useState<Error | null>(null);
+
+  const setDrafts = useCallback((nextDrafts: LocalImageDraftManifest[]) => {
+    draftsRef.current = nextDrafts;
+    setDraftsState(nextDrafts);
+  }, []);
+
+  const removeDraft = useCallback((draftId: string) => {
+    const remainingDrafts = draftsRef.current.filter((draft) => draft.draftId !== draftId);
+
+    draftsRef.current = remainingDrafts;
+    setDraftsState(remainingDrafts);
+
+    return remainingDrafts;
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -130,8 +145,10 @@ export function useLocalImageDraftRecovery({
   }, [autoCheck, refresh]);
 
   const restore = useCallback(
-    async (draftId = drafts[0]?.draftId) => {
-      if (!draftId) {
+    async (draftId?: string) => {
+      const targetDraftId = draftId ?? draftsRef.current[0]?.draftId;
+
+      if (!targetDraftId) {
         return null;
       }
 
@@ -141,13 +158,14 @@ export function useLocalImageDraftRecovery({
       }
 
       try {
-        const result = await createdStore.restoreDraft(draftId);
+        const result = await createdStore.restoreDraft(targetDraftId);
 
         if (result && isMountedRef.current) {
           setStatus('restored');
         } else if (isMountedRef.current) {
-          setStatus('empty');
-          setDrafts((current) => current.filter((draft) => draft.draftId !== draftId));
+          const remainingDrafts = removeDraft(targetDraftId);
+
+          setStatus(remainingDrafts.length > 0 ? 'available' : 'empty');
         }
 
         if (result) {
@@ -160,16 +178,19 @@ export function useLocalImageDraftRecovery({
         return null;
       }
     },
-    [createdStore, drafts, reportError]
+    [createdStore, removeDraft, reportError]
   );
 
   const discard = useCallback(
-    async (draftId = drafts[0]?.draftId) => {
-      if (!draftId) {
+    async (draftId?: string) => {
+      const targetDraftId = draftId ?? draftsRef.current[0]?.draftId;
+
+      if (!targetDraftId) {
         return;
       }
 
-      const currentDraft = drafts.find((draft) => draft.draftId === draftId) ?? null;
+      const currentDraft =
+        draftsRef.current.find((draft) => draft.draftId === targetDraftId) ?? null;
 
       if (isMountedRef.current) {
         setError(null);
@@ -177,23 +198,22 @@ export function useLocalImageDraftRecovery({
       }
 
       try {
-        await createdStore.discardDraft(draftId);
+        await createdStore.discardDraft(targetDraftId);
 
         if (currentDraft) {
           optionsRef.current.onDiscarded?.(currentDraft);
         }
 
-        const remainingDrafts = drafts.filter((draft) => draft.draftId !== draftId);
-
         if (isMountedRef.current) {
-          setDrafts(remainingDrafts);
+          const remainingDrafts = removeDraft(targetDraftId);
+
           setStatus(remainingDrafts.length > 0 ? 'available' : 'discarded');
         }
       } catch (nextError) {
         reportError(nextError);
       }
     },
-    [createdStore, drafts, reportError]
+    [createdStore, removeDraft, reportError]
   );
 
   const draft = drafts[0] ?? null;

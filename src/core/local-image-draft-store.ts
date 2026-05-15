@@ -641,6 +641,10 @@ async function blobToFile(
   }) as File;
 }
 
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'NotFoundError';
+}
+
 async function writeOpfsFile(
   root: FileSystemDirectoryHandle,
   rootDirectoryName: string,
@@ -682,14 +686,22 @@ async function readOpfsFile(
 
   let currentDirectory = root;
 
-  for (const directoryName of parts.slice(0, -1)) {
-    currentDirectory = await currentDirectory.getDirectoryHandle(directoryName);
+  try {
+    for (const directoryName of parts.slice(0, -1)) {
+      currentDirectory = await currentDirectory.getDirectoryHandle(directoryName);
+    }
+
+    const handle = await currentDirectory.getFileHandle(parts[parts.length - 1]);
+    const file = await handle.getFile();
+
+    return blobToFile(file, ref.fileName, ref.mimeType || file.type, file.lastModified);
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return null;
+    }
+
+    throw error;
   }
-
-  const handle = await currentDirectory.getFileHandle(parts[parts.length - 1]);
-  const file = await handle.getFile();
-
-  return blobToFile(file, ref.fileName, ref.mimeType || file.type, file.lastModified);
 }
 
 async function removeOpfsDraftDirectory(
