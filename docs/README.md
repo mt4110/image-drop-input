@@ -27,6 +27,7 @@ Core docs:
 - [Uploads](./uploads.md): adapter contracts, signed upload boundaries, progress, typed upload errors, and aborts
 - [Transforms](./transforms.md): compression, WebP conversion, return shapes, and MIME consistency
 - [Accessibility](./accessibility.md): keyboard, paste, status, dialog, and headless responsibilities
+- [ROI model](./roi-model.md): vendor-neutral byte, processing, and cost estimate for Zero Image-Processing Backend pilots
 
 Recipes:
 

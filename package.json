@@ -109,6 +109,7 @@
     "browser:budget-lab": "npm run build:lib && node scripts/run-browser-budget-lab.mjs",
     "browser:budget-lab:install": "playwright install chromium firefox",
     "browser:budget-lab:install:webkit": "playwright install webkit",
+    "roi:estimate": "node docs/tools/roi-calculator.mjs",
     "publish:check": "node scripts/verify-release-workflow.mjs && node scripts/verify-pack-manifest.mjs",
     "release:pr:check": "npm run verify && npm run publish:check",
     "typecheck:examples": "npm run typecheck --workspace examples/vite && npm run typecheck --workspace examples/rsbuild",
