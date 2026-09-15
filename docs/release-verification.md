@@ -49,6 +49,7 @@ Keep these stable unless a release intentionally changes them:
 `.github/workflows/release.yml` should keep these properties:
 
 - release concurrency is enabled with `cancel-in-progress: false`
+- release verification and publish jobs use Node `22.18.0` or newer to satisfy the build toolchain
 - the publish job runs only from `workflow_dispatch` with `publish=true`
 - publishing a GitHub Release does not attempt to publish the same package version to npm
 - publish waits for verify

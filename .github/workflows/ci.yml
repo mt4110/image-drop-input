@@ -111,10 +111,10 @@ jobs:
             types_react_version: 18.2.79
             types_react_dom_version: 18.2.25
           - label: react-19
-            react_version: 19.2.4
-            react_dom_version: 19.2.4
-            types_react_version: 19.2.14
-            types_react_dom_version: 19.2.3
+            react_version: 19.3.0
+            react_dom_version: 19.3.0
+            types_react_version: 19.3.0
+            types_react_dom_version: 19.3.0
     steps:
       - uses: actions/checkout@v6
 

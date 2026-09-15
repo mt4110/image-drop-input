@@ -10,7 +10,7 @@ on:
         type: boolean
 
 env:
-  NODE_VERSION: 22.14.0
+  NODE_VERSION: 22.18.0
 
 concurrency:
   group: release-image-drop-input
