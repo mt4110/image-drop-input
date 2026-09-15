@@ -82,7 +82,7 @@ The package separates the repo toolchain from the install floor for apps that co
 
 | Layer | Policy |
 | --- | --- |
-| Maintainer toolchain | Node 22.x with the npm version pinned by `packageManager`. This is for contributors running the full repo, examples, and release checks. |
+| Maintainer toolchain | Node 22.x with the npm version pinned by `packageManager`; release checks use Node `22.18.0` or newer to satisfy the build toolchain. This is for contributors running the full repo, examples, and release checks. |
 | Published package consumers | Node `>=18.18.0` for package install, type resolution, and CJS/ESM subpath loading. React is a peer dependency. |
 
 The library is built to ES2020 and keeps cloud SDKs out of the bundle. CI verifies the packed package in Node 18.18.x, 20.x, and 22.x without running the root repo install in those consumer jobs.
