@@ -132,7 +132,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "fake-indexeddb": "^6.2.5",
-    "happy-dom": "^20.14.5",
+    "happy-dom": "^21.0.4",
     "jsdom": "^30.0.1",
     "marked": "^18.0.13",
     "playwright": "^1.63.0",
