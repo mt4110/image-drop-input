@@ -12,14 +12,12 @@ permissions:
 jobs:
   verify-maintainer:
     runs-on: ubuntu-latest
-    env:
-      NODE_VERSION: 22
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Resolve npm version from packageManager
@@ -39,14 +37,12 @@ jobs:
 
   pack-consumer-artifact:
     runs-on: ubuntu-latest
-    env:
-      NODE_VERSION: 22
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Resolve npm version from packageManager
@@ -77,6 +73,8 @@ jobs:
           - 18.18.0
           - 20.x
           - 22.x
+          - 24.x
+          - 26.x
     steps:
       - uses: actions/checkout@v6
 
@@ -104,6 +102,8 @@ jobs:
           - 18.18.0
           - 20.x
           - 22.x
+          - 24.x
+          - 26.x
         react:
           - label: react-18
             react_version: 18.2.0
@@ -111,8 +111,8 @@ jobs:
             types_react_version: 18.2.79
             types_react_dom_version: 18.2.25
           - label: react-19
-            react_version: 19.3.0
-            react_dom_version: 19.3.0
+            react_version: 19.3.1
+            react_dom_version: 19.3.1
             types_react_version: 19.3.0
             types_react_dom_version: 19.3.0
     steps:

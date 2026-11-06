@@ -9,7 +9,7 @@ The release workflow publishes with npm Trusted Publishing from GitHub Actions.
 The publish job uses OIDC through `id-token: write`; it does not use `NPM_TOKEN` or `NODE_AUTH_TOKEN`.
 
 Trusted publishing currently requires npm CLI `11.5.1` or newer and Node `22.14.0` or newer.
-This repository pins npm through `packageManager` and pins the release workflow to Node `22.14.0`.
+This repository pins npm through `packageManager` and pins all maintainer workflows to Node `26.13.0` via `.nvmrc`.
 
 When a public package is published from this public repository through trusted publishing, npm generates provenance automatically.
 Do not add `--provenance` to the publish command unless npm changes that guidance.
@@ -187,8 +187,8 @@ The public release verification checklist lives in [docs/release-verification.md
 
 ## Runtime support checks
 
-The repo maintainer toolchain is Node 22.x with the npm version pinned by `packageManager`.
-The release workflow uses Node `22.14.0` so trusted publishing always has the required Node floor.
+The repo maintainer toolchain is Node 26 LTS, pinned by `.nvmrc`, with npm `12.2.2` pinned by `packageManager`.
+The release workflow reads the same `.nvmrc` pin as CI, Pages, and the browser lab.
 The published package consumer floor is Node `>=18.18.0`.
 
 Before publishing, keep both lanes green:

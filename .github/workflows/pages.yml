@@ -19,14 +19,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      NODE_VERSION: 22
       GITHUB_PAGES: true
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Resolve npm version from packageManager

@@ -67,6 +67,12 @@ import 'image-drop-input/style.css';
 
 組み込みの transform helper は browser の画像 decode と canvas encode に依存します。`transform` と `previewSrc` の扱いは browser 側に寄せ、保存するのは upload 後の `src` / `key` / metadata にしてください。`previewSrc` は DB や API payload に保存しません。
 
+## 開発・利用環境
+
+リポジトリの開発・CI・リリースには、`.nvmrc` の Node 26 LTS（`26.13.0`）と、`packageManager` の npm `12.2.2` を使います。TypeScript は安定版の `7.0.2` です。
+
+公開パッケージのインストール条件は Node `>=18.18.0` のままです。梱包済みパッケージの CI は Node 18.18 / 20 / 22 / 24 / 26 を対象にします。18 / 20 は過去環境との互換性確認であり、サポート終了版の利用を推奨するものではありません。
+
 ## 最短導入
 
 `upload` を省略すると、local-preview-only の画像 field として使えます。

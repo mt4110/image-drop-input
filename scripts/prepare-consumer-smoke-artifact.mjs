@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, renameSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseNpmPackOutput } from './parse-npm-pack-output.mjs';
 
 const artifactsDir = fileURLToPath(new URL('../.artifacts/', import.meta.url));
 const fixedTarballName = 'image-drop-input.tgz';
@@ -33,8 +34,7 @@ const packOutput = execFileSync(
     encoding: 'utf8'
   }
 );
-const packResult = JSON.parse(packOutput);
-const tarballName = packResult[0]?.filename;
+const tarballName = parseNpmPackOutput(packOutput).filename;
 
 if (!tarballName) {
   throw new Error('npm pack did not return a tarball filename.');

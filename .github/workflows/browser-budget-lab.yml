@@ -14,14 +14,12 @@ permissions:
 jobs:
   browser-budget-lab:
     runs-on: ubuntu-latest
-    env:
-      NODE_VERSION: 22
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Resolve npm version from packageManager
@@ -98,3 +96,4 @@ jobs:
           name: browser-budget-lab
           path: .artifacts/browser-budget-lab.*
           if-no-files-found: error
+          include-hidden-files: true

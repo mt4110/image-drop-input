@@ -1,3 +1,4 @@
+import { parseNpmPackOutput } from './parse-npm-pack-output.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -110,34 +111,10 @@ function getRootPackEnv() {
 }
 
 function parsePackOutput(output) {
-  const jsonMatch = output.match(/(\[\s*(?:\{[\s\S]*\}\s*)?\])\s*$/);
-
-  if (!jsonMatch) {
-    fail('npm pack did not return a parseable JSON payload.');
-    return undefined;
-  }
-
   try {
-    const parsed = JSON.parse(jsonMatch[1]);
-
-    if (!Array.isArray(parsed)) {
-      fail('npm pack did not return a JSON array.');
-      return undefined;
-    }
-
-    if (parsed.length !== 1) {
-      fail(`Expected npm pack to return one manifest, received ${parsed.length}.`);
-      return undefined;
-    }
-
-    if (!parsed[0] || typeof parsed[0] !== 'object') {
-      fail('npm pack returned an invalid manifest entry.');
-      return undefined;
-    }
-
-    return parsed[0];
+    return parseNpmPackOutput(output);
   } catch (error) {
-    fail(`npm pack returned invalid JSON: ${error.message}`);
+    fail(error.message);
     return undefined;
   }
 }

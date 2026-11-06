@@ -82,10 +82,10 @@ The package separates the repo toolchain from the install floor for apps that co
 
 | Layer | Policy |
 | --- | --- |
-| Maintainer toolchain | Node 22.x with the npm version pinned by `packageManager`; release checks use Node `22.18.0` or newer to satisfy the build toolchain. This is for contributors running the full repo, examples, and release checks. |
+| Maintainer toolchain | Node 26 LTS, pinned to `26.13.0` in `.nvmrc`, with npm `12.2.2` pinned by `packageManager`. CI, examples, browser lab, and release jobs use the same Node pin. This is for contributors running the full repo, examples, and release checks. |
 | Published package consumers | Node `>=18.18.0` for package install, type resolution, and CJS/ESM subpath loading. React is a peer dependency. |
 
-The library is built to ES2020 and keeps cloud SDKs out of the bundle. CI verifies the packed package in Node 18.18.x, 20.x, and 22.x without running the root repo install in those consumer jobs.
+The library is built to ES2020 and keeps cloud SDKs out of the bundle. CI verifies the packed package in Node 18.18.x, 20.x, 22.x, 24.x, and 26.x without running the root repo install in those consumer jobs. The 18/20 lanes are legacy compatibility checks, not a recommendation to use end-of-life Node releases.
 
 ## 30-second quick start
 
