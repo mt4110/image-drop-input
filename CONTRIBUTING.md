@@ -10,6 +10,12 @@ This project is intentionally small in scope:
 - no cloud SDK coupling
 - durable product image state over generic upload breadth
 
+## Toolchain
+
+Use `nvm install && nvm use` to load the Node 26 LTS version pinned in `.nvmrc`.
+Use npm `12.2.2`, matching `packageManager` in `package.json`, then run `npm ci` and `npm run release:pr:check`.
+The published package retains its separate Node `>=18.18.0` install floor.
+
 ## Before you start
 
 - use the bug report form for reproducible defects

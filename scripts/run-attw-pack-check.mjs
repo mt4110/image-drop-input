@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
+import { parseNpmPackOutput } from './parse-npm-pack-output.mjs';
 
 let tarballName = '';
 
@@ -7,15 +8,7 @@ try {
   const packOutput = execFileSync('npm', ['pack', '--json', '--silent'], {
     encoding: 'utf8'
   });
-  const jsonMatch = packOutput.match(/(\[\s*\{[\s\S]*\}\s*\])\s*$/);
-
-  if (!jsonMatch) {
-    throw new Error('npm pack did not return a parseable JSON payload.');
-  }
-
-  const packResult = JSON.parse(jsonMatch[1]);
-
-  tarballName = packResult[0]?.filename ?? '';
+  tarballName = parseNpmPackOutput(packOutput).filename;
 
   if (!tarballName) {
     throw new Error('npm pack did not return a tarball filename.');

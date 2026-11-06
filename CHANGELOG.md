@@ -6,8 +6,16 @@ Notable changes for `image-drop-input` are tracked here.
 
 ### Changed
 
+- Unified maintainer workflows on Node 26 LTS (`26.13.0`) via `.nvmrc` and updated the pinned npm CLI to `12.2.2`.
+- Refreshed development dependencies, including Happy DOM 21, Vite and Vitest security fixes, while retaining TypeScript 7.0.2 and the published package install floor.
+- Extended packed consumer CI to Node 24 and 26 alongside legacy Node 18/20 and Node 22 checks; updated the legacy Vite fixture to 6.4.5.
+
 - Changed the release workflow to publish only from manual `workflow_dispatch` runs with `publish=true`, preventing GitHub Release publication from attempting a duplicate npm publish.
 - Documented public release surface cache checks and package scanner score triage for post-release review.
+
+### Fixed
+
+- Kept package validation and consumer artifact creation compatible with both npm 11 array and npm 12 package-map JSON output, rejecting missing or multiple manifests.
 
 ## 0.3.4 - 2026-05-08
 
