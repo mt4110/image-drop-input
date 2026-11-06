@@ -4,6 +4,8 @@ Notable changes for `image-drop-input` are tracked here.
 
 ## Unreleased
 
+## 0.3.5 - 2026-11-07
+
 ### Changed
 
 - Unified maintainer workflows on Node 26 LTS (`26.13.0`) via `.nvmrc` and updated the pinned npm CLI to `12.2.2`.
