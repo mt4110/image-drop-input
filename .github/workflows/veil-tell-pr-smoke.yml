@@ -1,0 +1,97 @@
+name: Verify veil-tell on a dependency PR
+on:
+  pull_request:
+    branches: [verify/veil-tell-pr-base]
+permissions:
+  contents: read
+  attestations: read
+jobs:
+  verify:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare Ubuntu isolation and compare the two baselines
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! -x /usr/bin/bwrap ]]; then
+            sudo apt-get update
+            sudo apt-get install -y bubblewrap
+          fi
+          /usr/bin/bwrap --unshare-user --unshare-net --ro-bind / / -- /bin/true
+          mkdir -p "$RUNNER_TEMP/pr-evidence"
+          git show "$BASE_SHA:.veil-tell/npm.json" > "$RUNNER_TEMP/pr-evidence/base.json"
+          git show "$HEAD_SHA:.veil-tell/npm.json" > "$RUNNER_TEMP/pr-evidence/head.json"
+          jq -e '[.destinations[].host] == ["registry.npmjs.org"]' "$RUNNER_TEMP/pr-evidence/base.json"
+          jq -e '[.destinations[].host] == ["registry.npmjs.org", "veil-tell-pr-control.test"]' "$RUNNER_TEMP/pr-evidence/head.json"
+          printf 'base=%s\nhead=%s\n' "$BASE_SHA" "$HEAD_SHA" | tee "$RUNNER_TEMP/pr-evidence/refs.txt"
+          test ! -e node_modules
+          sha256sum package-lock.json > "$RUNNER_TEMP/pr-evidence/lock.sha256"
+      - name: Install the PR lockfile
+        uses: mt4110/veil-tell@v0
+        id: normal
+      - name: Check the installed dependency
+        run: |
+          sha256sum -c "$RUNNER_TEMP/pr-evidence/lock.sha256"
+          node -e 'if (require("./node_modules/marked/package.json").version !== "18.2.0") process.exit(1)'
+      - name: Install and attempt an unlisted CONNECT
+        uses: mt4110/veil-tell@v0
+        id: control
+        continue-on-error: true
+        with:
+          command: npm ci && python3 -B .github/veil-tell/pr-connect.py
+      - name: Collect and check the Action reports and summaries
+        if: always()
+        env:
+          NORMAL: ${{ steps.normal.outputs.report }}
+          CONTROL: ${{ steps.control.outputs.report }}
+          NORMAL_OUTCOME: ${{ steps.normal.outcome }}
+          CONTROL_OUTCOME: ${{ steps.control.outcome }}
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/pr-evidence"
+          for pair in "normal:$NORMAL" "control:$CONTROL"; do
+            path="${pair#*:}"
+            if [[ -n "$path" && -f "$path" ]]; then
+              cp "$path" "$evidence/${pair%%:*}.json"
+            fi
+          done
+          test "$NORMAL_OUTCOME" = success
+          test "$CONTROL_OUTCOME" = failure
+          sha256sum -c "$evidence/lock.sha256"
+          jq -e '.backend == "isolated" and .child_status.exit_code == 0
+            and .run_status == {exit_code:0,reason:"completed"}
+            and .comparison.added == [] and (.volume_anomalies // []) == []
+            and ([.destinations[].host] | unique) == ["registry.npmjs.org"]
+            and any(.comparison.lockfile_changes.updated[]; .before.name == "marked"
+                and .before.version == "18.1.3" and .after.version == "18.2.0")' "$evidence/normal.json"
+          jq -e '.backend == "isolated" and .child_status.exit_code == 0
+            and .run_status == {exit_code:21,reason:"new_destination"}
+            and [.comparison.added[].host] == ["veil-tell-pr-control.test"]
+            and any(.destinations[]; .host == "veil-tell-pr-control.test"
+                and .reason == "new_destination" and .result == "blocked" and .sent_bytes == 0)' "$evidence/control.json"
+          python3 - "$evidence" <<'PY'
+          import os
+          from pathlib import Path
+          import sys
+          folder = Path(sys.argv[1])
+          summaries = [p.read_text() for p in Path(os.environ["GITHUB_STEP_SUMMARY"]).parent.glob("step_summary_*")]
+          for label, marker in [
+              ("normal", "No new destinations, attempts or volume anomalies"),
+              ("control", "<code>veil-tell-pr-control.test:443</code>"),
+          ]:
+              (summary,) = [s for s in summaries if marker in s]
+              (folder / f"{label}-summary.md").write_text(summary)
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: veil-tell-pr-evidence
+          path: ${{ runner.temp }}/pr-evidence/
+          if-no-files-found: error

@@ -1392,6 +1392,11 @@
           "confidence": "unknown"
         }
       ]
+    },
+    {
+      "host": "veil-tell-pr-control.test",
+      "port": 443,
+      "attempts": 1
     }
   ],
   "volume": {
