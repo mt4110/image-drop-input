@@ -1,0 +1,8 @@
+# Reviewed npm registry destination for image-drop-input CI.
+version = 1
+profile = "observed"
+
+[[rule]]
+action = "allow"
+host = "registry.npmjs.org"
+port = 443

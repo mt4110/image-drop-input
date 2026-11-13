@@ -1,0 +1,118 @@
+name: Check npm registry allowlist
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restrict-npm-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Prepare isolation and pinned tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -x /usr/bin/bwrap ]]; then
+            sudo apt-get update
+            sudo apt-get install -y bubblewrap
+          fi
+          /usr/bin/bwrap --unshare-user --unshare-net --ro-bind / / -- /bin/true
+
+          work="$RUNNER_TEMP/veil-tell-restrict"
+          mkdir -p "$work/cold" "$work/reports"
+          git archive HEAD | tar -xf - -C "$work/cold"
+          cp .github/veil-tell/npm-ci.toml "$work/policy.toml"
+          cd "$work"
+
+          archive='veil-tell-0.2.0-linux-x86_64-gnu.tar.gz'
+          curl -fsSLO "https://github.com/mt4110/veil-tell/releases/download/v0.2.0/$archive"
+          printf '%s  %s\n' 0ae7f2ad6e8bbfae78c84f165d4fafebe52037f50bb93ba0901a3caf89f31c23 "$archive" | sha256sum -c
+          tar -xzf "$archive"
+
+          curl -fsSLO https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-x64.tar.xz
+          printf '%s\n' 'd28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997  node-v26.13.0-linux-x64.tar.xz' | sha256sum -c
+          tar -xf node-v26.13.0-linux-x64.tar.xz
+          curl -fsSLO https://registry.npmjs.org/npm/-/npm-12.2.2.tgz
+          test "$(openssl dgst -sha512 -binary npm-12.2.2.tgz | openssl base64 -A)" = \
+            'KglgbZyacf7jH+FHuNRqVuCzQi8VhI2a7J87Ix43FsPTuZoGWmIXXGdZtBUOA79vwL+IJREqURVzupA7PsQTcA=='
+          mkdir -p cold/.trial-toolchain/bin cold/.trial-toolchain/npm
+          cp node-v26.13.0-linux-x64/bin/node cold/.trial-toolchain/bin/
+          tar -xzf npm-12.2.2.tgz --strip-components=1 -C cold/.trial-toolchain/npm
+          ln -s ../npm/bin/npm-cli.js cold/.trial-toolchain/bin/npm
+
+          touch cold/.trial-user.npmrc cold/.trial-global.npmrc
+          cat > cold/build-and-test.sh <<'SH'
+          set -eu
+          export PATH="$PWD/.trial-toolchain/bin:/usr/bin:/bin"
+          export CI=true npm_config_cache=./.trial-cache
+          export npm_config_userconfig=./.trial-user.npmrc
+          export npm_config_globalconfig=./.trial-global.npmrc
+          export npm_config_fetch_retries=0 npm_config_fetch_timeout=10000
+          export npm_config_audit=true npm_config_fund=false
+          test ! -e node_modules
+          test ! -e .trial-cache
+          sha256sum -c .trial-lock.sha256
+          npm ci
+          npm run typecheck
+          npm test
+          npm run build:examples
+          npm run check:package
+          sha256sum -c .trial-lock.sha256
+          SH
+          (cd cold && sha256sum package-lock.json > .trial-lock.sha256)
+          cp -R cold control
+          cat > control/connect-probe.py <<'PYTHON'
+          import base64
+          import os
+          import socket
+          from urllib.parse import urlsplit
+
+          proxy = urlsplit(os.environ["HTTPS_PROXY"])
+          credentials = base64.b64encode(f"{proxy.username}:{proxy.password}".encode()).decode()
+          target = "veil-tell-unregistered.test:443"
+          request = (
+              f"CONNECT {target} HTTP/1.1\r\n"
+              f"Host: {target}\r\n"
+              f"Proxy-Authorization: Basic {credentials}\r\n\r\n"
+          )
+          with socket.create_connection((proxy.hostname, proxy.port), timeout=5) as sock:
+              sock.sendall(request.encode())
+              with sock.makefile("rb") as reply:
+                  status = reply.readline(1024).split()[1]
+          if status != b"403":
+              raise SystemExit("Expected HTTP 403 for the unregistered CONNECT")
+          print(f"Control CONNECT {target}: HTTP 403; child exits successfully")
+          PYTHON
+
+      - name: Run build and tests with the reviewed policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/veil-tell-restrict"
+          cd "$work/cold"
+          "$work/veil-tell-0.2.0-linux-x86_64-gnu/veil-tell" restrict \
+            --backend isolated --policy "$work/policy.toml" --fail-on-unknown \
+            --report "$work/reports/restricted.json" -- /bin/sh ./build-and-test.sh
+
+      - name: Reject an unregistered CONNECT
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/veil-tell-restrict"
+          cd "$work/control"
+          "$work/veil-tell-0.2.0-linux-x86_64-gnu/veil-tell" restrict \
+            --backend isolated --policy "$work/policy.toml" --fail-on-unknown \
+            --report "$work/reports/unknown.json" -- \
+            /bin/sh -ec '/bin/sh ./build-and-test.sh; /usr/bin/python3 ./connect-probe.py'
+
+      - name: Upload restrict reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-tell-restrict
+          path: ${{ runner.temp }}/veil-tell-restrict/reports/*.json
+          if-no-files-found: error
