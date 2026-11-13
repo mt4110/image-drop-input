@@ -1,0 +1,117 @@
+name: Verify npm registry dependency
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-npm-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Prepare isolation and pinned tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -x /usr/bin/bwrap ]]; then
+            sudo apt-get update
+            sudo apt-get install -y bubblewrap
+          fi
+          /usr/bin/bwrap --unshare-user --unshare-net --ro-bind / / -- /bin/true
+
+          work="$RUNNER_TEMP/veil-tell-ci"
+          mkdir -p "$work/cold" "$work/reports"
+          git archive HEAD | tar -xf - -C "$work/cold"
+          cd "$work"
+
+          archive='veil-tell-0.2.0-linux-x86_64-gnu.tar.gz'
+          curl -fsSLO "https://github.com/mt4110/veil-tell/releases/download/v0.2.0/$archive"
+          printf '%s  %s\n' 0ae7f2ad6e8bbfae78c84f165d4fafebe52037f50bb93ba0901a3caf89f31c23 "$archive" | sha256sum -c
+          tar -xzf "$archive"
+
+          curl -fsSLO https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-x64.tar.xz
+          printf '%s\n' 'd28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997  node-v26.13.0-linux-x64.tar.xz' | sha256sum -c
+          tar -xf node-v26.13.0-linux-x64.tar.xz
+          curl -fsSLO https://registry.npmjs.org/npm/-/npm-12.2.2.tgz
+          test "$(openssl dgst -sha512 -binary npm-12.2.2.tgz | openssl base64 -A)" = \
+            'KglgbZyacf7jH+FHuNRqVuCzQi8VhI2a7J87Ix43FsPTuZoGWmIXXGdZtBUOA79vwL+IJREqURVzupA7PsQTcA=='
+          mkdir -p cold/.trial-toolchain/bin cold/.trial-toolchain/npm
+          cp node-v26.13.0-linux-x64/bin/node cold/.trial-toolchain/bin/
+          tar -xzf npm-12.2.2.tgz --strip-components=1 -C cold/.trial-toolchain/npm
+          ln -s ../npm/bin/npm-cli.js cold/.trial-toolchain/bin/npm
+
+          cat > allow.toml <<'TOML'
+          version = 1
+          profile = "npm"
+          [[rule]]
+          action = "allow"
+          host = "registry.npmjs.org"
+          port = 443
+          TOML
+          touch cold/.trial-user.npmrc cold/.trial-global.npmrc
+          cat > cold/verify-npm.sh <<'SH'
+          set -eu
+          export PATH="$PWD/.trial-toolchain/bin:/usr/bin:/bin"
+          export CI=true npm_config_cache=./.trial-cache
+          export npm_config_userconfig=./.trial-user.npmrc
+          export npm_config_globalconfig=./.trial-global.npmrc
+          export npm_config_fetch_retries=0 npm_config_fetch_timeout=10000
+          export npm_config_audit=true npm_config_fund=false
+          node --version
+          npm --version
+          test ! -e node_modules
+          sha256sum -c .trial-lock.sha256
+          status=0
+          case "$1" in
+            seed) npm ci ;;
+            workflow)
+              npm ci
+              npm run typecheck
+              npm test
+              npm run build:examples
+              npm run check:package
+              ;;
+            audit) npm audit || status=$? ;;
+            *) exit 64 ;;
+          esac
+          sha256sum -c .trial-lock.sha256
+          exit "$status"
+          SH
+          (cd cold && sha256sum package-lock.json > .trial-lock.sha256)
+          cp -R cold prime
+          veil="$work/veil-tell-0.2.0-linux-x86_64-gnu/veil-tell"
+          (cd prime && "$veil" restrict --backend isolated --policy "$work/allow.toml" \
+            -- /bin/sh ./verify-npm.sh seed)
+          mkdir cold/.trial-cache
+          cp -R prime/.trial-cache/_cacache cold/.trial-cache/
+
+      - name: Verify cached build and tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/veil-tell-ci"
+          "$work/veil-tell-0.2.0-linux-x86_64-gnu/veil-tell" verify \
+            --source "$work/cold" --policy "$work/allow.toml" \
+            --without registry.npmjs.org:443 --timeout-seconds 120 \
+            --report "$work/reports/workflow.json" -- /bin/sh ./verify-npm.sh workflow
+
+      - name: Verify npm audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/veil-tell-ci"
+          "$work/veil-tell-0.2.0-linux-x86_64-gnu/veil-tell" verify \
+            --source "$work/cold" --policy "$work/allow.toml" \
+            --without registry.npmjs.org:443 --timeout-seconds 120 \
+            --report "$work/reports/audit.json" -- /bin/sh ./verify-npm.sh audit
+
+      - name: Upload verify reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-tell-verify
+          path: ${{ runner.temp }}/veil-tell-ci/reports/*.json
+          if-no-files-found: error
