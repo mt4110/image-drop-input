@@ -86,7 +86,7 @@ jobs:
               ("normal", "No new destinations, attempts or volume anomalies"),
               ("control", "<code>veil-tell-pr-control.test:443</code>"),
           ]:
-              (summary,) = [s for s in summaries if marker in s]
+              (summary,) = {s.strip() + "\n" for s in summaries if marker in s}
               (folder / f"{label}-summary.md").write_text(summary)
           PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
