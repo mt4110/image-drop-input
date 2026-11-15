@@ -1,117 +1,106 @@
-name: Verify npm registry dependency
+name: Check npm destinations
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - '**/package.json'
+      - '.npmrc'
 
 permissions:
   contents: read
+  attestations: read
+
+env:
+  # Match the Node.js version used by your existing npm CI.
+  NODE_VERSION: '26.13.0'
 
 jobs:
-  verify-npm-registry:
-    runs-on: ubuntu-latest
+  npm-destinations:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Prepare isolation and pinned tools
-        shell: bash
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Prepare isolation
         run: |
-          set -euo pipefail
           if [[ ! -x /usr/bin/bwrap ]]; then
             sudo apt-get update
             sudo apt-get install -y bubblewrap
           fi
-          /usr/bin/bwrap --unshare-user --unshare-net --ro-bind / / -- /bin/true
 
-          work="$RUNNER_TEMP/veil-tell-ci"
-          mkdir -p "$work/cold" "$work/reports"
-          git archive HEAD | tar -xf - -C "$work/cold"
-          cd "$work"
-
-          archive='veil-tell-0.2.0-linux-x86_64-gnu.tar.gz'
-          curl -fsSLO "https://github.com/mt4110/veil-tell/releases/download/v0.2.0/$archive"
-          printf '%s  %s\n' 0ae7f2ad6e8bbfae78c84f165d4fafebe52037f50bb93ba0901a3caf89f31c23 "$archive" | sha256sum -c
-          tar -xzf "$archive"
-
-          curl -fsSLO https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-x64.tar.xz
-          printf '%s\n' 'd28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997  node-v26.13.0-linux-x64.tar.xz' | sha256sum -c
-          tar -xf node-v26.13.0-linux-x64.tar.xz
-          curl -fsSLO https://registry.npmjs.org/npm/-/npm-12.2.2.tgz
-          test "$(openssl dgst -sha512 -binary npm-12.2.2.tgz | openssl base64 -A)" = \
-            'KglgbZyacf7jH+FHuNRqVuCzQi8VhI2a7J87Ix43FsPTuZoGWmIXXGdZtBUOA79vwL+IJREqURVzupA7PsQTcA=='
-          mkdir -p cold/.trial-toolchain/bin cold/.trial-toolchain/npm
-          cp node-v26.13.0-linux-x64/bin/node cold/.trial-toolchain/bin/
-          tar -xzf npm-12.2.2.tgz --strip-components=1 -C cold/.trial-toolchain/npm
-          ln -s ../npm/bin/npm-cli.js cold/.trial-toolchain/bin/npm
-
-          cat > allow.toml <<'TOML'
-          version = 1
-          profile = "npm"
-          [[rule]]
-          action = "allow"
-          host = "registry.npmjs.org"
-          port = 443
-          TOML
-          touch cold/.trial-user.npmrc cold/.trial-global.npmrc
-          cat > cold/verify-npm.sh <<'SH'
-          set -eu
-          export PATH="$PWD/.trial-toolchain/bin:/usr/bin:/bin"
-          export CI=true npm_config_cache=./.trial-cache
-          export npm_config_userconfig=./.trial-user.npmrc
-          export npm_config_globalconfig=./.trial-global.npmrc
-          export npm_config_fetch_retries=0 npm_config_fetch_timeout=10000
-          export npm_config_audit=true npm_config_fund=false
-          node --version
-          npm --version
-          test ! -e node_modules
-          sha256sum -c .trial-lock.sha256
-          status=0
-          case "$1" in
-            seed) npm ci ;;
-            workflow)
-              npm ci
-              npm run typecheck
-              npm test
-              npm run build:examples
-              npm run check:package
-              ;;
-            audit) npm audit || status=$? ;;
-            *) exit 64 ;;
-          esac
-          sha256sum -c .trial-lock.sha256
-          exit "$status"
-          SH
-          (cd cold && sha256sum package-lock.json > .trial-lock.sha256)
-          cp -R cold prime
-          veil="$work/veil-tell-0.2.0-linux-x86_64-gnu/veil-tell"
-          (cd prime && "$veil" restrict --backend isolated --policy "$work/allow.toml" \
-            -- /bin/sh ./verify-npm.sh seed)
-          mkdir cold/.trial-cache
-          cp -R prime/.trial-cache/_cacache cold/.trial-cache/
-
-      - name: Verify cached build and tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          work="$RUNNER_TEMP/veil-tell-ci"
-          "$work/veil-tell-0.2.0-linux-x86_64-gnu/veil-tell" verify \
-            --source "$work/cold" --policy "$work/allow.toml" \
-            --without registry.npmjs.org:443 --timeout-seconds 120 \
-            --report "$work/reports/workflow.json" -- /bin/sh ./verify-npm.sh workflow
-
-      - name: Verify npm audit
-        shell: bash
-        run: |
-          set -euo pipefail
-          work="$RUNNER_TEMP/veil-tell-ci"
-          "$work/veil-tell-0.2.0-linux-x86_64-gnu/veil-tell" verify \
-            --source "$work/cold" --policy "$work/allow.toml" \
-            --without registry.npmjs.org:443 --timeout-seconds 120 \
-            --report "$work/reports/audit.json" -- /bin/sh ./verify-npm.sh audit
-
-      - name: Upload verify reports
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v7
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        if: github.event_name == 'workflow_dispatch'
         with:
-          name: veil-tell-verify
-          path: ${{ runner.temp }}/veil-tell-ci/reports/*.json
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - name: Record a baseline candidate
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          state=$(mktemp -d "$RUNNER_TEMP/veil-bootstrap.XXXXXX")
+          prepare="$state/candidate"
+          mkdir "$prepare"
+
+          archive=veil-tell-0.4.0-linux-x86_64-gnu.tar.gz
+          curl -fsSL "https://github.com/mt4110/veil-tell/releases/download/v0.4.0/$archive" -o "$state/$archive"
+          gh attestation verify "$state/$archive" --repo mt4110/veil-tell \
+            --source-ref refs/tags/v0.4.0 \
+            --signer-workflow mt4110/veil-tell/.github/workflows/release-build.yml \
+            --deny-self-hosted-runners
+          tar -xzf "$state/$archive" -C "$state"
+          unset GH_TOKEN
+
+          runtime=$(mktemp -d "$PWD/.veil-tell-node.XXXXXX")
+          node_bin=$(node -p 'require("node:fs").realpathSync(process.execPath)')
+          cp -R "$(dirname "$(dirname "$node_bin")")/." "$runtime"
+          export PATH="$runtime/bin:$PATH"
+          "$state/${archive%.tar.gz}/veil-tell" observe --backend isolated \
+            --baseline-out "$prepare/npm.json" --report "$prepare/report.json" -- npm ci
+          jq -e '.backend == "isolated" and .run_status.exit_code == 0' "$prepare/report.json" > /dev/null
+
+          printf 'path=%s\n' "$prepare" >> "$GITHUB_OUTPUT"
+          jq -r '.destinations[] | "- \(.host):\(.port)"' "$prepare/npm.json" >> "$GITHUB_STEP_SUMMARY"
+          printf '\nNext: review the candidate, then commit the reviewed file as .veil-tell/npm.json.\n' >> "$GITHUB_STEP_SUMMARY"
+        id: baseline
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: veil-tell-baseline-candidate
+          path: ${{ steps.baseline.outputs.path }}
           if-no-files-found: error
+
+      - name: Compare against the PR base baseline
+        if: github.event_name == 'pull_request'
+        id: check
+        uses: mt4110/veil-tell@v0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Show what to check next
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          REPORT: ${{ steps.check.outputs.report }}
+        run: |
+          if [[ -f "$REPORT" ]]; then
+            reason=$(jq -r '.run_status.reason' "$REPORT")
+            case "$reason" in
+              new_destination) next='Review the blocked destination in the table above before accepting it or merging this PR.' ;;
+              volume_limit_exceeded) next='Open report.json and compare volume_anomalies[].observed with its limits.' ;;
+              *) next='Open report.json and the failing step log to identify why this check could not pass.' ;;
+            esac
+          else
+            next='Open the failing step log. Check that the PR base has a reviewed .veil-tell/npm.json and that isolation and release verification succeeded.'
+          fi
+          printf '\nNext: %s\n' "$next" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && github.event_name == 'pull_request' && steps.check.outputs.report != ''
+        with:
+          name: veil-tell-pr-report
+          path: ${{ steps.check.outputs.report }}
+          if-no-files-found: ignore
