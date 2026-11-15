@@ -1,7 +1,11 @@
 const net = require("node:net");
 
 const destination = "veil-image-onboarding-control.test:443";
+if (!process.env.HTTPS_PROXY) process.exit(0);
 const proxy = new URL(process.env.HTTPS_PROXY);
+if (!["127.0.0.1", "localhost"].includes(proxy.hostname) || !proxy.username || !proxy.password) {
+  process.exit(0);
+}
 const auth = Buffer.from(`${proxy.username}:${proxy.password}`).toString("base64");
 const socket = net.createConnection({host: proxy.hostname, port: Number(proxy.port)});
 let response = "";
